@@ -1,12 +1,12 @@
 #include <iostream>
 
-#include "Application.h"
+#include "Application.hpp"
 
 using namespace VoxSmith;
 
 Application::Application()
 {
-	std::cout << "oh you touch my talala" << std::endl;
+
 }
 
 Application::~Application()

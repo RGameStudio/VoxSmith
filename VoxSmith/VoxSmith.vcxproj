@@ -19,13 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\VoxSmith\Application.h" />
+    <ClInclude Include="src\VoxSmith\Application\Application.hpp" />
     <ClInclude Include="src\VoxSmith.hpp" />
     <ClInclude Include="src\VoxSmith\Core.hpp" />
     <ClInclude Include="src\VoxSmith\EntryPoint.hpp" />
+    <ClInclude Include="src\VoxSmith\Logger\Log.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\VoxSmith\Application.cpp" />
+    <ClCompile Include="src\VoxSmith\Application\Application.cpp" />
+    <ClCompile Include="src\VoxSmith\Logger\Log.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -117,6 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;VS_BUILD_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>D:\Working\VoxSmith\VoxSmith\src;D:\Working\VoxSmith\VoxSmith\vendor\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -1,9 +1,9 @@
 //
-//  Engine stuff
+//  Engine code
 // ------------
-#include "VoxSmith/Application.h"
+#include "VoxSmith/Application/Application.hpp"
+#include "VoxSmith/Logger/Log.hpp"
 // -----------
-// 
 // 
 // Entry point
 // -----------

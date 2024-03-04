@@ -21,15 +21,21 @@
     <ClInclude Include="src\VoxSmith\EntryPoint.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\VoxSmith\Application.h">
+    <ClInclude Include="src\VoxSmith\Application\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\VoxSmith\Core.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\VoxSmith\Logger\Log.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\VoxSmith\Application.cpp">
+    <ClCompile Include="src\VoxSmith\Application\Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\VoxSmith\Logger\Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

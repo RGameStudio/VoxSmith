@@ -1,0 +1,7 @@
+# Unwanted folders
+.vs/
+bin/
+bin-int/
+
+# Unwanted files
+*.user

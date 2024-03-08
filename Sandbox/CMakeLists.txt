@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.10)
+
+file(GLOB_RECURSE HEADER_FILES ${CMAKE_SOURCE_DIR}/Sandbox/src/*.hpp)
+file(GLOB_RECURSE SOURCE_FILES ${CMAKE_SOURCE_DIR}/Sandbox/src/*.cpp)
+
+include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/spdlog/include)
+include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/src)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/Sandbox/src/)
+
+add_executable(Sandbox ${SOURCE_FILES} ${HEADER_FILES})
+
+target_link_directories(Sandbox PUBLIC ${CMAKE_BINARY_DIR}/VoxSmith/Debug/)
+target_link_libraries(Sandbox VoxSmith.lib)

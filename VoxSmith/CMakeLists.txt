@@ -6,5 +6,6 @@ file(GLOB_RECURSE SOURCE_FILES ${CMAKE_SOURCE_DIR}/VoxSmith/src/*.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/spdlog/include)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/src/)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Debug-x64)
 add_definitions(-DVS_BUILD_DLL)
 add_library(VoxSmith SHARED ${SOURCE_FILES} ${HEADER_FILES})

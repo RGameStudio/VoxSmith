@@ -1,4 +1,6 @@
 @echo off
 
-cd out/build
+if not exist out\build mkdir out\build
+
+cd out\build
 cmake ../../

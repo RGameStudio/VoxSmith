@@ -1,6 +1,9 @@
 #pragma once
 
-#include "VoxSmith/Core.hpp"
+#include <memory>
+
+#include "../Core.hpp"
+#include "../Window/Window.hpp"
 
 namespace VoxSmith
 {
@@ -16,6 +19,9 @@ namespace VoxSmith
 		Application(Application&&) = delete;
 		Application& operator=(const Application&) = delete;
 		Application& operator=(Application&&) = delete;
+
+	private:
+		std::unique_ptr<Window> m_window;
 	};
 
 	Application* createApplication();

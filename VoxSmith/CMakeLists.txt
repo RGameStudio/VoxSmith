@@ -4,8 +4,11 @@ file(GLOB_RECURSE HEADER_FILES ${CMAKE_SOURCE_DIR}/VoxSmith/src/*.hpp)
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_SOURCE_DIR}/VoxSmith/src/*.cpp)
 
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/spdlog/include)
+include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/GLFW/include)
+
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/src/)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Debug-x64)
 add_definitions(-DVS_BUILD_DLL)
 add_library(VoxSmith SHARED ${SOURCE_FILES} ${HEADER_FILES})
+target_link_libraries(VoxSmith glfw3.lib)

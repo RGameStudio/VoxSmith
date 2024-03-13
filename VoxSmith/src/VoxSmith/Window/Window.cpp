@@ -1,10 +1,23 @@
+#include <memory>
+
 #include "../Logger/Log.hpp"
 
 #include "Window.hpp"
 
 using namespace VoxSmith;
 
-Window::Window(size_t width, size_t height)
+std::unique_ptr<Window> Window::create(const size_t width, const size_t height, const char* title)
+{
+	static bool created = false;
+	if (created)
+	{
+		return nullptr;
+	}
+
+	return std::unique_ptr<Window>(new Window(width, height, title));
+}
+
+Window::Window(const size_t width, const size_t height, const char* title)
 	: m_width(width)
 	, m_height(height)
 {
@@ -13,11 +26,17 @@ Window::Window(size_t width, size_t height)
 		LOG_CORE_ERROR("Could not initialize GLFW");
 	}
 
-	m_window = glfwCreateWindow(width, height, "VoxSmithDemo", nullptr, nullptr);
+	m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	glfwMakeContextCurrent(m_window);
 }
 
 Window::~Window()
 {
 	glfwDestroyWindow(m_window);
+}
+
+void Window::endFrame()
+{
+	glfwSwapBuffers(m_window);
+	glfwPollEvents();
 }

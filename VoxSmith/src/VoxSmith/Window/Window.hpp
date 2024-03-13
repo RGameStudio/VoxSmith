@@ -6,11 +6,21 @@
 
 namespace VoxSmith
 {
+	struct WindowCallbackData
+	{
+
+	};
+
 	class VOX_SMITH_API Window final
 	{
 	public:
-		Window(size_t width, size_t height);
+		static std::unique_ptr<Window> create(const size_t width, const size_t height, const char* title);
+
 		~Window();
+
+		inline bool canClose() { return !glfwWindowShouldClose(m_window); }
+
+		void endFrame();
 
 		Window() = delete;
 		Window(const Window&) = delete;
@@ -19,6 +29,8 @@ namespace VoxSmith
 		Window& operator=(Window&&) = delete;
 
 	private:
+		Window(const size_t width, const size_t height, const char* title);
+
 		size_t m_width;
 		size_t m_height;
 

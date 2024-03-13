@@ -10,7 +10,7 @@ Application::Application()
 {
 	Log::init();
 
-	m_window = std::unique_ptr<Window>(new Window(500.0f, 500.0f));
+	m_window = Window::create(800.0f, 800.0f, "VoxSmithDemo");
 }
 
 Application::~Application()
@@ -20,8 +20,8 @@ Application::~Application()
 
 void Application::run()
 {
-	while (true)
+	while (m_window->canClose())
 	{
-
+		m_window->endFrame();
 	}
 }

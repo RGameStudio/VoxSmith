@@ -7,13 +7,16 @@
 
 namespace VoxSmith
 {
+	struct WindowEvent;
+
 	class VOX_SMITH_API Application
 	{
 	public:
 		Application();
 		virtual ~Application();
 
-		void run();
+		virtual void run();
+		virtual void handleEvents(WindowEvent& e);
 
 		Application(const Application&) = delete;
 		Application(Application&&) = delete;
@@ -21,7 +24,7 @@ namespace VoxSmith
 		Application& operator=(Application&&) = delete;
 
 	private:
-		std::unique_ptr<Window> m_window;
+		std::unique_ptr<Window> m_window = nullptr;
 	};
 
 	Application* createApplication();

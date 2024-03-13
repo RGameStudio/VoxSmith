@@ -25,10 +25,8 @@ namespace VoxSmith
 #define LOG_CORE_TRACE(...) VoxSmith::Log::getCoreLogger()->info(__VA_ARGS__)
 #define LOG_CORE_WARN(...) VoxSmith::Log::getCoreLogger()->warn(__VA_ARGS__)
 #define LOG_CORE_ERROR(...) VoxSmith::Log::getCoreLogger()->error(__VA_ARGS__)
-#define LOG_CORE_FATAL(...) VoxSmith::Log::getCoreLogger()->fatal(__VA_ARGS__)
 
 #define LOG_INFO(...) VoxSmith::Log::getCoreLogger()->info(__VA_ARGS__)
 #define LOG_TRACE(...) VoxSmith::Log::getCoreLogger()->info(__VA_ARGS__)
 #define LOG_WARN(...) VoxSmith::Log::getCoreLogger()->warn(__VA_ARGS__)
 #define LOG_ERROR(...) VoxSmith::Log::getCoreLogger()->error(__VA_ARGS__)
-#define LOG_FATAL(...) VoxSmith::Log::getCoreLogger()->fatal(__VA_ARGS__)

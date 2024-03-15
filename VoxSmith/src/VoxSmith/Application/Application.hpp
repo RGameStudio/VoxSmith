@@ -25,6 +25,8 @@ namespace VoxSmith
 
 	private:
 		std::unique_ptr<Window> m_window = nullptr;
+
+		bool m_isRunning = false;
 	};
 
 	Application* createApplication();

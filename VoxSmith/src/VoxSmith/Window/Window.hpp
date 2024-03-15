@@ -17,8 +17,6 @@ namespace VoxSmith
 		static std::unique_ptr<Window> create(const size_t width, const size_t height, const char* title = "");
 
 		~Window() noexcept;
-
-		inline bool canClose() { return !glfwWindowShouldClose(m_window); }
 		
 		void setWindowCallback(const WindowEventCallbackFn& fn);
 		void update();

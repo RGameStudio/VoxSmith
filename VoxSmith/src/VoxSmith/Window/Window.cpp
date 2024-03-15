@@ -70,6 +70,7 @@ Window::Window(const size_t width, const size_t height, const char* title)
 		[](GLFWwindow* window) {
 			auto* const wrapper = 
 				static_cast<const WindowCallbackWrapper* const>(glfwGetWindowUserPointer(window));
+
 			wrapper->fn(CloseEvent());
 		});
 	

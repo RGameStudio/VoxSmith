@@ -9,6 +9,7 @@
 using namespace VoxSmith;
 
 Application::Application()
+	: m_isRunning(true)
 {
 	Log::init();
 
@@ -23,7 +24,7 @@ Application::~Application()
 
 void Application::run()
 {
-	while (m_window->canClose())
+	while (m_isRunning)
 	{
 		m_window->update();
 	}
@@ -33,20 +34,23 @@ void Application::handleEvents(WindowEvent& e)
 {
 	switch (e.getType())
 	{
-	case WindowEventType::MouseMove:
-		LOG_CORE_INFO("MouseMoveEvent");
-		break;
+	case WindowEventType::MouseMove: {
+		MouseMoveEvent event = static_cast<MouseMoveEvent&>(e);
+		LOG_CORE_INFO("MouseMoveEvent x:{} y:{}", event.x, event.y);
+	}break;
 
 	case WindowEventType::MouseClick:
 		LOG_CORE_INFO("MouseClickEvent");
 		break;
 
 	case WindowEventType::Keyboard: {
-		LOG_CORE_INFO("KeyboardEvent");
+		KeyboardEvent event = static_cast<KeyboardEvent&>(e);
+		LOG_CORE_INFO("KeyboardEvent: {}", (char)event.m_key);
 	}break;
 
 	case WindowEventType::Close:
 		LOG_CORE_INFO("CloseEvent");
+		m_isRunning = false;
 		break;
 	}
 }

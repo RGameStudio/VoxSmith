@@ -32,6 +32,11 @@ Window::Window(const size_t width, const size_t height, const char* title)
 	glfwMakeContextCurrent(m_window);
 	glfwSetWindowUserPointer(m_window, &m_wrapper);
 
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		LOG_CORE_ERROR("Could not initialize GLAD.");
+	}
+
 	glfwSetKeyCallback(m_window,
 		[](GLFWwindow* window, int key, int scancode, int action, int mods) {
 			const auto* const wrapper = 
@@ -49,8 +54,8 @@ Window::Window(const size_t width, const size_t height, const char* title)
 				static_cast<const WindowCallbackWrapper* const>(glfwGetWindowUserPointer(window));
 
 			MouseMoveEvent e;
-			e.x = xPos;
-			e.y = yPos;
+			e.x = static_cast<int32_t>(xPos);
+			e.y = static_cast<int32_t>(yPos);
 			wrapper->fn(e);
 		});
 
@@ -65,10 +70,21 @@ Window::Window(const size_t width, const size_t height, const char* title)
 			wrapper->fn(e);
 		});
 
+	glfwSetWindowSizeCallback(m_window,
+		[](GLFWwindow* window, int width, int height) {
+			const auto* const wrapper =
+				static_cast<const WindowCallbackWrapper* const>(glfwGetWindowUserPointer(window));
+
+			ResizeEvent e;
+			e.m_width = width;
+			e.m_height = height;
+			wrapper->fn(e);
+		});
+
 
 	glfwSetWindowCloseCallback(m_window,
 		[](GLFWwindow* window) {
-			auto* const wrapper = 
+			const auto* const wrapper = 
 				static_cast<const WindowCallbackWrapper* const>(glfwGetWindowUserPointer(window));
 
 			wrapper->fn(CloseEvent());

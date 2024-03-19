@@ -7,12 +7,15 @@
 
 using namespace VoxSmith;
 
+constexpr size_t g_tempWidth = 800.0f;
+constexpr size_t g_tempHeight = 800.0f;
+
 Application::Application()
 	: m_isRunning(true)
 {
 	Log::init();
 
-	m_window = Window::create(800.0f, 800.0f, "VoxSmithDemo");
+	m_window = Window::create(g_tempWidth, g_tempHeight, "VoxSmithDemo");
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
 }
 
@@ -25,7 +28,7 @@ void Application::run()
 {
 	while (m_isRunning)
 	{
-		glClearColor(1.0f, 0.5f, 0.7f, 1.0f);
+		glClearColor(0.9f, 0.2f, 0.7f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		m_window->update();
 	}
@@ -58,7 +61,7 @@ void Application::handleEvents(WindowEvent& e)
 	}
 
 	case WindowEventType::CLOSE:
-		LOG_CORE_INFO("CloseEvent");
+		LOG_CORE_TRACE("CloseEvent");
 		m_isRunning = false;
 		break;
 	}

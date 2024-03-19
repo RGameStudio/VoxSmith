@@ -21,14 +21,16 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+target_link_directories(VoxSmith PUBLIC 
+	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLAD/Debug
+	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLFW/src/Debug
+	${CMAKE_BINARY_DIR}/VoxSmith/vendor/imgui-top-level/Debug)
+
 add_subdirectory(VoxSmith/vendor/GLFW)
-add_dependencies(VoxSmith glfw)
-target_link_directories(VoxSmith PUBLIC ${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLFW/src/Debug)
-target_link_directories(VoxSmith PUBLIC ${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLAD/Debug)
-
-
 add_subdirectory(VoxSmith/vendor/GLAD)
-add_dependencies(VoxSmith glad)
+add_subdirectory(VoxSmith/vendor/imgui-top-level)
+
+add_dependencies(VoxSmith glad glfw imgui)
 
 target_link_directories(Sandbox PUBLIC ${CMAKE_BINARY_DIR}/VoxSmith/Debug)
 add_dependencies(Sandbox VoxSmith)

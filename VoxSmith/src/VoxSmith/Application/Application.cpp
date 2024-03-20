@@ -2,6 +2,7 @@
 
 #include "../Event/Event.hpp"
 #include "../Logger/Log.hpp"
+#include "../UIImguiWrapper/UIImguiWrapper.hpp"
 
 #include "Application.hpp"
 
@@ -17,20 +18,24 @@ Application::Application()
 
 	m_window = Window::create(g_tempWidth, g_tempHeight, "VoxSmithDemo");
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
+
+	m_UIWrapper = new UIWrapperIMGUI(m_window->getInstance());
 }
 
 Application::~Application()
 {
-
+	delete m_UIWrapper;
 } 
 
 void Application::run()
 {
 	while (m_isRunning)
 	{
-		glClearColor(0.9f, 0.2f, 0.7f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		m_window->update();
+		m_window->clearBuffers();
+
+		m_UIWrapper->update();
+
+		m_window->swapBuffers();
 	}
 }
 

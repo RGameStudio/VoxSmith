@@ -20,7 +20,10 @@ namespace VoxSmith
 		~Window() noexcept;
 		
 		void setWindowCallback(const WindowEventCallbackFn& fn);
-		void update();
+		void clearBuffers();
+		void swapBuffers();
+
+		inline GLFWwindow* getInstance() const { return m_window; }
 
 		Window() = delete;
 		Window(const Window&) = delete;

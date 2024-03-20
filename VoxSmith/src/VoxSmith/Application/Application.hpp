@@ -8,6 +8,7 @@
 namespace VoxSmith
 {
 	struct WindowEvent;
+	class UIWrapperIMGUI;
 
 	class VOX_SMITH_API Application
 	{
@@ -25,6 +26,7 @@ namespace VoxSmith
 
 	private:
 		std::unique_ptr<Window> m_window = nullptr;
+		UIWrapperIMGUI* m_UIWrapper = nullptr;
 
 		bool m_isRunning = false;
 	};

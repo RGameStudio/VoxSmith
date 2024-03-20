@@ -1,9 +1,5 @@
 #include <memory>
 
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-
 #include "../Logger/Log.hpp"
 #include "../Event/Event.hpp"
 
@@ -40,15 +36,6 @@ Window::Window(const size_t width, const size_t height, const char* title)
 	{
 		LOG_CORE_ERROR("Could not initialize GLAD.");
 	}
-
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(m_window, true);
-	ImGui_ImplOpenGL3_Init("#version 410");
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	glfwSetKeyCallback(m_window,
 		[](GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -110,13 +97,19 @@ Window::~Window() noexcept
 	glfwDestroyWindow(m_window);
 }
 
-void Window::update()
+void Window::setWindowCallback(const WindowEventCallbackFn& fn)
+{
+	m_wrapper.fn = fn;
+}
+
+void Window::swapBuffers()
 {
 	glfwSwapBuffers(m_window);
 	glfwPollEvents();
 }
 
-void Window::setWindowCallback(const WindowEventCallbackFn& fn)
+void Window::clearBuffers()
 {
-	m_wrapper.fn = fn;
+	glClearColor(0.9f, 0.2f, 0.7f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
 }

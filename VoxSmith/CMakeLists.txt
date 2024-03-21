@@ -6,6 +6,7 @@ file(GLOB_RECURSE SOURCE_FILES ${CMAKE_SOURCE_DIR}/VoxSmith/src/*.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/spdlog/include)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/GLFW/include)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/GLAD/include)
+include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/glm/)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/imgui-top-level/imgui)
 
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/src/)

@@ -29,6 +29,7 @@ target_link_directories(VoxSmith PUBLIC
 add_subdirectory(VoxSmith/vendor/GLFW)
 add_subdirectory(VoxSmith/vendor/GLAD)
 add_subdirectory(VoxSmith/vendor/imgui-top-level)
+add_subdirectory(VoxSmith/vendor/glm)
 
 add_dependencies(VoxSmith glad glfw imgui)
 

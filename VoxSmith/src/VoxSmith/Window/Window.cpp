@@ -26,9 +26,11 @@ Window::Window(const size_t width, const size_t height, const char* title)
 	{
 		LOG_CORE_ERROR("Could not initialize GLFW.");
 	}
-
+	LOG_CORE_INFO("GLFW initialized");
 	m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	LOG_CORE_INFO("GLFW window was cretaed.");
+
+
 	glfwMakeContextCurrent(m_window);
 	glfwSetWindowUserPointer(m_window, &m_wrapper);
 
@@ -36,6 +38,7 @@ Window::Window(const size_t width, const size_t height, const char* title)
 	{
 		LOG_CORE_ERROR("Could not initialize GLAD.");
 	}
+	LOG_CORE_INFO("GLAD initialized");
 
 	glfwSetKeyCallback(m_window,
 		[](GLFWwindow* window, int key, int scancode, int action, int mods) {

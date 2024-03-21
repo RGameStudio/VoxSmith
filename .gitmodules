@@ -7,3 +7,6 @@
 [submodule "VoxSmith/vendor/imgui-top-level/imgui"]
 	path = VoxSmith/vendor/imgui-top-level/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "VoxSmith/vendor/glm"]
+	path = VoxSmith/vendor/glm
+	url = https://github.com/g-truc/glm

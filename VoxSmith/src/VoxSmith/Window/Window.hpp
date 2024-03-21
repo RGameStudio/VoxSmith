@@ -25,6 +25,9 @@ namespace VoxSmith
 
 		inline GLFWwindow* getInstance() const { return m_window; }
 
+		inline size_t getWidth() const { return m_width; }
+		inline size_t getHeight() const { return m_height; }
+
 		Window() = delete;
 		Window(const Window&) = delete;
 		Window(Window&&) = delete;

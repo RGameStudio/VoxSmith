@@ -6,6 +6,7 @@ file(GLOB_RECURSE SOURCE_FILES ${CMAKE_SOURCE_DIR}/Sandbox/src/*.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/spdlog/include)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/GLFW/include)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/GLAD/include)
+include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/glm/)
 
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/src)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/Sandbox/src/)

@@ -8,7 +8,7 @@
 namespace VoxSmith
 {
 	struct WindowEvent;
-	class UIWrapperIMGUI;
+	class UICanvasIMGUI;
 
 	class VOX_SMITH_API Application
 	{
@@ -16,8 +16,11 @@ namespace VoxSmith
 		Application();
 		virtual ~Application();
 
-		virtual void run();
-		virtual void handleEvents(WindowEvent& e);
+		// this function is derived in Sandbox where the game is supposed to happen
+		virtual void update();
+
+		void run();
+		void handleEvents(WindowEvent& e);
 
 		Application(const Application&) = delete;
 		Application(Application&&) = delete;
@@ -26,7 +29,7 @@ namespace VoxSmith
 
 	private:
 		std::unique_ptr<Window> m_window = nullptr;
-		UIWrapperIMGUI* m_UIWrapper = nullptr;
+		UICanvasIMGUI* m_UICanvas = nullptr;
 
 		bool m_isRunning = false;
 	};

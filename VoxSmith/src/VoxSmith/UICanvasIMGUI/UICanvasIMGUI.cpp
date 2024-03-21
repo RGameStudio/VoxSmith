@@ -2,13 +2,13 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include "UIImguiWrapper.hpp"
+#include "UICanvasIMGUI.hpp"
 
 using namespace VoxSmith;
 
 const char* g_glVersion = "#version 410";
 
-UIWrapperIMGUI::UIWrapperIMGUI(GLFWwindow* window)
+UICanvasIMGUI::UICanvasIMGUI(GLFWwindow* window)
 	: m_windowPtr(window)
 {
 	ImGui::CreateContext();
@@ -20,16 +20,15 @@ UIWrapperIMGUI::UIWrapperIMGUI(GLFWwindow* window)
 	ImGui_ImplOpenGL3_Init(g_glVersion);
 }
 
-void UIWrapperIMGUI::update()
+void UICanvasIMGUI::update()
 {
-	bool showFirstWindow = true;
-    bool showSecondWindow = true;
+    static bool showSecondWindow = true;
+	static bool showFirstWindow = true;
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	ImGui::ShowDemoWindow(&showFirstWindow);
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(800.0f, 800.0f);
 

@@ -2,7 +2,7 @@
 
 #include "../Event/Event.hpp"
 #include "../Logger/Log.hpp"
-#include "../UIImguiWrapper/UIImguiWrapper.hpp"
+#include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
 
 #include "Application.hpp"
 
@@ -19,13 +19,18 @@ Application::Application()
 	m_window = Window::create(g_tempWidth, g_tempHeight, "VoxSmithDemo");
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
 
-	m_UIWrapper = new UIWrapperIMGUI(m_window->getInstance());
+	m_UICanvas = new UICanvasIMGUI(m_window->getInstance());
 }
 
-Application::~Application()
+Application::~Application() noexcept
 {
-	delete m_UIWrapper;
-} 
+	delete m_UICanvas;
+}
+
+void Application::update()
+{
+
+}
 
 void Application::run()
 {
@@ -33,7 +38,9 @@ void Application::run()
 	{
 		m_window->clearBuffers();
 
-		m_UIWrapper->update();
+		update();
+
+		m_UICanvas->update();
 
 		m_window->swapBuffers();
 	}

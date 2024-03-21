@@ -1,10 +1,22 @@
 #include <VoxSmith.hpp>
 
-class SandBox : public VoxSmith::Application
+class SandBox final : public VoxSmith::Application
 {
 public:
-	SandBox() = default;
-	~SandBox() = default;
+	SandBox()
+	{
+
+	}
+	
+	void update() override
+	{
+		LOG_TRACE("Hi low from the sandbox");
+	}
+	
+	~SandBox() noexcept
+	{
+
+	};
 
 	SandBox(const SandBox&) = delete;
 	SandBox(SandBox&&) = delete;

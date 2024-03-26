@@ -9,6 +9,8 @@ include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/GLAD/include)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/glm/)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/imgui-top-level/imgui)
 
+include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/shaders)
+
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/src/)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Debug-x64)

@@ -14,12 +14,6 @@ namespace VoxSmith
 
 		void update();
 
-		UICanvasIMGUI() = delete;
-		UICanvasIMGUI(const UICanvasIMGUI&) = delete;
-		UICanvasIMGUI(UICanvasIMGUI&&) = delete;
-		UICanvasIMGUI& operator=(const UICanvasIMGUI&) = delete;
-		UICanvasIMGUI& operator=(UICanvasIMGUI&&) = delete;
-
 	private:
 		GLFWwindow* m_windowPtr;
 	};

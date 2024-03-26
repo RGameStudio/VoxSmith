@@ -4,6 +4,7 @@
 
 #include "../Core.hpp"
 #include "../Window/Window.hpp"
+#include "../Renderer/Renderer.hpp"
 
 namespace VoxSmith
 {
@@ -14,10 +15,11 @@ namespace VoxSmith
 	{
 	public:
 		Application();
-		virtual ~Application();
+		virtual ~Application() noexcept;
 
-		// this function is derived in Sandbox where the game is supposed to happen
-		virtual void update();
+		// these functions are derived in Sandbox where the client code is allowed
+		virtual void update(float dt);
+		virtual void draw();
 
 		void run();
 		void handleEvents(WindowEvent& e);

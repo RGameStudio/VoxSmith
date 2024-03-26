@@ -24,15 +24,10 @@ namespace VoxSmith
 		void swapBuffers();
 
 		inline GLFWwindow* getInstance() const { return m_window; }
+		inline float getTime() const { return glfwGetTime(); }
 
 		inline size_t getWidth() const { return m_width; }
 		inline size_t getHeight() const { return m_height; }
-
-		Window() = delete;
-		Window(const Window&) = delete;
-		Window(Window&&) = delete;
-		Window& operator=(const Window&) = delete;
-		Window& operator=(Window&&) = delete;
 
 	private:
 		Window(const size_t width, const size_t height, const char* title = "");

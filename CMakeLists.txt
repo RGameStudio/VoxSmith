@@ -31,6 +31,8 @@ add_subdirectory(VoxSmith/vendor/GLAD)
 add_subdirectory(VoxSmith/vendor/imgui-top-level)
 add_subdirectory(VoxSmith/vendor/glm)
 
+file(COPY VoxSmith/shaders/ DESTINATION ${CMAKE_BINARY_DIR}/Sandbox/shaders/)
+
 add_dependencies(VoxSmith glad glfw imgui)
 
 target_link_directories(Sandbox PUBLIC ${CMAKE_BINARY_DIR}/VoxSmith/Debug)

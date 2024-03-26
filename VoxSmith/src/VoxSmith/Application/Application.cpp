@@ -3,6 +3,7 @@
 #include "../Event/Event.hpp"
 #include "../Logger/Log.hpp"
 #include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
+#include "../Shader/Shader.hpp"
 
 #include "Application.hpp"
 
@@ -27,20 +28,31 @@ Application::~Application() noexcept
 	delete m_UICanvas;
 }
 
-void Application::update()
+void Application::update(float dt)
+{
+
+}
+
+void Application::draw()
 {
 
 }
 
 void Application::run()
 {
+	float currentFrame = m_window->getTime();
+	float previousFrame = 0.0f;
+
 	while (m_isRunning)
 	{
+		float dt = currentFrame - previousFrame;
+		previousFrame = currentFrame;
+
 		m_window->clearBuffers();
-
-		update();
-
 		m_UICanvas->update();
+
+		update(dt);
+		draw();
 
 		m_window->swapBuffers();
 	}

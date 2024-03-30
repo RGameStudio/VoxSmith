@@ -6,13 +6,13 @@ const std::vector<float> data = {
 	0.5f, -0.5f, 0.0f
 };
 
-class SandBox final : public VoxSmith::Application
+class Sandbox final : public VoxSmith::Application
 {
 	VoxSmith::Buffer buffer;
 	VoxSmith::Shader shader;
 	VoxSmith::Renderer renderer;
 public:
-	SandBox()
+	Sandbox()
 		: shader("shaders/simple.glsl")
 	{
 		VoxSmith::initBuffer(buffer, data);
@@ -28,18 +28,18 @@ public:
 		renderer.draw(buffer, shader);
 	}
 	
-	~SandBox() noexcept
+	~Sandbox() noexcept
 	{
 
-	};
+	}
 
-	SandBox(const SandBox&) = delete;
-	SandBox(SandBox&&) = delete;
-	SandBox& operator=(const SandBox&) = delete;
-	SandBox* operator=(SandBox&&) = delete;
+	Sandbox(const Sandbox&) = delete;
+	Sandbox(Sandbox&&) = delete;
+	Sandbox& operator=(const Sandbox&) = delete;
+	Sandbox* operator=(Sandbox&&) = delete;
 };
 
 VoxSmith::Application* VoxSmith::createApplication()
 {
-	return new SandBox();
+	return new Sandbox();
 }

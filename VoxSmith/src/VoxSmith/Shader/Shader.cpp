@@ -31,6 +31,7 @@ Shader::Shader(const char* sPath)
 	sStream << sFile.rdbuf();
 
 	std::string vStr = "";
+	std::string gStr = "";
 	std::string fStr = "";
 
 	std::string line;
@@ -43,6 +44,10 @@ Shader::Shader(const char* sPath)
 			{
 				mode = ShaderMode::VERTEX;
 			}
+			else if (line.find("GEOMETRY") != std::string::npos)
+			{
+				mode = ShaderMode::GEOMETRY;
+			}
 			else if (line.find("FRAGMENT") != std::string::npos)
 			{
 				mode = ShaderMode::FRAGMENT;
@@ -54,6 +59,10 @@ Shader::Shader(const char* sPath)
 			{
 			case ShaderMode::VERTEX:
 				vStr += line += '\n';
+				break;
+
+			case ShaderMode::GEOMETRY:
+				gStr += line += '\n';
 				break;
 
 			case ShaderMode::FRAGMENT:
@@ -78,6 +87,20 @@ Shader::Shader(const char* sPath)
 		LOG_ERROR("ERROR::VERTEX_SHADER::COMPILATION_FAILED:\n{}", infolog);
 	}
 
+	uint32_t gID = 0;
+	if (!gStr.empty())
+	{
+		const char* gSrc = gStr.c_str();
+		glShaderSource(gID, 1, &gSrc, nullptr);
+		glCompileShader(gID);
+		glGetShaderiv(gID, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(vID, 512, NULL, infolog);
+			LOG_ERROR("ERROR::VERTEX_SHADER::COMPILATION_FAILED:\n{}", infolog);
+		}
+	}
+
 	uint32_t fID = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fID, 1, &fSrc, nullptr);
 	glCompileShader(fID);
@@ -91,6 +114,10 @@ Shader::Shader(const char* sPath)
 	ID = glCreateProgram();
 	glAttachShader(ID, vID);
 	glAttachShader(ID, fID);
+	if (gID)
+	{
+		glAttachShader(ID, gID);
+	}
 	glLinkProgram(ID);
 	glGetShaderiv(ID, GL_LINK_STATUS, &success);
 	if (!success)
@@ -99,6 +126,10 @@ Shader::Shader(const char* sPath)
 	}
 
 	glDeleteShader(vID);
+	if (gID)
+	{
+		glDeleteShader(gID);
+	}
 	glDeleteShader(fID);
 }
 

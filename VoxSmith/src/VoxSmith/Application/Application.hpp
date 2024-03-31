@@ -14,16 +14,17 @@ namespace VoxSmith
 	class VOX_SMITH_API Application
 	{
 	public:
-		Application();
+		Application(uint32_t width, uint32_t height);
 		virtual ~Application() noexcept;
 
-		// these functions are derived in Sandbox where the client code is allowed
+		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
 		virtual void update(float dt);
 		virtual void draw();
 
 		void run();
 		void handleEvents(WindowEvent& e);
 
+		Application() = delete;
 		Application(const Application&) = delete;
 		Application(Application&&) = delete;
 		Application& operator=(const Application&) = delete;

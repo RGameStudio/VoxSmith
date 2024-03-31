@@ -11,7 +11,7 @@ Renderer::Renderer()
 
 }
 
-void Renderer::draw(const Buffer& buffer, Shader& shader)
+void Renderer::draw(const Buffer& buffer, const Shader& shader)
 {
 	shader.use();
 	glBindVertexArray(buffer.VAO);

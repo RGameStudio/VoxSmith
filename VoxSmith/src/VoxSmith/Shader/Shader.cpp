@@ -11,20 +11,21 @@
 
 using namespace VoxSmith;
 
+enum class ShaderMode {
+	NONE,
+	VERTEX,
+	FRAGMENT,
+	GEOMETRY,
+	COMPUTE,
+};
+
 Shader::Shader(const char* sPath)
 {
-	enum class ShaderMode {
-		NONE,
-		VERTEX,
-		FRAGMENT,
-		GEOMETRY
-	};
-
 	std::ifstream sFile(sPath);
 
 	if (!sFile.is_open())
 	{
-		LOG_CORE_ERROR("Could not open {}", sPath);
+		LOG_CORE_ERROR("ERROR::SHADER_SOURCE::Could not open {}", sPath);
 	}
 
 	std::stringstream sStream;
@@ -122,7 +123,7 @@ Shader::Shader(const char* sPath)
 	glGetShaderiv(ID, GL_LINK_STATUS, &success);
 	if (!success)
 	{
-		LOG_ERROR("ERROR::SHADER_PROGRAM::LINK_FAILED:\n{}", infolog);
+		LOG_ERROR("ERROR::SHADER_PROGRAM::LINK_FAILED:{}", infolog);
 	}
 
 	glDeleteShader(vID);
@@ -138,12 +139,12 @@ Shader::~Shader()
 
 }
 
-void Shader::use()
+void Shader::use() const
 {
 	glUseProgram(ID);
 }
 
-int32_t Shader::isUniform(const char* uniform)
+int32_t Shader::isUniform(const char* uniform) const
 {
 	int32_t location = glGetUniformLocation(ID, uniform);
 
@@ -155,32 +156,89 @@ int32_t Shader::isUniform(const char* uniform)
 	return location;
 }
 
-void Shader::setUniform1i(const char* uniform, const int32_t value)
+void Shader::setUniform1i(const char* uniform, const int32_t value) const
 {
 	use();
 	glUniform1i(isUniform(uniform), value);
 }
 
-void Shader::setUniform1b(const char* uniform, const bool value)
+void Shader::setUniform1b(const char* uniform, const bool value) const
 {
 	use();
 	glUniform1i(isUniform(uniform), value);
 }
 
-void Shader::setUniform1f(const char* uniform, const float value)
+void Shader::setUniform1f(const char* uniform, const float value) const
 {
 	use();
 	glUniform1d(isUniform(uniform), value);
 }
 
-void Shader::setUniform4m(const char* uniform, const glm::mat4& value)
+void Shader::setUniform4m(const char* uniform, const glm::mat4& value) const
 {
 	use();
 	glUniformMatrix3fv(isUniform(uniform), 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void Shader::setUniform3fv(const char* uniform, const glm::vec3& value)
+void Shader::setUniform3fv(const char* uniform, const glm::vec3& value) const
 {
 	use();
 	glUniform3fv(isUniform(uniform), 1, glm::value_ptr(value));
+}
+
+ComputeShader::ComputeShader(const char* cPath)
+{
+	std::ifstream cFile(cPath);
+
+	if (!cFile.is_open())
+	{
+		LOG_CORE_ERROR("ERROR:COMPUTE_SHADER_SOURCE::Could not open {}", cPath);
+	}
+
+	std::stringstream sStream;
+	sStream << cFile.rdbuf();
+
+	std::string cStr;
+
+	std::string line;
+	while (std::getline(sStream, line))
+	{
+		cStr += line += '\n';
+	}
+
+	int32_t success;
+	char infolog[512];
+	const char* cSrc = cStr.c_str();
+
+	uint32_t cID = glCreateShader(GL_COMPUTE_SHADER);
+	glShaderSource(cID, 1, &cSrc, nullptr);
+	glCompileShader(cID);
+	glGetShaderiv(cID, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(cID, 512, NULL, infolog);
+		LOG_ERROR("ERROR::COMPUTE_SHADER::COMPILATION_FAILED:\n{}", infolog);
+	}
+
+	ID = glCreateProgram();
+	glAttachShader(ID, cID);
+	glLinkProgram(ID);
+	glGetShaderiv(ID, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(ID, 512, nullptr, infolog);
+		LOG_ERROR("ERROR::SHADER_PROGRAM::LINK_FAILED:{}", infolog);
+	}
+
+	glDeleteShader(cID);
+}
+
+ComputeShader::~ComputeShader()
+{
+
+}
+
+void ComputeShader::use() const
+{
+	glUseProgram(ID);
 }

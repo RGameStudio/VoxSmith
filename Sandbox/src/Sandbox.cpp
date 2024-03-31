@@ -6,6 +6,9 @@ const std::vector<float> data = {
 	0.5f, -0.5f, 0.0f
 };
 
+constexpr size_t g_tempWidth = 800.0f;
+constexpr size_t g_tempHeight = 800.0f;
+
 class Sandbox final : public VoxSmith::Application
 {
 	VoxSmith::Buffer buffer;
@@ -13,7 +16,8 @@ class Sandbox final : public VoxSmith::Application
 	VoxSmith::Renderer renderer;
 public:
 	Sandbox()
-		: shader("shaders/simple.glsl")
+		: Application(g_tempWidth, g_tempHeight)
+		, shader("shaders/simple.glsl")
 	{
 		VoxSmith::initBuffer(buffer, data);
 	}

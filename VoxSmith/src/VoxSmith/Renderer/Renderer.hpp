@@ -14,6 +14,7 @@ namespace VoxSmith
 	};
 
 	class Shader;
+	class Texture;
 
 	class VOX_SMITH_API Renderer
 	{
@@ -22,6 +23,7 @@ namespace VoxSmith
 		~Renderer() = default;
 
 		void draw(const Buffer& buffer, const Shader& shader);
+		void draw(const Buffer& buffer, const Shader& shader, const Texture& texture);
 
 	private:
 	};

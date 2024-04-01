@@ -19,7 +19,7 @@ namespace VoxSmith
 
 		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
 		virtual void update(float dt);
-		virtual void draw();
+		virtual void draw(float dt, float cframe);
 
 		void run();
 		void handleEvents(WindowEvent& e);

@@ -35,8 +35,17 @@ namespace VoxSmith
 		~ComputeShader() noexcept;
 
 		void use() const;
+		void launchWorkGroups(const glm::ivec3& dim) const;
+
+		void setUniform1i(const char* uniform, const int32_t value) const;
+		void setUniform1b(const char* uniform, const bool value) const;
+		void setUniform1f(const char* uniform, const float value) const;
+		void setUniform4m(const char* uniform, const glm::mat4& value) const;
+		void setUniform3fv(const char* uniform, const glm::vec3& value) const;
 	
 	private:
 		uint32_t ID;
+
+		int32_t isUniform(const char* uniform) const;
 	};
 }

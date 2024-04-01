@@ -30,27 +30,27 @@ void Application::update(float dt)
 
 }
 
-void Application::draw()
+void Application::draw(float dt, float cframe)
 {
 
 }
 
 void Application::run()
 {
-	float currentFrame = m_window->getTime();
 	float previousFrame = 0.0f;
 
 	while (m_isRunning)
 	{
+		float currentFrame = m_window->getTime();
 		float dt = currentFrame - previousFrame;
 		previousFrame = currentFrame;
 
 		m_window->clearBuffers();
-		m_UICanvas->update();
 
 		update(dt);
-		draw();
+		draw(dt, currentFrame);
 
+		m_UICanvas->update();
 		m_window->swapBuffers();
 	}
 }

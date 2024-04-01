@@ -242,3 +242,52 @@ void ComputeShader::use() const
 {
 	glUseProgram(ID);
 }
+
+void ComputeShader::launchWorkGroups(const glm::ivec3& dim) const
+{
+	use();
+	glDispatchCompute(dim.x, dim.y, dim.z);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
+int32_t ComputeShader::isUniform(const char* uniform) const
+{
+	int32_t location = glGetUniformLocation(ID, uniform);
+
+	if (location == -1)
+	{
+		LOG_ERROR("SHADER_UNIFORM::ERROR::No such uniform: {}", uniform);
+	}
+
+	return location;
+}
+
+void ComputeShader::setUniform1i(const char* uniform, const int32_t value) const
+{
+	use();
+	glUniform1i(isUniform(uniform), value);
+}
+
+void ComputeShader::setUniform1b(const char* uniform, const bool value) const
+{
+	use();
+	glUniform1i(isUniform(uniform), value);
+}
+
+void ComputeShader::setUniform1f(const char* uniform, const float value) const
+{
+	use();
+	glUniform1f(isUniform(uniform), value);
+}
+
+void ComputeShader::setUniform4m(const char* uniform, const glm::mat4& value) const
+{
+	use();
+	glUniformMatrix3fv(isUniform(uniform), 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void ComputeShader::setUniform3fv(const char* uniform, const glm::vec3& value) const
+{
+	use();
+	glUniform3fv(isUniform(uniform), 1, glm::value_ptr(value));
+}

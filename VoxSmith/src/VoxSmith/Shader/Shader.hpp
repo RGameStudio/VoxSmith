@@ -8,7 +8,7 @@
 
 namespace VoxSmith
 {
-	class VOX_SMITH_API Shader
+	class VOX_SMITH_API Shader final
 	{
 	public:
 		Shader(const char* sPath);
@@ -22,13 +22,15 @@ namespace VoxSmith
 		void setUniform4m(const char* uniform, const glm::mat4& value) const;
 		void setUniform3fv(const char* uniform, const glm::vec3& value) const;
 
+		Shader() = default;
+
 	private:
 		uint32_t ID;
 
 		int32_t isUniform(const char* uniform) const;
 	};
 
-	class VOX_SMITH_API ComputeShader
+	class VOX_SMITH_API ComputeShader final
 	{
 	public:
 		ComputeShader(const char* cPath);
@@ -42,6 +44,8 @@ namespace VoxSmith
 		void setUniform1f(const char* uniform, const float value) const;
 		void setUniform4m(const char* uniform, const glm::mat4& value) const;
 		void setUniform3fv(const char* uniform, const glm::vec3& value) const;
+
+		ComputeShader() = default;
 	
 	private:
 		uint32_t ID;

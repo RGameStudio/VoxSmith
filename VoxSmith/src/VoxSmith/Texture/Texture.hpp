@@ -14,7 +14,7 @@ namespace VoxSmith
 		PIXEL,
 	};
 
-	class VOX_SMITH_API Texture
+	class VOX_SMITH_API Texture final
 	{
 	public:
 		Texture(const char* path);
@@ -26,6 +26,8 @@ namespace VoxSmith
 		inline TextureType getType() const { return m_type; }
 
 		void use() const;
+
+		Texture() = default;
 
 	private:
 		uint32_t ID;

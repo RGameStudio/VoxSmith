@@ -13,6 +13,10 @@ const std::vector<float> data = {
 constexpr size_t g_tempWidth = 1000.0f;
 constexpr size_t g_tempHeight = 1000.0f;
 
+constexpr glm::vec3 g_eyePos = { 0.5f, 0.5f, 1.0f };
+
+float g_focalLength = 3.0f;
+
 class Sandbox final : public VoxSmith::Application
 {
 	VoxSmith::Buffer buffer;
@@ -28,6 +32,9 @@ public:
 		, texture(g_tempWidth, g_tempHeight)
 	{
 		VoxSmith::initBuffer(buffer, data);
+
+		cShader.setUniform3fv("g_eyePos", g_eyePos);
+		cShader.setUniform1f("g_focalLength", g_focalLength);
 	}
 	
 	float fCounter = 0;
@@ -47,8 +54,7 @@ public:
 	void draw(float dt, float cframe) override
 	{
 		cShader.use();
-		cShader.setUniform1f("t", cframe);
-		cShader.launchWorkGroups({ g_tempWidth / 10, g_tempHeight / 10, 1 });
+		cShader.launchWorkGroups({ g_tempWidth, g_tempHeight, 1 });
 
 		screenQuad.use();
 		texture.use();

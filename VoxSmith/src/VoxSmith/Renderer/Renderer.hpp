@@ -22,8 +22,8 @@ namespace VoxSmith
 		Renderer();
 		~Renderer() = default;
 
-		void draw(const Buffer& buffer, const Shader& shader);
-		void draw(const Buffer& buffer, const Shader& shader, const Texture& texture);
+		void draw(const Buffer& buffer, const Shader& shader) const;
+		void draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const;
 
 	private:
 	};

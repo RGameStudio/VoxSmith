@@ -6,7 +6,7 @@
 
 using namespace VoxSmith;
 
-const char* g_glVersion = "#version 410";
+const char* g_glVersion = "#version 430";
 
 UICanvasIMGUI::UICanvasIMGUI(GLFWwindow* window)
 	: m_windowPtr(window)

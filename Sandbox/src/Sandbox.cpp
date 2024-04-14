@@ -1,21 +1,11 @@
 #include <VoxSmith.hpp>
 
-const std::vector<float> data = {
-	-1, -1, 0,   0, 0, // left-bot
-	 1, -1, 0,   1, 0, // right-bot
-	-1,  1, 0,   0, 1, // left-top
+constexpr size_t g_tempWidth = 1600.0f;
+constexpr size_t g_tempHeight = 900.0f;
 
-	 1, -1, 0,   1, 0, // right-bot
-	-1,  1, 0,   0, 1, // left-top
-	 1,  1, 0,   1, 1, // right-top
-};
+constexpr glm::vec3 g_eyePos = { 0.0f, 0.0f, 20.0f };
 
-constexpr size_t g_tempWidth = 1000.0f;
-constexpr size_t g_tempHeight = 1000.0f;
-
-constexpr glm::vec3 g_eyePos = { 0.5f, 0.5f, 1.0f };
-
-float g_focalLength = 3.0f;
+constexpr float g_focalLength = 1.0f + g_eyePos.z;
 
 class Sandbox final : public VoxSmith::Application
 {
@@ -24,41 +14,28 @@ class Sandbox final : public VoxSmith::Application
 	VoxSmith::Texture texture;
 	VoxSmith::Shader screenQuad;
 	VoxSmith::Renderer renderer;
+	VoxSmith::RayTracer raytracer;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
 		, screenQuad("shaders/simple.glsl")
 		, cShader("shaders/compute_test.glsl")
 		, texture(g_tempWidth, g_tempHeight)
+		, raytracer(g_tempWidth, g_tempHeight)
 	{
-		VoxSmith::initBuffer(buffer, data);
-
 		cShader.setUniform3fv("g_eyePos", g_eyePos);
 		cShader.setUniform1f("g_focalLength", g_focalLength);
 	}
 	
-	float fCounter = 0;
 	void update(float dt) override
 	{
-		if (fCounter > 500)
-		{
-			LOG_INFO("FPS: {}", (1.0f / dt));
-			fCounter = 0;
-		}
-		else
-		{
-			fCounter++;
-		}
+
 	}
 
 	void draw(float dt, float cframe) override
 	{
-		cShader.use();
-		cShader.launchWorkGroups({ g_tempWidth, g_tempHeight, 1 });
-
-		screenQuad.use();
-		texture.use();
-		renderer.draw(buffer, screenQuad, texture);
+		raytracer.trace({ g_tempWidth / 10, g_tempHeight / 10, 1 }, cShader);
+		raytracer.drawImage(screenQuad, renderer);
 	}
 	
 	~Sandbox() noexcept

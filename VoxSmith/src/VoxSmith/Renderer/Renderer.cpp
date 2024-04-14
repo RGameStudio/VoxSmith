@@ -12,14 +12,14 @@ Renderer::Renderer()
 
 }
 
-void Renderer::draw(const Buffer& buffer, const Shader& shader)
+void Renderer::draw(const Buffer& buffer, const Shader& shader) const
 {
 	shader.use();
 	glBindVertexArray(buffer.VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& texture)
+void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const
 {
 	shader.use();
 	texture.use();

@@ -26,9 +26,25 @@ struct HitRecord
     vec3 normal;
 };
 
-vec3 pixelColor(Ray ray);
+const int g_nSpheres = 2;
+const float g_vHeight = 2.0f;
 
-const float vHeight = 2.0f;
+Sphere g_spheres[g_nSpheres] = {
+    Sphere(vec3(0.0f,  0.5f, -g_focalLength), 1.0f),
+    Sphere(vec3(0.0f, -100.5f, -g_focalLength), 100.0f)
+};
+
+highp float rand(vec2 co)
+{
+    highp float a = 12.9898;
+    highp float b = 78.233;
+    highp float c = 43758.5453;
+    highp float dt= dot(co.xy ,vec2(a,b));
+    highp float sn= mod(dt,3.14);
+    return fract(sin(sn) * c);
+}
+
+vec4 pixelColor(Ray ray);
 
 void main() 
 {
@@ -37,12 +53,12 @@ void main()
         
     ivec2 dims = imageSize(imgOutput);
     float aspectRatio = float(dims.x) / float(dims.y);
-    float vWidth = vHeight * aspectRatio;
+    float vWidth = g_vHeight * aspectRatio;
 
     vec3 lowerLeft = vec3(-aspectRatio, -1.0f, -g_focalLength);
 
     vec3 viepowrt_u = vec3(vWidth, 0.0f, 0);
-    vec3 viepowrt_v = vec3(0.0f, vHeight, 0);
+    vec3 viepowrt_v = vec3(0.0f, g_vHeight, 0);
 
     float du = float(texelCoord.x) / dims.x;
     float dv = float(texelCoord.y) / dims.y;
@@ -51,12 +67,12 @@ void main()
     ray.origin = g_eyePos;
     ray.dir = lowerLeft + du * viepowrt_u + dv * viepowrt_v;
 
-    vec4 value = vec4(pixelColor(ray), 1.0f);
+    vec4 value = pixelColor(ray);
 
     imageStore(imgOutput, texelCoord, value);
 }
 
-float lerp(vec3 a, vec3 b, float t)
+vec3 lerp(vec3 a, vec3 b, float t)
 {
     return a * (1.0f - t) + b * t;
 }
@@ -64,6 +80,27 @@ float lerp(vec3 a, vec3 b, float t)
 vec3 getVecAtT(Ray ray, float t)
 {
     return ray.origin + ray.dir * t;
+}
+
+vec3 getRandomPInUnitSphere(vec3 pos)
+{
+    vec3 p = vec3(0.0f);
+    do 
+    {
+        p = 2.0f * vec3(rand(pos.xy + p.xy), rand(pos.yz + p.yz), rand(pos.xz + p.xz)) - vec3(1,1,1);
+    } 
+    while (length(p) * length(p) >= 1);
+    return p;
+}
+
+vec3 getRandomOnHemisphere(vec3 pos, vec3 normal)
+{
+    vec3 onUSphere = normalize(getRandomPInUnitSphere(pos));
+    if (dot(onUSphere, normal) > 0.0f)
+    {
+        return onUSphere;
+    }
+    return -onUSphere;
 }
 
 bool hitSphere(Sphere sphere, Ray ray, float tMin, float tMax, out HitRecord hRecord)
@@ -95,34 +132,71 @@ bool hitSphere(Sphere sphere, Ray ray, float tMin, float tMax, out HitRecord hRe
     return false;
 }
 
-const float g_minRayLen = 0.0f;
-const float g_maxRayLen = 1000.0f;
+const float g_minRayLen = 0.001f;
+const float g_maxRayLen = 10000.0f;
 
-vec3 pixelColor(Ray ray)
+vec3 skyColor(Ray ray)
 {
-    Sphere s1;
-    HitRecord rec1;
-    s1.center = vec3(0.0f, 0.0f, -g_focalLength);
-    s1.radius = 0.5f;
-
-    Sphere s2;
-    HitRecord rec2;
-    s2.center = vec3(0.0f, -100.5f, -g_focalLength);
-    s2.radius = 100.0f;
-
-    bool hit = hitSphere(s1, ray, g_minRayLen, g_maxRayLen, rec1);
-    if (hit)
-    {
-        return 0.5f * (rec1.normal + vec3(1.0f));
-    }
-
-    hit = hitSphere(s2, ray, g_minRayLen, g_maxRayLen, rec2);
-    if (hit)
-    {
-        return 0.5f * (rec2.normal + vec3(1.0f));
-    }
-
     vec3 rayn = normalize(ray.dir);
-    float a = 0.5f * (rayn.y + 1.0f);
-    return lerp(vec3(1.0f, 1.0f, 1.0f), vec3(0.5f, 0.7f, 1.0f), a);
+    float t = 0.5f * (rayn.y + 1.0f);
+    return mix(vec3(1.0), vec3(0.3, 0.5, 0.9), t);
+}
+
+bool worldHit(Ray ray, float tMin, float tMax, out HitRecord record)
+{
+    HitRecord temp;
+    float closestSoFar = tMax;
+    bool hit = false;
+    for (uint iSphere = 0; iSphere < g_nSpheres; iSphere++)
+    {
+        if (hitSphere(g_spheres[iSphere], ray, tMin, closestSoFar, temp))
+        {
+            hit = true;
+            closestSoFar = temp.t;
+            record = temp;
+        }
+    }
+
+    return hit;
+}
+
+vec4 pixelColor(Ray ray)
+{
+    HitRecord hRecord;
+    bool hit = worldHit(ray, g_minRayLen, g_maxRayLen, hRecord);
+    if (hit)
+    {
+        const int maxSecondRays = 256;
+        vec3 rayColor[maxSecondRays];
+        int rayCount = 0;
+
+        do 
+        {
+            vec3 target = hRecord.pos + hRecord.normal + getRandomPInUnitSphere(hRecord.pos);
+            Ray secondaryRay = { hRecord.pos, (target - hRecord.pos) };
+            hit = worldHit(secondaryRay, g_minRayLen, g_maxRayLen, hRecord);
+            if (hit)
+            {
+                rayColor[rayCount] = vec3(0.0f);
+                rayCount++;
+            }
+            else
+            {
+                rayColor[rayCount] = skyColor(secondaryRay);
+            }
+        } 
+        while(hit && rayCount < maxSecondRays);
+
+        vec3 color = vec3(0.0f);
+        do
+        {
+            color = 0.5f * (color + rayColor[rayCount]);
+            rayCount--;
+        }
+        while(rayCount >= 0);
+
+        return vec4(color, 1.0f);
+    }
+
+    return vec4(skyColor(ray), 1.0f);
 }

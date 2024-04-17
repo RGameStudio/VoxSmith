@@ -3,9 +3,9 @@
 constexpr size_t g_tempWidth = 1600.0f;
 constexpr size_t g_tempHeight = 900.0f;
 
-constexpr glm::vec3 g_eyePos = { 0.0f, 0.0f, 20.0f };
+constexpr glm::vec3 g_eyePos = { 0.0f, 0.0f, 0.0f };
 
-constexpr float g_focalLength = 1.0f + g_eyePos.z;
+constexpr float g_focalLength = 1.0f;
 
 class Sandbox final : public VoxSmith::Application
 {

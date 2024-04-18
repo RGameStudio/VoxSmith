@@ -223,7 +223,7 @@ ComputeShader::ComputeShader(const char* cPath)
 	ID = glCreateProgram();
 	glAttachShader(ID, cID);
 	glLinkProgram(ID);
-	 	glGetShaderiv(ID, GL_LINK_STATUS, &success);
+	glGetShaderiv(ID, GL_LINK_STATUS, &success);
 	if (!success)
 	{
 		glGetShaderInfoLog(ID, 512, nullptr, infolog);

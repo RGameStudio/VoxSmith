@@ -1,7 +1,8 @@
 #include <VoxSmith.hpp>
 
-constexpr size_t g_tempWidth = 1000.0f;
-constexpr size_t g_tempHeight = 1000.0f;
+constexpr float g_aspectRatio = 16.0f / 9.0f;
+constexpr float g_tempWidth = 1600.0f;
+constexpr float g_tempHeight = g_tempWidth / g_aspectRatio;
 
 constexpr glm::vec3 g_eyePos = { 0.0f, 0.0f, 0.0f };
 

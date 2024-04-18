@@ -2,7 +2,7 @@
 
 layout (local_size_x = 10, local_size_y = 10, local_size_z = 1) in;
 
-layout(rgba32f, binding = 0) uniform image2D imgOutput;
+layout(rgba32f, binding = 0) writeonly uniform image2D imgOutput;
 
 uniform vec3 g_eyePos;
 uniform float g_focalLength;
@@ -45,9 +45,14 @@ float lerp(float a, float b, float t)
     return a * (1.0f - t) + b * t;
 }
 
-float rand(vec2 co)
+float rand(vec2 co) 
 {
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+  float a = 12.9898;
+  float b = 78.233;
+  float c = 43758.5453;
+  float dt = dot(co.xy, vec2(a, b));
+  float sn = mod(dt, 3.1415926535);
+  return fract(sin(sn) * c);
 }
 
 float randRange(vec2 co, float tMin, float tMax)
@@ -55,9 +60,9 @@ float randRange(vec2 co, float tMin, float tMax)
     return lerp(tMin, tMax, rand(co));
 }
 
-float randReal(vec2 co)
+float randReal()
 {
-    return 2.0f * abs(rand(co)) - 1.0f;
+    return rand(vec2(0, 1));
 }
 
 vec4 pixelColor(Ray ray);
@@ -86,7 +91,7 @@ void main()
     float dv = float(texelCoord.y) / dims.y;
 
     ray.dir = lowerLeft + du * viepowrt_u + dv * viepowrt_v;
-    vec4 value = pixelColor2(ray);
+    vec4 value = pixelColor(ray);
     imageStore(imgOutput, texelCoord, value);
     /**/
 
@@ -119,11 +124,11 @@ vec3 getRandomPInUnitSphere(vec3 pos)
     vec3 p = vec3(0.0f);
     do 
     {
-        p = 2.0f * vec3(rand(pos.xy + p.xy), rand(pos.yz + p.yz), rand(pos.xz + p.xz)) - vec3(1.0f);
-        //p = vec3(rand(pos.xy + p.xy), rand(pos.yz + p.yz), rand(pos.xz + p.xz));
+        //p = 2.0f * vec3(rand(-1, 1), rand(pos.yz + p.yz), rand(pos.xz + p.xz)) - vec3(1.0f);
+        p = vec3(rand(vec2(-1.0f, 1.0f)), rand(vec2(-1.0f, 1.0f)), rand(vec2(-1.0f, 1.0f)));
 
     } 
-    while (length(p) * length(p) >= 1);
+    while (dot(p, p) >= 1);
     return p;
 }
 

@@ -26,6 +26,8 @@ public:
 	{
 		cShader.setUniform3fv("g_eyePos", g_eyePos);
 		cShader.setUniform1f("g_focalLength", g_focalLength);
+		cShader.setUniform1f("g_screenWidth", g_tempWidth);
+		cShader.setUniform1f("g_screenHeight", g_tempHeight);
 	}
 	
 	void update(float dt) override

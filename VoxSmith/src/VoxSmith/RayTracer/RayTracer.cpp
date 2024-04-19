@@ -15,7 +15,7 @@ const std::vector<float> g_quadData = {
 	 1,  1, 0,   1, 1, // right-top
 };
 
-RayTracer::RayTracer(const uint32_t width, const uint32_t height)
+RayTracer::RayTracer(const float width, const float height)
 	: m_image(width, height)
 {
 	initBuffer(m_buffer, g_quadData);

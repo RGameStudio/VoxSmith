@@ -9,7 +9,7 @@
 
 using namespace VoxSmith;
 
-Application::Application(uint32_t width, uint32_t height)
+Application::Application(const uint32_t width, const uint32_t height)
 	: m_isRunning(true)
 {
 	Log::init();

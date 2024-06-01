@@ -53,12 +53,7 @@ public:
 
 	void draw(float dt, float cframe) override
 	{
-		cShader.use();
-		cShader.launchWorkGroups({ g_tempWidth, g_tempHeight, 1 });
 
-		screenQuad.use();
-		texture.use();
-		renderer.draw(buffer, screenQuad, texture);
 	}
 	
 	~Sandbox() noexcept

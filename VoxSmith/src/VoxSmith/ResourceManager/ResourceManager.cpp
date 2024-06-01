@@ -13,6 +13,11 @@ std::unordered_map<std::string, Shader> ResourceManager::s_shaders = {};
 std::unordered_map<std::string, ComputeShader> ResourceManager::s_computeShaders = {};
 std::unordered_map<std::string, Texture> ResourceManager::s_textures = {};
 
+ResourceManager::~ResourceManager()
+{
+
+}
+
 ResourceManager& ResourceManager::getInstance()
 {
 	if (s_manager == nullptr)

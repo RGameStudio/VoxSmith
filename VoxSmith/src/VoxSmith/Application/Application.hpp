@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <memory>
 
 #include "../Core.hpp"
@@ -14,7 +15,7 @@ namespace VoxSmith
 	class VOX_SMITH_API Application
 	{
 	public:
-		Application(uint32_t width, uint32_t height);
+		Application(const uint32_t width, const uint32_t height);
 		virtual ~Application() noexcept;
 
 		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
@@ -23,6 +24,7 @@ namespace VoxSmith
 
 		void run();
 		void handleEvents(WindowEvent& e);
+		void handleClientInput();
 
 		Application() = delete;
 		Application(const Application&) = delete;
@@ -35,6 +37,9 @@ namespace VoxSmith
 		UICanvasIMGUI* m_UICanvas = nullptr;
 
 		bool m_isRunning = false;
+
+	protected:
+		//std::queue<WindowEvent> m_userEvent;
 	};
 
 	Application* createApplication();

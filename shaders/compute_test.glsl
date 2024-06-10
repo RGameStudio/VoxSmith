@@ -1,17 +1,19 @@
 #version 430 core
 
-layout (local_size_x = 10, local_size_y = 10, local_size_z = 1) in;
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) writeonly uniform image2D imgOutput;
 
-uniform vec3 g_eyePos;
+uniform float g_focalLength;
 uniform float g_screenWidth;
 uniform float g_screenHeight;
-uniform float g_focalLength;
+uniform vec3 g_eyePos;
+
+#define M_PI 3.1415926535897932384626433832795
 
 struct Ray
 {
-    vec3 origin;
+    vec3 start;
     vec3 dir;
 };
 
@@ -26,179 +28,82 @@ struct HitRecord
     float t;
     vec3 pos;
     vec3 normal;
+    bool frontFace;
 };
 
-const int g_nSpheres = 2;
-const float g_vHeight = 2.0f;
+const int g_sphereCount = 2;
 
-Sphere g_spheres[g_nSpheres] = {
-    Sphere(vec3(0.0f, -100.5f, -g_focalLength - 1), 100.0f),
-    Sphere(vec3(0.0f,  0.5f, -g_focalLength - 1), 1.0f),
-    
+const Sphere[g_sphereCount] g_spheres = {
+    Sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f),
+    Sphere(vec3(0.0f, -100.5f, -1.0f), 100.0f),
 };
 
-vec3 lerp(vec3 a, vec3 b, float t)
+const int g_samples = 100;
+const float g_samplesPkerPixel = 1.0f / float(g_samples);
+const float g_rayMin = 0.0001f;
+const float g_rayMax = 1000000.0f;
+
+bool hitSphere(Sphere s, Ray r, const float tMin, const float tMax, out HitRecord record);
+bool worldHit(Ray ray, const float tMin, const float tMax, out HitRecord record);
+vec3 pixelColor(Ray ray);
+vec3 rayAtT(Ray ray, float t);
+vec3 lerp(vec3 a, vec3 b, const float t);
+uint hash(uint x);
+float random();
+float randomInInterval(const float min, const float max);
+vec3 randomVec();
+vec3 randomUnitVec();
+vec3 randomOnHemisphere(const vec3 normal);
+
+void main()
 {
-    return a * (1.0f - t) + b * t;
-}
+    const ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
 
-float lerp(float a, float b, float t)
-{
-    return a * (1.0f - t) + b * t;
-}
+    const float viewportHeight = 2.0f;
+    const float viewportWidth = viewportHeight * (g_screenWidth / g_screenHeight); 
 
-float rand(vec2 co) 
-{
-  float a = 12.9898;
-  float b = 78.233;
-  float c = 43758.5453;
-  float dt = dot(co.xy, vec2(a, b));
-  float sn = mod(dt, 3.1415926535);
-  return fract(sin(sn) * c);
-}
+    const vec3 viewportU = vec3(viewportWidth, 0, 0);
+    const vec3 viewportV = vec3(0, viewportHeight, 0);
 
-float randRange(vec2 co, float tMin, float tMax)
-{
-    return lerp(tMin, tMax, rand(co));
-}
+    const vec3 du = viewportU / g_screenWidth;
+    const vec3 dv = viewportV / g_screenHeight;
 
-float randReal()
-{
-    return rand(vec2(0, 1));
-}
+    const vec3 viepowrtBottomLeft = 
+        g_eyePos - vec3(0, 0, g_focalLength) - viewportU / 2 - viewportV / 2;
 
-vec4 pixelColor(Ray ray);
-vec4 pixelColor2(Ray ray);
-vec4 pixelColorNormal(Ray ray);
+    const vec3 pixel00Loc = viepowrtBottomLeft + 0.5f * (du + dv);
 
-void main() 
-{
-    ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
+    vec3 finalColor = vec3(0.0f);
 
-    float aspectRatio = float(g_screenWidth) / float(g_screenHeight);
-    float vWidth = g_vHeight * aspectRatio;
-
-
-    vec3 viepowrt_u = vec3(vWidth, 0.0f, 0.0f);
-    vec3 viepowrt_v = vec3(0.0f, g_vHeight, 0.0f);
-
-    vec3 lowerLeft = g_eyePos - vec3(0.0f, 0.0f, g_focalLength) - viepowrt_u / 2 - viepowrt_v / 2;
-
-
-    Ray ray;
-    ray.origin = g_eyePos;
-
-    /*
-    float du = float(texelCoord.x) / dims.x;
-    float dv = float(texelCoord.y) / dims.y;
-
-    ray.dir = lowerLeft + du * viepowrt_u + dv * viepowrt_v;
-    vec4 value = pixelColor(ray);
-    imageStore(imgOutput, texelCoord, value);
-    */
-
-    
-    /**/
-    vec4 value = vec4(0.0f);
-    for (int s = 0; s < 4; s++)
+    for (int i = 0; i < g_samples; i++)
     {
-        const float rx = rand(vec2(float(texelCoord.x+s), float(texelCoord.y+s)));
-		const float ry = rand(vec2(float(texelCoord.y+s), float(texelCoord.x+s)));
-
-		const float u = (float(texelCoord.x) + rx) / g_screenWidth;
-		const float v = (float(texelCoord.y) + ry) / g_screenHeight;
-
-        ray.dir = lowerLeft + u * viepowrt_u + v * viepowrt_v;
-        value += pixelColor(ray);
+        vec3 pixelSample = pixel00Loc 
+            + (texelCoord.x + random()) * du
+            + (texelCoord.y + random()) * dv;
+        
+        Ray ray = Ray(g_eyePos, pixelSample - g_eyePos);
+        finalColor += pixelColor(ray);
     }
     
-    imageStore(imgOutput, texelCoord, value / 4);
-    /**/
+    imageStore(imgOutput, texelCoord, vec4(finalColor, 1.0f) / g_samples);
 }
 
-vec3 getVecAtT(Ray ray, float t)
+vec3 lerp(vec3 a, vec3 b, const float t)
 {
-    return ray.origin + ray.dir * t;
+    return a * (1 - t) + b * t;
 }
 
-vec3 getRandomPInUnitSphere(vec3 pos)
+vec3 rayAtT(Ray ray, float t)
 {
-    vec3 p = vec3(0.0f);
-    do 
-    {
-        //p = 2.0f * vec3(rand(vec2(-1, 1)), rand(vec2(-1, 1)), rand(vec2(-1, 1))) - vec3(1.0f);
-        //p = vec3(rand(vec2(-1.0f, 1.0f)), rand(vec2(-1.0f, 1.0f)), rand(vec2(-1.0f, 1.0f)));
-        p = 2.0f * vec3(rand(pos.xy * p.xy), rand(pos.xz * p.xz), rand(pos.yz * p.yz)) - vec3(1.0f);
-
-    } 
-    while (length(p) * length(p) >= 1);
-    return p;
+    return ray.start + ray.dir * t;
 }
 
-vec3 getRandomOnHemisphere(vec3 pos, vec3 normal)
+bool worldHit(Ray ray, const float tMin, const float tMax, out HitRecord record)
 {
-    vec3 onUSphere = normalize(getRandomPInUnitSphere(pos));
-    if (dot(onUSphere, normal) > 0.0f)
-    {
-        return onUSphere;
-    }
-    return -onUSphere;
-}
-
-bool hitSphere(Sphere sphere, Ray ray, float tMin, float tMax, out HitRecord hRecord)
-{
-    const vec3 oc = g_eyePos - sphere.center;
-    const float a = dot(ray.dir, ray.dir);
-    const float h = dot(ray.dir, oc);
-    const float c = dot(oc, oc) - sphere.radius * sphere.radius;
-
-    const float discriminant = h*h - a*c;
-    if (discriminant > 0.0f)
-    {
-        float t = (-h - sqrt(discriminant)) / a;
-        if (t <= tMin || t >= tMax)
-        {
-            t = (-h + sqrt(discriminant)) / a;
-            if (t <= tMin || t >= tMax)
-            {
-                return false;
-            }
-        }
-
-        hRecord.t = t;
-        hRecord.pos = getVecAtT(ray, hRecord.t);
-        hRecord.normal = (hRecord.pos - sphere.center) / sphere.radius;
-        if (dot(hRecord.normal, ray.dir) > 0.0f)
-        {
-            hRecord.normal *= -1.0f;
-        }
-        return true;
-    }
-
-    return false;
-}
-
-const float g_minRayLen = 0.00001f;
-const float g_maxRayLen = 1.0f / 0.0f;
-
-vec3 skyColor(vec3 dir)
-{
-    vec3 rayn = normalize(dir);
-    float t = 0.5f * (rayn.y + 1.0f);
-    return lerp(vec3(1.0), vec3(0.3, 0.5, 0.9), t);
-}
-
-vec3 normalColor(vec3 normal)
-{
-    return 0.5f * (normal + vec3(1.0f));
-}
-
-bool worldHit(Ray ray, float tMin, float tMax, out HitRecord record)
-{
-    HitRecord temp;
-    float closestSoFar = tMax;
     bool hit = false;
-    for (int iSphere = 0; iSphere < g_nSpheres; iSphere++)
+    float closestSoFar = tMax;
+    HitRecord temp;
+    for (int iSphere = 0; iSphere < g_sphereCount; iSphere++)
     {
         if (hitSphere(g_spheres[iSphere], ray, tMin, closestSoFar, temp))
         {
@@ -211,80 +116,116 @@ bool worldHit(Ray ray, float tMin, float tMax, out HitRecord record)
     return hit;
 }
 
-vec4 pixelColor(Ray ray)
+vec3 skyColor(vec3 dir)
 {
-    HitRecord hRecord;
-    bool hit = worldHit(ray, g_minRayLen, g_maxRayLen, hRecord);
-    if (hit)
-    {
-        const int maxSecondRays = 16;
-        vec3 rayColor[maxSecondRays];
-        int rayCount = 0;
-        do 
-        {
-            vec3 target = hRecord.pos + hRecord.normal + getRandomPInUnitSphere(hRecord.pos);
-            Ray secondaryRay = { hRecord.pos, target};
-            hit = worldHit(secondaryRay, g_minRayLen, g_maxRayLen, hRecord);
-            if (hit)
-            {
-                rayColor[rayCount] = vec3(0.0f);
-                rayCount++;
-            }
-            else
-            {
-                rayColor[rayCount] = skyColor(secondaryRay.dir).rgb;
-            } 
-        }
-        while(hit && rayCount < maxSecondRays); 
-
-        vec3 color = vec3(0.0f);
-        do
-        {
-            color = 0.5f * (color + rayColor[rayCount]);
-            rayCount--;
-        }
-        while(rayCount >= 0);
-        return vec4(color, 1.0f);
-    }
-
-    return vec4(skyColor(ray.dir), 1.0f);
+    vec3 v = normalize(dir);
+    float t = 0.5f * (v.y + 1.0f);
+    return lerp(vec3(1.0f), vec3(0.5f, 0.7f, 1.0f), t);
 }
 
-vec4 pixelColor2(Ray ray)
+vec3 pixelColor(Ray ray)
 {
-    const int maxSecondRays = 2;
-    Ray tempRay = Ray(ray.origin, ray.dir);
-    vec3 color = vec3(1.0f);
-    int rayCount = 0;
-    while (true)
+    HitRecord record;    
+    int depths = 50;
+    float coeff = 1.0f;
+    Ray tempRay = ray;
+
+    for (int i = 0; i < depths; i++)
     {
         HitRecord record;
-        if (rayCount >= maxSecondRays)
+        if (worldHit(tempRay, g_rayMin, g_rayMax, record))
         {
-            return vec4(skyColor(tempRay.dir), 1.0f);
+            coeff *= 0.6f;
+            tempRay = Ray(record.pos, record.normal + randomUnitVec());
+            continue;
         }
-        if (worldHit(tempRay, g_minRayLen, g_maxRayLen, record))
-        {
-            vec3 target = getRandomOnHemisphere(record.pos, record.normal);
-            tempRay = Ray(record.pos, target);
-            rayCount++;
-            color *= 0.5f;
-        }
-        else
-        {
-            color *= vec4(skyColor(tempRay.dir), 1.0f);
-            return color;
-        }
+        return coeff * skyColor(tempRay.dir);
     }
+
+    return vec3(0.0f);
 }
 
-vec4 pixelColorNormal(Ray ray)
+bool hitSphere(Sphere s, Ray r, const float tMin, const float tMax, out HitRecord record)
 {
-    HitRecord hRecord;
-    if (worldHit(ray, g_minRayLen, g_maxRayLen, hRecord))
+    const vec3 oc = s.center - r.start;
+
+    const float a = dot(r.dir, r.dir);
+    const float h = dot(r.dir, oc); 
+    const float c = dot(oc, oc) - s.radius * s.radius;
+    
+    const float D = h * h - a * c;  
+    if (D < 0.0f)
     {
-        return vec4(normalColor(hRecord.normal), 1.0f);
+        return false;
     }
 
-    return vec4(skyColor(ray.dir), 1.0f);
+    const float sqrtD = sqrt(D);
+
+    float root = (h - sqrtD) / a;
+    if (root <= tMin || tMax <= root)
+    {
+        root = (h + sqrtD) / a;
+        if (root <= tMin || tMax <= root)
+        {
+            return false;
+        }
+    }
+
+    record.t = root;
+    record.pos = rayAtT(r, record.t);
+    record.normal = (record.pos - s.center) / s.radius;
+    if (dot(record.normal, r.dir) > 0)
+    {
+        record.normal = -record.normal;
+    }
+
+    return true;
+}
+
+uint hash(uint x) 
+{
+    x += (x << 10u);
+    x ^= (x >>  6u);
+    x += (x <<  3u);
+    x ^= (x >> 11u);
+    x += (x << 15u);
+    return x;
+}
+
+uint currentRandomOffset = 0;
+
+float random() 
+{
+    currentRandomOffset += 1;
+    const uvec3 v = floatBitsToUint(vec3(gl_GlobalInvocationID.xy, currentRandomOffset));
+
+    uint m = hash(v.x ^ hash(v.y) ^ hash(v.z));
+    m &= 0x007FFFFFu;
+    m |= 0x3F800000u;
+    return uintBitsToFloat(m) - 1.0f;
+}
+
+float randomInInterval(const float min, const float max)
+{
+    return min + (max - min) * random();
+}
+
+vec3 randomVec()
+{
+    return vec3(randomInInterval(-1.0f, 1.0f), randomInInterval(-1.0f, 1.0f), randomInInterval(-1.0f, 1.0f));
+}
+
+vec3 randomUnitVec()
+{
+    return normalize(randomVec());
+}
+
+vec3 randomOnHemisphere(const vec3 normal)
+{
+    vec3 unitVec = randomUnitVec();
+    if (dot(normal, unitVec) > 0.0f)
+    {
+        return unitVec;
+    }
+    return -unitVec;
 }

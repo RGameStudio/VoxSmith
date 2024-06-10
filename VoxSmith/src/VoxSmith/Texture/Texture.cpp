@@ -18,7 +18,7 @@ Texture::Texture(std::vector<const char*> paths)
 
 }
 
-Texture::Texture(uint32_t width, uint32_t height)
+Texture::Texture(const uint32_t width, const uint32_t height)
 	: m_type(TextureType::PIXEL)
 {
 	glGenTextures(1, &ID);

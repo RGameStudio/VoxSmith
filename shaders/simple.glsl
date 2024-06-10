@@ -36,5 +36,5 @@ vec3 LinearToSRGB(in vec3 color)
 void main()
 {
     vec4 color = vec4(texture(u_texture, frag_texCoords).rgb, 1.0f);
-    o_color = vec4(LinearToSRGB(color.rgb), color.a);
+    o_color = color; //vec4(texture(u_texture, frag_texCoords).rgb, color.a);
 }

@@ -14,10 +14,16 @@ namespace VoxSmith
 
 	struct Buffer;
 
+	enum class RayTracerType
+	{
+		COMPUTE,
+		FRAGMENT
+	};
+
 	class VOX_SMITH_API RayTracer final
 	{
 	public:
-		RayTracer(const float width, const float height);
+		RayTracer(const uint32_t width, const uint32_t height);
 		~RayTracer() = default;
 
 		void trace(const glm::ivec3& dims, const ComputeShader& cShader) const;

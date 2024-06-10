@@ -1,8 +1,10 @@
 #include <VoxSmith.hpp>
 
+#define CALC_HEIGHT(width, ratio) (width) / (ratio)
+
 constexpr float g_aspectRatio = 16.0f / 9.0f;
-constexpr float g_tempWidth = 1600.0f;
-constexpr float g_tempHeight = g_tempWidth / g_aspectRatio;
+constexpr uint32_t g_tempWidth = 1600;
+constexpr uint32_t g_tempHeight = CALC_HEIGHT(g_tempWidth, g_aspectRatio);
 
 constexpr glm::vec3 g_eyePos = { 0.0f, 0.0f, 0.0f };
 
@@ -26,8 +28,8 @@ public:
 	{
 		cShader.setUniform3fv("g_eyePos", g_eyePos);
 		cShader.setUniform1f("g_focalLength", g_focalLength);
-		cShader.setUniform1f("g_screenWidth", g_tempWidth);
-		cShader.setUniform1f("g_screenHeight", g_tempHeight);
+		cShader.setUniform1f("g_screenWidth", static_cast<float>(g_tempWidth));
+		cShader.setUniform1f("g_screenHeight", static_cast<float>(g_tempHeight));
 	}
 	
 	void update(float dt) override
@@ -37,7 +39,7 @@ public:
 
 	void draw(float dt, float cframe) override
 	{
-		raytracer.trace({ g_tempWidth / 10, g_tempHeight / 10, 1 }, cShader);
+		raytracer.trace({ g_tempWidth / 1, g_tempHeight / 1, 1 }, cShader);
 		raytracer.drawImage(screenQuad, renderer);
 	}
 	

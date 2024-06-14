@@ -22,7 +22,7 @@ public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
 		, screenQuad("shaders/simple.glsl")
-		, cShader("shaders/compute_test.glsl")
+		, cShader("shaders/raytracer_in_a_weekend.glsl")
 		, texture(g_tempWidth, g_tempHeight)
 		, raytracer(g_tempWidth, g_tempHeight)
 	{

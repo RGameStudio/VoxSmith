@@ -17,10 +17,23 @@ struct Ray
     vec3 dir;
 };
 
+const uint DIFFUSE = 1;
+const uint METAL = 2;
+const uint DIELECTRIC = 3;
+
+struct Material
+{
+    vec3 color;
+    uint type;
+    float fuzziness;
+    float refractionIndex;
+};
+
 struct Sphere
 {
     vec3 center;
     float radius;
+    Material material;
 };
 
 struct HitRecord
@@ -29,17 +42,21 @@ struct HitRecord
     vec3 pos;
     vec3 normal;
     bool frontFace;
+    Material material;
 };
 
-const int g_sphereCount = 2;
+const int g_sphereCount = 4;
 
 const Sphere[g_sphereCount] g_spheres = {
-    Sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f),
-    Sphere(vec3(0.0f, -100.5f, -1.0f), 100.0f),
+    Sphere(vec3(0.0f, 0.0f, -1.2f),     0.5f,   Material(vec3(0.1f, 0.2f, 0.5f), DIFFUSE, 0.0f, 0.0f)),
+    Sphere(vec3(0.0f, -100.5f, -1.0f),  100.0f, Material(vec3(0.8f, 0.8f, 0.0f), DIFFUSE, 0.0f, 0.0f)),
+    Sphere(vec3(-1.0f, 0.0f, -1.0f),    0.5f,   Material(vec3(0.8f, 0.8f, 0.8f), DIELECTRIC, 0.0f, 1.5f)),
+    //Sphere(vec3(-1.0f, 0.0f, -1.0f),    0.4f,   Material(vec3(0.8f, 0.8f, 0.8f), DIELECTRIC, 0.0f, 1.0f / 1.333f)),
+    Sphere(vec3(1.0f, 0.0f, -1.0f),     0.5f,   Material(vec3(0.8f, 0.6f, 0.2f), METAL, 1.0f, 0.0f)),
 };
 
 const int g_samples = 100;
-const float g_samplesPkerPixel = 1.0f / float(g_samples);
+const float g_samplesPerPixel = 1.0f / float(g_samples);
 const float g_rayMin = 0.0001f;
 const float g_rayMax = 1000000.0f;
 
@@ -54,6 +71,12 @@ float randomInInterval(const float min, const float max);
 vec3 randomVec();
 vec3 randomUnitVec();
 vec3 randomOnHemisphere(const vec3 normal);
+vec3 reflectRay(const vec3 v, const vec3 normal);
+vec3 refractRay(const vec3 uv, const vec3 normal, float etaiOverEtat);
+bool scatter(const Ray r, const HitRecord record, out vec3 attenuation, out Ray scattered);
+bool nearZero(vec3 v);
+bool canRefract(const vec3 vector, const vec3 normal, const float eta);
+float reflectanceFactor(const vec3 vector, const vec3 normal, const float eta);
 
 void main()
 {
@@ -128,21 +151,31 @@ vec3 pixelColor(Ray ray)
     HitRecord record;    
     int depths = 50;
     float coeff = 1.0f;
-    Ray tempRay = ray;
+    vec3 finalColor = vec3(1.0f);
+    vec3 lightSourceColor = skyColor(ray.dir);
 
     for (int i = 0; i < depths; i++)
     {
         HitRecord record;
-        if (worldHit(tempRay, g_rayMin, g_rayMax, record))
+        if (!worldHit(ray, g_rayMin, g_rayMax, record))
         {
-            coeff *= 0.6f;
-            tempRay = Ray(record.pos, record.normal + randomUnitVec());
-            continue;
+            break;
         }
-        return coeff * skyColor(tempRay.dir);
+        
+        Ray scattered;
+        vec3 attenuation;
+        if (scatter(ray, record, attenuation, scattered))
+        {
+            finalColor *= attenuation;
+            ray = Ray(scattered.start, scattered.dir);
+        }
+        else
+        {
+            lightSourceColor = vec3(0.0f);
+        }
     }
 
-    return vec3(0.0f);
+    return finalColor * lightSourceColor;
 }
 
 bool hitSphere(Sphere s, Ray r, const float tMin, const float tMax, out HitRecord record)
@@ -174,9 +207,12 @@ bool hitSphere(Sphere s, Ray r, const float tMin, const float tMax, out HitRecor
     record.t = root;
     record.pos = rayAtT(r, record.t);
     record.normal = (record.pos - s.center) / s.radius;
+    record.material = s.material;
+    record.frontFace = true;
     if (dot(record.normal, r.dir) > 0)
     {
         record.normal = -record.normal;
+        record.frontFace = false;
     }
 
     return true;
@@ -212,7 +248,10 @@ float randomInInterval(const float min, const float max)
 
 vec3 randomVec()
 {
-    return vec3(randomInInterval(-1.0f, 1.0f), randomInInterval(-1.0f, 1.0f), randomInInterval(-1.0f, 1.0f));
+    return vec3(
+        randomInInterval(-1.0f, 1.0f), 
+        randomInInterval(-1.0f, 1.0f), 
+        randomInInterval(-1.0f, 1.0f));
 }
 
 vec3 randomUnitVec()
@@ -228,4 +267,85 @@ vec3 randomOnHemisphere(const vec3 normal)
         return unitVec;
     }
     return -unitVec;
+}
+
+vec3 reflectRay(const vec3 v, const vec3 normal)
+{
+    return v - 2.0f * dot(v, normal) * normal;
+}
+
+vec3 refractRay(const vec3 uv, const vec3 normal, float etaiOverEtat)
+{
+    float cos_theta = min(dot(-uv, normal), 1.0f);
+    vec3 r_out_perp =  etaiOverEtat * (uv + cos_theta * normal);
+    vec3 r_out_parallel = -sqrt(abs(1.0 - dot(r_out_perp, r_out_perp))) * normal;
+    return r_out_perp + r_out_parallel;
+}
+
+bool nearZero(vec3 v)
+{
+    float val = 1e-8;
+    return abs(v.x) < val && abs(v.y) < val && abs(v.z) < val;
+}
+
+bool scatter(const Ray r, const HitRecord record, out vec3 attenuation, out Ray scattered)
+{
+    switch(record.material.type)
+    {
+        case DIFFUSE: {
+            vec3 scatterDir = record.normal + randomUnitVec();
+
+            if (nearZero(scatterDir))
+            {
+                scatterDir = record.normal;
+            }
+            scattered = Ray(record.pos, scatterDir);
+            attenuation = record.material.color;
+            return true;
+        }
+
+        case METAL: {
+            vec3 reflected = reflectRay(r.dir, record.normal);
+            reflected = normalize(reflected) + (record.material.fuzziness * randomUnitVec());
+            scattered = Ray(record.pos, reflected);
+            attenuation = record.material.color;
+            return dot(scattered.dir, record.normal) > 0.0f;
+        }
+
+        case DIELECTRIC: {
+            attenuation = vec3(1.0f);
+            float ri = 
+                record.frontFace ? (1.0f / record.material.refractionIndex) 
+                    : record.material.refractionIndex;
+
+            const bool doesRefract = 
+                canRefract(r.dir, record.normal, ri) && 
+                reflectanceFactor(r.dir, record.normal, ri) < random();            
+                
+            vec3 direction;
+            if (!doesRefract)
+            {
+                direction = reflectRay(r.dir, record.normal);
+            }
+            else
+            {
+                direction = refractRay(r.dir, record.normal, ri);
+            }
+
+            scattered = Ray(record.pos, direction);
+            return true;
+        }
+    }
+}
+
+bool canRefract(const vec3 vector, const vec3 normal, const float eta) 
+{
+    const float cosTheta = dot(-vector, normal);
+    return eta * sqrt(1.0f - cosTheta * cosTheta) <= 1.0f;
+}
+
+float reflectanceFactor(const vec3 vector, const vec3 normal, const float eta) 
+{
+    float r = pow((1.0f - eta) / (1.0f + eta), 2.0f);
+    return r + (1.0f - r) * pow(1.0f - dot(-vector, normal), 5.0f);
 }

@@ -4,10 +4,12 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) writeonly uniform image2D imgOutput;
 
-uniform float g_focalLength;
-uniform float g_screenWidth;
-uniform float g_screenHeight;
-uniform vec3 g_eyePos;
+uniform float u_focalLength;
+uniform float u_screenWidth;
+uniform float u_screenHeight;
+uniform vec3 u_eyePos;
+uniform vec3 u_lookAt;
+uniform vec3 u_upv;
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -45,20 +47,22 @@ struct HitRecord
     Material material;
 };
 
-const int g_sphereCount = 5;
+const int g_sphereCount = 4;
 
-const Sphere[g_sphereCount] g_spheres = {
-    Sphere(vec3(0.0f, 0.0f, -1.2f),     0.5f,   Material(vec3(0.1f, 0.2f, 0.5f),    DIFFUSE,       0.0f, 0.0f)),
-    Sphere(vec3(0.0f, -100.5f, -1.0f),  100.0f, Material(vec3(0.8f, 0.8f, 0.0f),    DIFFUSE,       0.0f, 0.0f)),
-    Sphere(vec3(-1.0f, 0.0f, -1.0f),    0.5f,   Material(vec3(1.0f),                DIELECTRIC,    0.0f, 1.5f)),
-    Sphere(vec3(-1.0f, 0.0f, -1.0f),    0.4f,   Material(vec3(1.0f),                DIELECTRIC,    0.0f, 1.0f / 1.5f)),
-    Sphere(vec3(1.0f, 0.0f, -1.0f),     0.5f,   Material(vec3(0.8f, 0.6f, 0.2f),    METAL,         1.0f, 0.0f)),
+Sphere[g_sphereCount] g_spheres = {
+    Sphere(vec3(0.0f, -1000.0f, 0.0f), 1000.0f, Material(vec3(0.5f, 0.5f, 0.5), DIFFUSE, 0.0f, 0.0f)),
+    Sphere(vec3(0.0f, 1.0f, 0.0f), 1.0f, Material(vec3(0.0f), DIELECTRIC, 0.0f, 1.5f)),
+    Sphere(vec3(-4.0f, 1.0f, 0.0f), 1.0f, Material(vec3(0.4f, 0.2f, 0.3f), DIFFUSE, 1.0f, 0.0f)),
+    Sphere(vec3(4.0f, 1.0f, 0.0f), 1.0f, Material(vec3(0.7f, 0.6f, 0.5f), METAL, 0.0f, 0.0f)),
 };
 
 const int g_samples = 100;
 const float g_samplesPerPixel = 1.0f / float(g_samples);
-const float g_rayMin = 0.0001f;
-const float g_rayMax = 1000000.0f;
+const float g_rayMin = 0.001f;
+const float g_rayMax = 1000000.0f; 
+const float g_vfov = 20.0f;
+const float g_focusDist = 10.0f;
+const float g_defocusAngle = 0.6f;
 
 bool hitSphere(Sphere s, Ray r, const float tMin, const float tMax, out HitRecord record);
 bool worldHit(Ray ray, const float tMin, const float tMax, out HitRecord record);
@@ -73,28 +77,40 @@ vec3 randomUnitVec();
 vec3 randomOnHemisphere(const vec3 normal);
 vec3 reflectRay(const vec3 v, const vec3 normal);
 vec3 refractRay(const vec3 uv, const vec3 normal, float etaiOverEtat);
+vec3 randomInUnitDisk();
+vec3 defocusDiskSample(const vec3 center, const vec3 defocusDiskU, const vec3 defocusDiskV);
 bool scatter(const Ray r, const HitRecord record, out vec3 attenuation, out Ray scattered);
 bool nearZero(vec3 v);
 bool canRefract(const vec3 vector, const vec3 normal, const float eta);
 float reflectanceFactor(const vec3 vector, const vec3 normal, const float eta);
+float toRadians(const float degs);
 
 void main()
 {
     const ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
 
-    const float viewportHeight = 2.0f;
-    const float viewportWidth = viewportHeight * (g_screenWidth / g_screenHeight); 
+    const float theta = toRadians(g_vfov);
+    const float h = tan(theta/2.0f);
 
-    const vec3 viewportU = vec3(viewportWidth, 0, 0);
-    const vec3 viewportV = vec3(0, viewportHeight, 0);
+    const vec3 w = normalize(u_eyePos - u_lookAt); 
+    const vec3 u = normalize(cross(u_upv, w));
+    const vec3 v = cross(w, u);
 
-    const vec3 du = viewportU / g_screenWidth;
-    const vec3 dv = viewportV / g_screenHeight;
+    const float viewportHeight = 2.0f * h * g_focusDist;
+    const float viewportWidth = viewportHeight * (u_screenWidth / u_screenHeight);
+    const vec3 viewportU = viewportWidth * u;
+    const vec3 viewportV = viewportHeight * v;
+
+    const vec3 du = viewportU / u_screenWidth;
+    const vec3 dv = viewportV / u_screenHeight;
 
     const vec3 viepowrtBottomLeft = 
-        g_eyePos - vec3(0, 0, g_focalLength) - viewportU / 2 - viewportV / 2;
-
+        u_eyePos - g_focusDist * w - viewportU / 2 - viewportV / 2;
     const vec3 pixel00Loc = viepowrtBottomLeft + 0.5f * (du + dv);
+
+    float defocusRadius = g_focusDist * tan(toRadians(g_defocusAngle / 2));
+    const vec3 defocusDiskU = u * defocusRadius;
+    const vec3 defocusDiskV = v * defocusRadius;
 
     vec3 finalColor = vec3(0.0f);
 
@@ -104,7 +120,9 @@ void main()
             + (texelCoord.x + random()) * du
             + (texelCoord.y + random()) * dv;
         
-        Ray ray = Ray(g_eyePos, pixelSample - g_eyePos);
+        vec3 rayOrigin = (g_defocusAngle < 0.0f) ? u_eyePos : defocusDiskSample(u_eyePos, defocusDiskU, defocusDiskV);
+
+        Ray ray = Ray(rayOrigin, pixelSample - rayOrigin);
         finalColor += pixelColor(ray);
     }
     
@@ -353,4 +371,27 @@ float reflectanceFactor(const vec3 vector, const vec3 normal, const float eta)
 {
     float r = pow((1.0f - eta) / (1.0f + eta), 2.0f);
     return r + (1.0f - r) * pow(1.0f - dot(-vector, normal), 5.0f);
+}
+
+float toRadians(const float degs)
+{
+    return degs * M_PI / 180.0f;
+}
+
+vec3 randomInUnitDisk()
+{
+    while (true)
+    {
+        vec3 p = vec3(randomInInterval(-1.0f, 1.0f), randomInInterval(-1.0f, 1.0f), 0.0f);
+        if (length(p) < 1.0f)
+        {
+            return p;
+        }
+    }
+}
+
+vec3 defocusDiskSample(const vec3 center, const vec3 defocusDiskU, const vec3 defocusDiskV)
+{
+    vec3 p = randomInUnitDisk();
+    return center + p[0] * defocusDiskU + p[1] * defocusDiskV;
 }

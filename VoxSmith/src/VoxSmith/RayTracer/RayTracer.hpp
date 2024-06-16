@@ -14,12 +14,6 @@ namespace VoxSmith
 
 	struct Buffer;
 
-	enum class RayTracerType
-	{
-		COMPUTE,
-		FRAGMENT
-	};
-
 	class VOX_SMITH_API RayTracer final
 	{
 	public:

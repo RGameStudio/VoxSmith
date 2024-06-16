@@ -19,7 +19,7 @@ namespace VoxSmith
 	public:
 		Texture(const char* path);
 		Texture(std::vector<const char*> paths);
-		Texture(uint32_t width, uint32_t height);
+		Texture(const uint32_t width, const uint32_t height);
 
 		~Texture();
 

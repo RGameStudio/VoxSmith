@@ -1,21 +1,17 @@
 #include <VoxSmith.hpp>
 
-const std::vector<float> data = {
-	-1, -1, 0,   0, 0, // left-bot
-	 1, -1, 0,   1, 0, // right-bot
-	-1,  1, 0,   0, 1, // left-top
+#define CALC_HEIGHT(width, ratio) (width) / (ratio)
 
-	 1, -1, 0,   1, 0, // right-bot
-	-1,  1, 0,   0, 1, // left-top
-	 1,  1, 0,   1, 1, // right-top
-};
+constexpr float g_aspectRatio = 16.0f / 9.0f;
+constexpr uint32_t g_tempWidth = 1600;
+constexpr uint32_t g_tempHeight = CALC_HEIGHT(g_tempWidth, g_aspectRatio);
 
-constexpr size_t g_tempWidth = 1000.0f;
-constexpr size_t g_tempHeight = 1000.0f;
+constexpr float g_focalLength = 1.0f;
 
-constexpr glm::vec3 g_eyePos = { 0.5f, 0.5f, 1.0f };
+constexpr glm::vec3 g_eyePos = { 13.0f, 2.0f, 3.0f };
+constexpr glm::vec3 g_lookAt = { 0.0f, 0.0f, 0.0f };
+constexpr glm::vec3 g_upv = { 0.0f, 1.0f, 0.0f };
 
-float g_focalLength = 3.0f;
 
 class Sandbox final : public VoxSmith::Application
 {
@@ -24,41 +20,23 @@ class Sandbox final : public VoxSmith::Application
 	VoxSmith::Texture texture;
 	VoxSmith::Shader screenQuad;
 	VoxSmith::Renderer renderer;
+	VoxSmith::RayTracer raytracer;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
 		, screenQuad("shaders/simple.glsl")
-		, cShader("shaders/compute_test.glsl")
 		, texture(g_tempWidth, g_tempHeight)
+		, raytracer(g_tempWidth, g_tempHeight)
 	{
-		VoxSmith::initBuffer(buffer, data);
-
-		cShader.setUniform3fv("g_eyePos", g_eyePos);
-		cShader.setUniform1f("g_focalLength", g_focalLength);
 	}
 	
-	float fCounter = 0;
 	void update(float dt) override
 	{
-		if (fCounter > 500)
-		{
-			LOG_INFO("FPS: {}", (1.0f / dt));
-			fCounter = 0;
-		}
-		else
-		{
-			fCounter++;
-		}
+
 	}
 
 	void draw(float dt, float cframe) override
 	{
-		cShader.use();
-		cShader.launchWorkGroups({ g_tempWidth, g_tempHeight, 1 });
-
-		screenQuad.use();
-		texture.use();
-		renderer.draw(buffer, screenQuad, texture);
 	}
 	
 	~Sandbox() noexcept

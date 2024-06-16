@@ -11,7 +11,7 @@ namespace VoxSmith
 	struct Shader;
 	struct ComputeShader;
 
-	class ResourceManager final
+	class VOX_SMITH_API ResourceManager final
 	{
 	public:
 		static ResourceManager& getInstance();

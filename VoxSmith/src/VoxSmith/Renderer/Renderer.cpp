@@ -3,6 +3,7 @@
 #include "../Shader/Shader.hpp"
 #include "../Texture/Texture.hpp"
 
+#include "Buffer.hpp"
 #include "Renderer.hpp"
 
 using namespace VoxSmith;
@@ -27,7 +28,7 @@ void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& t
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void VoxSmith::initBuffer(Buffer& buffer, const std::vector<float>& data)
+void VoxSmith::initQuadBuffer(Buffer& buffer, const std::vector<float>& data)
 {
 	glGenVertexArrays(1, &buffer.VAO);
 	glGenBuffers(1, &buffer.VBO);

@@ -5,12 +5,12 @@
 
 #include "../Core.hpp"
 #include "../Window/Window.hpp"
+#include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
 #include "../Renderer/Renderer.hpp"
 
 namespace VoxSmith
 {
 	struct WindowEvent;
-	class UICanvasIMGUI;
 
 	class VOX_SMITH_API Application
 	{
@@ -33,8 +33,9 @@ namespace VoxSmith
 		Application& operator=(Application&&) = delete;
 
 	private:
-		std::unique_ptr<Window> m_window = nullptr;
-		UICanvasIMGUI* m_UICanvas = nullptr;
+		std::shared_ptr<Window> m_window = nullptr;
+		std::shared_ptr<Renderer> m_renderer = nullptr;
+		std::unique_ptr<UICanvasIMGUI> m_UICanvas = nullptr;
 
 		bool m_isRunning = false;
 

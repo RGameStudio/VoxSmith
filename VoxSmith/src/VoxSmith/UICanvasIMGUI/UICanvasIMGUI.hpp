@@ -1,20 +1,22 @@
 #pragma once
 
+#include <memory>
+
 #include "../Core.hpp"
 
-struct GLFWwindow;
+class Window;
 
 namespace VoxSmith
 {
-	class VOX_SMITH_API UICanvasIMGUI
+	class VOX_SMITH_API UICanvasIMGUI final
 	{
 	public:
-		UICanvasIMGUI(GLFWwindow* window);
+		UICanvasIMGUI(const std::shared_ptr<Window>& window);
 		~UICanvasIMGUI() = default;
 
 		void update();
 
 	private:
-		GLFWwindow* m_windowPtr;
+		std::shared_ptr<Window> m_window;
 	};
 }

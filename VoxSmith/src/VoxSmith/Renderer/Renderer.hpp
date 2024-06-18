@@ -3,16 +3,12 @@
 #include <cstdint>
 #include <vector>
 
+#include "Buffer.hpp"
+
 #include "../Core.hpp"
 
 namespace VoxSmith
 {
-	struct VOX_SMITH_API Buffer
-	{
-		uint32_t VAO;
-		uint32_t VBO;
-	};
-
 	class Shader;
 	class Texture;
 
@@ -28,5 +24,5 @@ namespace VoxSmith
 	private:
 	};
 
-	void VOX_SMITH_API initBuffer(Buffer& buffer, const std::vector<float>& data);
+	void VOX_SMITH_API initQuadBuffer(Buffer& buffer, const std::vector<float>& data);
 }

@@ -2,21 +2,23 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
+#include "../Window/Window.hpp"
+
 #include "UICanvasIMGUI.hpp"
 
 using namespace VoxSmith;
 
 const char* g_glVersion = "#version 430";
 
-UICanvasIMGUI::UICanvasIMGUI(GLFWwindow* window)
-	: m_windowPtr(window)
+UICanvasIMGUI::UICanvasIMGUI(const std::shared_ptr<Window>& window)
+    : m_window(window)
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(m_windowPtr, true);
+	ImGui_ImplGlfw_InitForOpenGL(m_window->getInstance(), true);
 	ImGui_ImplOpenGL3_Init(g_glVersion);
 }
 

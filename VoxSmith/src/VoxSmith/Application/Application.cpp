@@ -2,7 +2,6 @@
 
 #include "../Event/Event.hpp"
 #include "../Logger/Log.hpp"
-#include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
 #include "../Shader/Shader.hpp"
 
 #include "Application.hpp"
@@ -14,15 +13,13 @@ Application::Application(const uint32_t width, const uint32_t height)
 {
 	Log::init();
 
-	m_window = Window::create(width, height, "VoxSmithDemo");
+	m_window = createWindow(width, height, "VoxSmithDemo");
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
-
-	m_UICanvas = new UICanvasIMGUI(m_window->getInstance());
+	m_UICanvas = std::unique_ptr<UICanvasIMGUI>(new UICanvasIMGUI(m_window));
 }
 
 Application::~Application() noexcept
 {
-	delete m_UICanvas;
 }
 
 void Application::update(float dt)

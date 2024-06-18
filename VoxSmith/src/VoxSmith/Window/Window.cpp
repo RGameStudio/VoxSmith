@@ -7,7 +7,7 @@
 
 using namespace VoxSmith;
 
-std::unique_ptr<Window> Window::create(const size_t width, const size_t height, const char* title)
+std::shared_ptr<Window> VoxSmith::createWindow(const size_t width, const size_t height, const char* title)
 {
 	static bool created = false;
 	if (created)
@@ -15,7 +15,7 @@ std::unique_ptr<Window> Window::create(const size_t width, const size_t height, 
 		return nullptr;
 	}
 
-	return std::unique_ptr<Window>(new Window(width, height, title));
+	return std::shared_ptr<Window>(new Window(width, height, title));
 }
 
 Window::Window(const size_t width, const size_t height, const char* title)

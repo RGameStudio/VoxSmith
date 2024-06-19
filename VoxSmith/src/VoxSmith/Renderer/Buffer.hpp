@@ -8,5 +8,7 @@ namespace VoxSmith
 	{
 		uint32_t VAO;
 		uint32_t VBO;
+
+		bool initialized = false;
 	};
 }

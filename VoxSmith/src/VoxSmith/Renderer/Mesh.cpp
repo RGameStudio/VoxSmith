@@ -1,3 +1,6 @@
+#include "../Renderer/Renderer.hpp"
+#include "../Shader/Shader.hpp"
+
 #include "Mesh.hpp"
 
 using namespace VoxSmith;
@@ -21,4 +24,19 @@ void Mesh::bakeGreedyMesh(const std::vector<Voxel>& voxels, const glm::vec3& pos
 	m_vertices.push_back(v011);
 	m_vertices.push_back(v110);
 	m_vertices.push_back(v111);
+}
+
+void Mesh::draw(const Renderer& renderer, const Shader& shader) const
+{
+	renderer.draw(m_buffer, shader);
+}
+
+void Mesh::loadToBuffer()
+{
+	if (m_buffer.initialized)
+	{
+		return;
+	}
+
+	initMeshBuffer(m_buffer, m_vertices);
 }

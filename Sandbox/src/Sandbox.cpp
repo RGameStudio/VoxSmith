@@ -15,18 +15,10 @@ constexpr glm::vec3 g_upv = { 0.0f, 1.0f, 0.0f };
 
 class Sandbox final : public VoxSmith::Application
 {
-	VoxSmith::Buffer buffer;
-	VoxSmith::ComputeShader cShader;
-	VoxSmith::Texture texture;
-	VoxSmith::Shader screenQuad;
 	VoxSmith::Renderer renderer;
-	VoxSmith::RayTracer raytracer;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
-		, screenQuad("shaders/simple.glsl")
-		, texture(g_tempWidth, g_tempHeight)
-		, raytracer(g_tempWidth, g_tempHeight)
 	{
 	}
 	

@@ -11,6 +11,7 @@ namespace VoxSmith
 {
 	class Shader;
 	class Texture;
+	struct Vertex;
 
 	class VOX_SMITH_API Renderer
 	{
@@ -25,4 +26,5 @@ namespace VoxSmith
 	};
 
 	void VOX_SMITH_API initQuadBuffer(Buffer& buffer, const std::vector<float>& data);
+	void VOX_SMITH_API initMeshBuffer(Buffer& buffer, const std::vector<Vertex>& data);
 }

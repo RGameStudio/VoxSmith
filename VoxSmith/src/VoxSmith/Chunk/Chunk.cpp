@@ -1,3 +1,7 @@
+#include "VoxSmith/Renderer/Renderer.hpp"
+#include "VoxSmith/Shader/Shader.hpp"
+#include "VoxSmith/Renderer/Mesh.hpp"
+
 #include "Voxel.hpp"
 
 #include "Chunk.hpp"
@@ -22,4 +26,19 @@ Chunk::Chunk(const glm::vec3& pos)
 			}
 		}
 	}
+}
+
+void Chunk::draw(const Renderer& renderer, const Shader& shader) const
+{
+	if (m_mesh == nullptr)
+	{
+		return;
+	}
+
+	m_mesh->draw(renderer, shader);
+}
+
+void Chunk::constructMesh()
+{
+	
 }

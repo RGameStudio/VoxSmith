@@ -11,6 +11,7 @@
 namespace VoxSmith
 {
 	class Renderer;
+	class Shader;
 
 	struct VOX_SMITH_API Vertex final
 	{
@@ -24,7 +25,9 @@ namespace VoxSmith
 		Mesh() = default;
 		~Mesh() = default;
 
+		void loadToBuffer();
 		void bakeGreedyMesh(const std::vector<Voxel>& voxels, const glm::vec3& pos);
+		void draw(const Renderer& renderer, const Shader& shader) const;
 
 	private:
 		std::vector<Vertex> m_vertices;

@@ -33,10 +33,5 @@ void Mesh::draw(const Renderer& renderer, const Shader& shader) const
 
 void Mesh::loadToBuffer()
 {
-	if (m_buffer.initialized)
-	{
-		return;
-	}
-
-	initMeshBuffer(m_buffer, m_vertices);
+	m_buffer.init<Vertex, StorageType::MESH>(m_vertices);
 }

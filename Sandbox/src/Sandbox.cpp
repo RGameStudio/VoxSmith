@@ -15,7 +15,6 @@ constexpr glm::vec3 g_upv = { 0.0f, 1.0f, 0.0f };
 
 class Sandbox final : public VoxSmith::Application
 {
-	VoxSmith::Renderer renderer;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)

@@ -24,7 +24,4 @@ namespace VoxSmith
 
 	private:
 	};
-
-	void VOX_SMITH_API initQuadBuffer(Buffer& buffer, const std::vector<float>& data);
-	void VOX_SMITH_API initMeshBuffer(Buffer& buffer, const std::vector<Vertex>& data);
 }

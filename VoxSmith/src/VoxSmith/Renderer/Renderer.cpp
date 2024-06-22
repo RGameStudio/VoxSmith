@@ -9,22 +9,17 @@
 
 using namespace VoxSmith;
 
-Renderer::Renderer()
-{
-
-}
-
 void Renderer::draw(const Buffer& buffer, const Shader& shader) const
 {
 	shader.use();
-	buffer.bind();
+	buffer.use();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const
 {
 	shader.use();
+	buffer.use();
 	texture.use();
-	buffer.bind();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }

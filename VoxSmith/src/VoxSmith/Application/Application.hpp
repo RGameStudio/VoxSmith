@@ -5,6 +5,7 @@
 
 #include "../Core.hpp"
 #include "../Window/Window.hpp"
+#include "../Camera/Camera.hpp"
 #include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
 #include "../Renderer/Renderer.hpp"
 
@@ -17,10 +18,6 @@ namespace VoxSmith
 	public:
 		Application(const uint32_t width, const uint32_t height);
 		virtual ~Application() noexcept;
-
-		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
-		virtual void update(float dt);
-		virtual void draw(float dt, float cframe);
 
 		void run();
 		void handleEvents(WindowEvent& e);
@@ -40,7 +37,12 @@ namespace VoxSmith
 		bool m_isRunning = false;
 
 	protected:
-		//std::queue<WindowEvent> m_userEvent;
+		std::unique_ptr<Camera> m_camera = nullptr;
+
+		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
+		virtual void update(const float dt);
+		virtual void draw(const float dt, const float cframe);
+		virtual void updateCamera(const float dt);
 	};
 
 	Application* createApplication();

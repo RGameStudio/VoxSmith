@@ -16,7 +16,7 @@ namespace VoxSmith
 	class VOX_SMITH_API Renderer
 	{
 	public:
-		Renderer();
+		Renderer() = default;
 		~Renderer() = default;
 
 		void draw(const Buffer& buffer, const Shader& shader) const;

@@ -1,6 +1,8 @@
 #include "../Renderer/Renderer.hpp"
 #include "../Shader/Shader.hpp"
 
+#include "../Chunk/Voxel.hpp"
+
 #include "Mesh.hpp"
 
 using namespace VoxSmith;
@@ -33,5 +35,5 @@ void Mesh::draw(const Renderer& renderer, const Shader& shader) const
 
 void Mesh::loadToBuffer()
 {
-	m_buffer.init<Vertex, StorageType::MESH>(m_vertices);
+	m_buffer.init(m_vertices);
 }

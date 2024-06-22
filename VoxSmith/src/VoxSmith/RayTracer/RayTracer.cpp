@@ -18,7 +18,7 @@ const std::vector<float> g_quadData = {
 RayTracer::RayTracer(const uint32_t width, const uint32_t height)
 	: m_image(width, height)
 {
-	m_buffer.init<float, StorageType::QUAD_TEXTURE>(g_quadData);
+	m_buffer.init(g_quadData);
 }
 
 void RayTracer::trace(const glm::ivec3& dims, const ComputeShader& cShader) const

@@ -3,6 +3,7 @@
 #include "../Event/Event.hpp"
 #include "../Logger/Log.hpp"
 #include "../Shader/Shader.hpp"
+#include "../Input/Input.hpp"
 
 #include "Application.hpp"
 
@@ -15,19 +16,24 @@ Application::Application(const uint32_t width, const uint32_t height)
 
 	m_window = createWindow(width, height, "VoxSmithDemo");
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
-	m_UICanvas = std::unique_ptr<UICanvasIMGUI>(new UICanvasIMGUI(m_window));
+	m_UICanvas = std::make_unique<UICanvasIMGUI>(m_window);
 }
 
 Application::~Application() noexcept
 {
 }
 
-void Application::update(float dt)
+void Application::update(const float dt)
 {
 
 }
 
-void Application::draw(float dt, float cframe)
+void Application::updateCamera(const float dt)
+{
+		
+}
+
+void Application::draw(const float dt, const float cframe)
 {
 
 }
@@ -57,7 +63,6 @@ void Application::handleEvents(WindowEvent& e)
 	switch (e.getType())
 	{
 	case WindowEventType::MOUSE_MOVE: {
-		MouseMoveEvent event = static_cast<MouseMoveEvent&>(e);
 		break;
 	}
 
@@ -66,6 +71,8 @@ void Application::handleEvents(WindowEvent& e)
 
 	case WindowEventType::KEYBOARD: {
 		KeyboardEvent event = static_cast<KeyboardEvent&>(e);
+		Keyboard::getInstance().setKeyStatus(event.m_key, static_cast<KeyStatus>(event.m_action));
+
 		break;
 	}
 

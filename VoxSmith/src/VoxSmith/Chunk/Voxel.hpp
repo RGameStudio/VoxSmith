@@ -6,8 +6,8 @@ namespace VoxSmith
 {
 	enum VOX_SMITH_API VoxelType
 	{
-		EMPTY = 0,
-		OPAQUE = 1,
+		EMPTY,
+		OPAQUE,
 	};
 
 	struct VOX_SMITH_API Voxel final

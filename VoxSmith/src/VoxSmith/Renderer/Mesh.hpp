@@ -4,14 +4,14 @@
 #include <glm/glm.hpp>
 
 #include "Buffer.hpp"
-
-#include "../Chunk/Voxel.hpp"
 #include "../Core.hpp"
 
 namespace VoxSmith
 {
 	class Renderer;
 	class Shader;
+
+	struct Voxel;
 
 	struct VOX_SMITH_API Vertex final
 	{

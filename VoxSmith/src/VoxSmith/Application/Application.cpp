@@ -17,6 +17,7 @@ Application::Application(const uint32_t width, const uint32_t height)
 	m_window = createWindow(width, height, "VoxSmithDemo");
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
 	m_UICanvas = std::make_unique<UICanvasIMGUI>(m_window);
+	m_camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 5.0f), width, height);
 }
 
 Application::~Application() noexcept
@@ -72,7 +73,6 @@ void Application::handleEvents(WindowEvent& e)
 	case WindowEventType::KEYBOARD: {
 		KeyboardEvent event = static_cast<KeyboardEvent&>(e);
 		Keyboard::getInstance().setKeyStatus(event.m_key, static_cast<KeyStatus>(event.m_action));
-
 		break;
 	}
 

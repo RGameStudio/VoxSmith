@@ -29,6 +29,8 @@ public:
 		, shader("shaders/mesh_basic.glsl")
 	{
 		buff.init(g_vertices);
+ 		shader.setUniform4m("u_projection", m_camera->getProjection());
+		shader.setUniform4m("u_view", m_camera->getView());
 	}
 
 	void update(const float dt) override
@@ -38,18 +40,26 @@ public:
 
 	void updateCamera(const float dt) override
 	{
-		if (VoxSmith::Keyboard::getInstance().getKeyStatus(VOX_KEY_W) == VoxSmith::KeyStatus::PRESS)
+		glm::vec3 vel = glm::vec3(0.0f);
+		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_W))
 		{
-			LOG_INFO("PRESS");
+			vel += m_camera->getDir();
 		}
-		else if (VoxSmith::Keyboard::getInstance().getKeyStatus(VOX_KEY_W) == VoxSmith::KeyStatus::REPEAT)
+		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_S))
 		{
-			LOG_INFO("REPEAT");
+			vel -= m_camera->getDir();
 		}
-		else
+		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_D))
 		{
-			//LOG_INFO("RELEASE");
+			vel += glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
+		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_A))
+		{
+			vel -= glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
+		}
+
+		m_camera->update(vel, dt);
+		shader.setUniform4m("u_view", m_camera->getView());
 	}
 
 	void draw(const float dt, const float cframe) override

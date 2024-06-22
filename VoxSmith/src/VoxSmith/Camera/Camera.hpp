@@ -17,11 +17,14 @@ namespace VoxSmith
 		inline glm::mat4 getProjection() const { return m_projection; }
 		inline glm::mat4 getView() const { return m_view; }
 		inline glm::vec3 getPos() const { return m_pos; }
+		inline glm::vec3 getFront() const { return m_front; }
+		inline glm::vec3 getDir() const { return m_dir; }
 
 	private:
 		glm::mat4 m_projection;
 		glm::mat4 m_view;
 		glm::vec3 m_pos;
 		glm::vec3 m_front;
+		glm::vec3 m_dir;
 	};
 }

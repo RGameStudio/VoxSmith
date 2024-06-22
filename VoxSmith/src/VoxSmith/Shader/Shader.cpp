@@ -177,7 +177,7 @@ void Shader::setUniform1f(const char* uniform, const float value) const
 void Shader::setUniform4m(const char* uniform, const glm::mat4& value) const
 {
 	use();
-	glUniformMatrix3fv(isUniform(uniform), 1, GL_FALSE, glm::value_ptr(value));
+	glUniformMatrix4fv(isUniform(uniform), 1, GL_FALSE, glm::value_ptr(value));
 }
 
 void Shader::setUniform3fv(const char* uniform, const glm::vec3& value) const

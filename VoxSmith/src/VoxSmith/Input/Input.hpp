@@ -128,7 +128,7 @@
 
 namespace VoxSmith
 {
-	enum VOX_SMITH_API KeyStatus : int32_t 
+	enum VOX_SMITH_API KeyStatus : int8_t 
 	{
 		RELEASE = 0,
 		PRESS = 1,
@@ -142,6 +142,8 @@ namespace VoxSmith
 
 		void setKeyStatus(const uint32_t key, KeyStatus status);
 		KeyStatus getKeyStatus(const uint32_t key) const;
+
+		bool isKeyActive(const uint32_t key) const;
 
 	private:
 		Keyboard();

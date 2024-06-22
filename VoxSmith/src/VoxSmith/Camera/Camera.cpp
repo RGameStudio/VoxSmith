@@ -12,10 +12,12 @@ constexpr float g_far = 100.0f;
 
 Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 	: m_pos(pos)
-	, m_front({0.0f, 0.0f, 0.0f})
+	, m_front({0.0f, 0.0f, -1.0f})
+	, m_dir(glm::normalize((m_front - m_pos)))
 {
-	m_projection = glm::perspective(glm::radians(g_fov), static_cast<float>(width) / height, g_near, g_far);
-	m_view = glm::lookAt(m_pos, m_pos + m_front, m_up);
+	m_projection = 
+		glm::perspective(glm::radians(g_fov), static_cast<float>(width) / static_cast<float>(height), g_near, g_far);
+	m_view = glm::lookAt(m_pos, m_front, m_up);
 }
 
 void Camera::update(const glm::vec3& dv, const float dt)

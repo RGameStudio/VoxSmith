@@ -66,6 +66,7 @@ bool Keyboard::isKeyActive(const uint32_t key) const
 }
 
 Mouse::Mouse()
+	: m_moved(false)
 {
 
 }
@@ -89,6 +90,8 @@ void Mouse::setMousePos(const float xPos, const float yPos)
 {
 	m_xPos = xPos;
 	m_yPos = yPos;
+
+	m_moved = true;
 }
 
 glm::vec2 Mouse::getMousePos() const

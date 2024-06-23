@@ -162,13 +162,17 @@ namespace VoxSmith
 		void setMousePos(const float xPos, const float yPos);
 		glm::vec2 getMousePos() const;
 
+		inline bool moved() const { return m_moved; }
+
 	private:
 		Mouse();
 		~Mouse();
 
 		static Mouse* s_mouse;
 
-		float m_xPos;
-		float m_yPos;
+		float m_xPos = 0.0f;
+		float m_yPos = 0.0f;
+
+		bool m_moved = false;
 	};
 }

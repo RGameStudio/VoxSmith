@@ -64,6 +64,8 @@ void Application::handleEvents(WindowEvent& e)
 	switch (e.getType())
 	{
 	case WindowEventType::MOUSE_MOVE: {
+		auto event = static_cast<MouseMoveEvent&>(e);
+		Mouse::getInstance().setMousePos(event.x, event.y);
 		break;
 	}
 
@@ -71,7 +73,7 @@ void Application::handleEvents(WindowEvent& e)
 		break;
 
 	case WindowEventType::KEYBOARD: {
-		KeyboardEvent event = static_cast<KeyboardEvent&>(e);
+		auto event = static_cast<KeyboardEvent&>(e);
 		Keyboard::getInstance().setKeyStatus(event.m_key, static_cast<KeyStatus>(event.m_action));
 		break;
 	}

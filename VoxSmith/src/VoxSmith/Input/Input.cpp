@@ -1,3 +1,5 @@
+#include <glm/glm.hpp>
+
 #include "../Logger/Log.hpp"
 
 #include "Input.hpp"
@@ -5,6 +7,7 @@
 using namespace VoxSmith;
 
 Keyboard* Keyboard::s_keyboard = nullptr;
+Mouse* Mouse::s_mouse = nullptr;
 
 Keyboard::Keyboard()
 {
@@ -60,4 +63,35 @@ bool Keyboard::isKeyActive(const uint32_t key) const
 	}
 
 	return (m_keys[key] & (KeyStatus::REPEAT | KeyStatus::PRESS)) != 0;
+}
+
+Mouse::Mouse()
+{
+
+}
+
+Mouse::~Mouse()
+{
+	delete s_mouse;
+}
+
+Mouse& Mouse::getInstance()
+{
+	if (s_mouse == nullptr)
+	{
+		s_mouse = new Mouse();
+	}
+
+	return *s_mouse;
+}
+
+void Mouse::setMousePos(const float xPos, const float yPos)
+{
+	m_xPos = xPos;
+	m_yPos = yPos;
+}
+
+glm::vec2 Mouse::getMousePos() const
+{
+	return { m_xPos, m_yPos };
 }

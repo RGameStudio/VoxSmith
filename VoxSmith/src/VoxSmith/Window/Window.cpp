@@ -32,6 +32,7 @@ Window::Window(const size_t width, const size_t height, const char* title)
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwMakeContextCurrent(m_window);
 	glfwSetWindowUserPointer(m_window, &m_wrapper);
 

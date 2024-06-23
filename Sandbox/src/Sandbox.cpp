@@ -58,7 +58,11 @@ public:
 			vel -= glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
 
-		m_camera->update(vel, dt);
+		auto mousePos = VoxSmith::Mouse::getInstance().getMousePos();
+
+		m_camera->updateCameraPos(vel, dt);
+		m_camera->updateCameraAngle(mousePos.x, mousePos.y);
+
 		shader.setUniform4m("u_view", m_camera->getView());
 	}
 

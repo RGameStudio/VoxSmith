@@ -153,4 +153,22 @@ namespace VoxSmith
 
 		KeyStatus m_keys[1024];
 	};
+
+	class VOX_SMITH_API Mouse
+	{
+	public:
+		static Mouse& getInstance();
+
+		void setMousePos(const float xPos, const float yPos);
+		glm::vec2 getMousePos() const;
+
+	private:
+		Mouse();
+		~Mouse();
+
+		static Mouse* s_mouse;
+
+		float m_xPos;
+		float m_yPos;
+	};
 }

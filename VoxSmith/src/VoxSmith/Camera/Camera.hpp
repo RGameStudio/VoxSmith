@@ -12,7 +12,8 @@ namespace VoxSmith
 		Camera(const glm::vec3 pos, const size_t width, const size_t height);
 		~Camera() = default;
 
-		void update(const glm::vec3& dv, const float dt);
+		void updateCameraPos(const glm::vec3& dv, const float dt);
+		void updateCameraAngle(const float xPos, const float yPos);
 
 		inline glm::mat4 getProjection() const { return m_projection; }
 		inline glm::mat4 getView() const { return m_view; }
@@ -26,5 +27,14 @@ namespace VoxSmith
 		glm::vec3 m_pos;
 		glm::vec3 m_front;
 		glm::vec3 m_dir;
+
+		float m_lastX;
+		float m_lastY;
+
+		float m_sensitivity = 0.1f;
+
+		bool m_firstMove = false;
+		float m_yaw = -90.0f;
+		float m_pitch = 0.0f;
 	};
 }

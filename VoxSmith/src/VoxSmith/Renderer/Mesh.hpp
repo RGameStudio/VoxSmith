@@ -26,7 +26,8 @@ namespace VoxSmith
 		~Mesh() = default;
 
 		void loadToBuffer();
-		void bakeGreedyMesh(const std::vector<Voxel>& voxels, const glm::vec3& pos);
+		void bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& pos, const glm::vec3& size);
+		void bakeBinaryGreedy(const std::vector<Voxel>& voxels, const glm::vec3& pos, const glm::vec3& size);
 		void draw(const Renderer& renderer, const Shader& shader) const;
 
 	private:

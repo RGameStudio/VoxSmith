@@ -18,6 +18,7 @@ namespace VoxSmith
 		Chunk(const glm::vec3& pos);
 		~Chunk() = default;
 
+		void setMesh(const std::shared_ptr<Mesh>& mesh);
 		void draw(const Renderer& renderer, const Shader& shader) const;
 		void constructMesh();
 

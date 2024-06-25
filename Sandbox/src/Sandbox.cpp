@@ -8,27 +8,19 @@ constexpr uint32_t g_tempHeight = CALC_HEIGHT(g_tempWidth, g_aspectRatio);
 
 constexpr float g_focalLength = 1.0f;
 
-std::vector<VoxSmith::Vertex> g_vertices = {
-	{glm::vec3(0, 0, 0)},
-	{glm::vec3(1, 0, 0)},
-	{glm::vec3(0, 1, 0)},
-
-	{glm::vec3(0, 1, 0)},
-	{glm::vec3(1, 0, 0)},
-	{glm::vec3(1, 1, 0)},
-};
-
 class Sandbox final : public VoxSmith::Application
 {
 	VoxSmith::Buffer buff;
 	VoxSmith::Renderer renderer;
 	VoxSmith::Shader shader;
+	VoxSmith::Chunk chunk;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
 		, shader("shaders/mesh_basic.glsl")
+		, chunk(glm::vec3(0.0f))
 	{
-		buff.init(g_vertices);
+		
  		shader.setUniform4m("u_projection", m_camera->getProjection());
 		shader.setUniform4m("u_view", m_camera->getView());
 	}
@@ -58,7 +50,6 @@ public:
 			vel -= glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
 
-		
 		m_camera->updateCameraPos(vel, dt);
 		if (VoxSmith::Mouse::getInstance().moved())
 		{

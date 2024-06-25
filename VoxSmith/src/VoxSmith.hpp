@@ -12,6 +12,7 @@
 #include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/RayTracer/RayTracer.hpp"
 #include "VoxSmith/Input/Input.hpp"
+#include "VoxSmith/Chunk/Chunk.hpp"
 // ---------------------------------------------
 // Entry point
 // ---------------------------------------------

@@ -38,6 +38,11 @@ void Chunk::draw(const Renderer& renderer, const Shader& shader) const
 	m_mesh->draw(renderer, shader);
 }
 
+void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
+{
+	m_mesh = mesh;
+}
+
 void Chunk::constructMesh()
 {
 	

@@ -14,13 +14,17 @@ class Sandbox final : public VoxSmith::Application
 	VoxSmith::Renderer renderer;
 	VoxSmith::Shader shader;
 	VoxSmith::Chunk chunk;
+	std::shared_ptr<VoxSmith::Mesh> mesh;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
 		, shader("shaders/mesh_basic.glsl")
 		, chunk(glm::vec3(0.0f))
 	{
-		
+		mesh = std::make_shared<VoxSmith::Mesh>();
+		chunk.setMesh(mesh);
+		chunk.constructMesh();
+		shader.setUniform3fv("u_chunkPos", glm::vec3(0.0f));
  		shader.setUniform4m("u_projection", m_camera->getProjection());
 		shader.setUniform4m("u_view", m_camera->getView());
 	}
@@ -61,7 +65,7 @@ public:
 
 	void draw(const float dt, const float cframe) override
 	{
-		renderer.draw(buff, shader);
+		chunk.draw(renderer, shader);
 	}
 
 	~Sandbox() noexcept

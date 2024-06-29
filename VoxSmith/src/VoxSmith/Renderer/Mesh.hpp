@@ -3,6 +3,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+//#include "../Chunk/Voxel.hpp"
+
 #include "Buffer.hpp"
 #include "../Core.hpp"
 
@@ -10,6 +12,7 @@ namespace VoxSmith
 {
 	class Renderer;
 	class Shader;
+	class Buffer;
 
 	struct Voxel;
 
@@ -26,8 +29,8 @@ namespace VoxSmith
 		~Mesh() = default;
 
 		void loadToBuffer();
-		void bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& pos, const glm::vec3& size);
-		void bakeBinaryGreedy(const std::vector<Voxel>& voxels, const glm::vec3& pos, const glm::vec3& size);
+		void bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& pos, const glm::vec3& dims);
+		
 		void draw(const Renderer& renderer, const Shader& shader) const;
 
 	private:

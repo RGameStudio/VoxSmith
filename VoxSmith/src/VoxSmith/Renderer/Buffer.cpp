@@ -32,7 +32,7 @@ void Buffer::init(const std::vector<float>& data)
 	m_initialized = true;
 }
 
-void Buffer::init(const std::vector<Vertex>& data)
+void Buffer::init(const std::vector<Vertex>& vertices)
 {
 	if (m_initialized)
 	{
@@ -45,7 +45,7 @@ void Buffer::init(const std::vector<Vertex>& data)
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(Vertex), data.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);

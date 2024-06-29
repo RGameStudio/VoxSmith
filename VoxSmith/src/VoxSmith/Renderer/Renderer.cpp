@@ -9,11 +9,11 @@
 
 using namespace VoxSmith;
 
-void Renderer::draw(const Buffer& buffer, const Shader& shader) const
+void Renderer::draw(const Buffer& buffer, const Shader& shader, const int32_t count) const
 {
 	shader.use();
 	buffer.use();
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_LINE_LOOP, 0, count);
 }
 
 void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const

@@ -95,6 +95,7 @@ Window::Window(const size_t width, const size_t height, const char* title)
 			wrapper->fn(CloseEvent());
 		});
 	
+	glEnable(GL_DEPTH_TEST);
 }
 
 Window::~Window() noexcept
@@ -116,5 +117,5 @@ void Window::swapBuffers()
 void Window::clearBuffers()
 {
 	glClearColor(0.1f, 0.3f, 0.9f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

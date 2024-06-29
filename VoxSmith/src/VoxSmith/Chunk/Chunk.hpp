@@ -1,16 +1,18 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+
 #include <glm/glm.hpp>
+
+#include "Voxel.hpp"
 
 #include "../Core.hpp"
 
 namespace VoxSmith
 {
-	class Mesh;
 	class Renderer;
 	class Shader;
-	struct Voxel;
 
 	class VOX_SMITH_API Chunk final
 	{
@@ -25,7 +27,7 @@ namespace VoxSmith
 	private:
 		glm::vec3 m_pos;
 
-		std::shared_ptr<Mesh> m_mesh;
+		std::shared_ptr<Mesh> m_mesh = nullptr;
 		std::vector<Voxel> m_voxels;
 	};
 }

@@ -8,10 +8,10 @@
 #include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/Texture/Texture.hpp"
 #include "VoxSmith/Renderer/Mesh.hpp"
-#include "VoxSmith/Renderer/Buffer.hpp"
 #include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/RayTracer/RayTracer.hpp"
 #include "VoxSmith/Input/Input.hpp"
+#include "VoxSmith/Chunk/Voxel.hpp"
 #include "VoxSmith/Chunk/Chunk.hpp"
 // ---------------------------------------------
 // Entry point

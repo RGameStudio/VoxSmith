@@ -15,13 +15,13 @@ Chunk::Chunk(const glm::vec3& pos)
 	: m_pos(pos)
 {
 	m_voxels.reserve(g_voxelsPerChunk);
-	for (uint32_t z = 0; z < g_dims.z; z++)
+	for (uint32_t y = 0; y < g_dims.y; y++)
 	{
-		for (uint32_t y = 0; y < g_dims.y; y++)
+		for (uint32_t z = 0; z < g_dims.z; z++)
 		{
 			for (uint32_t x = 0; x < g_dims.x; x++)
 			{
-				Voxel voxel = { VoxelType::OPAQUE };
+				Voxel voxel = { VoxelType::Opaque };
 				m_voxels.emplace_back(std::move(voxel));
 			}
 		}
@@ -45,5 +45,11 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 void Chunk::constructMesh()
 {
+	if (m_mesh == nullptr)
+	{
+		return;
+	}
 	
+	m_mesh->bakeStupid(m_voxels, m_pos, g_dims);
+	m_mesh->loadToBuffer();
 }

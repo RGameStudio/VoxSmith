@@ -4,10 +4,10 @@
 
 namespace VoxSmith
 {
-	enum VOX_SMITH_API VoxelType
+	enum class VOX_SMITH_API VoxelType : int8_t
 	{
-		EMPTY,
-		OPAQUE,
+		Empty,
+		Opaque
 	};
 
 	struct VOX_SMITH_API Voxel final

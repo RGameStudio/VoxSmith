@@ -31,13 +31,13 @@ namespace VoxSmith
 
 	private:
 		std::shared_ptr<Window> m_window = nullptr;
-		std::shared_ptr<Renderer> m_renderer = nullptr;
 		std::unique_ptr<UICanvasIMGUI> m_UICanvas = nullptr;
 
 		bool m_isRunning = false;
 
 	protected:
 		std::unique_ptr<Camera> m_camera = nullptr;
+		std::shared_ptr<Renderer> m_renderer = nullptr;
 
 		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
 		virtual void update(const float dt);

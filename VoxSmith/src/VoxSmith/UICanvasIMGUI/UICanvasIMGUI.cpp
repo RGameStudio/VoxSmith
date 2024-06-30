@@ -28,17 +28,32 @@ void UICanvasIMGUI::update()
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(800.0f, 800.0f);
+	ImGuiIO& io = ImGui::GetIO();
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+	// FrameRate
     {
-        ImGui::Begin("Framerate & Frametime");
+		ImGui::Begin("Framerate & Frametime");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
     }
 
-    // 3. Show another simple window.
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	// Chunks info
+	{
+		ImGui::Begin("Chunk Info");
+		ImGui::Checkbox("Show edges", &m_showEdges);
+		ImGui::End();
+	}
+}
+
+void UICanvasIMGUI::setCameraInfo(const glm::vec3& pos)
+{
+	ImGui::Begin("Camera Info");
+	ImGui::Text("Camera position { %.1f, %.1f, %.1f}", pos.x, pos.y, pos.z);
+	ImGui::End();
+}
+
+void UICanvasIMGUI::render()
+{
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

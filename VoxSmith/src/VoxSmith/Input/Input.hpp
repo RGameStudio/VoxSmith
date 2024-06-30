@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <glm/glm.hpp>
+
 #include "../Core.hpp"
 
 #define VOX_KEY_SPACE              32

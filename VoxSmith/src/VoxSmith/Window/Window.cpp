@@ -1,7 +1,8 @@
 #include <memory>
 
-#include "../Logger/Log.hpp"
-#include "../Event/Event.hpp"
+#include "VoxSmith/Logger/Log.hpp"
+#include "VoxSmith/Event/Event.hpp"
+#include "VoxSmith/Input/Input.hpp"
 
 #include "Window.hpp"
 
@@ -32,7 +33,6 @@ Window::Window(const size_t width, const size_t height, const char* title)
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwMakeContextCurrent(m_window);
 	glfwSetWindowUserPointer(m_window, &m_wrapper);
 
@@ -110,6 +110,15 @@ void Window::setWindowCallback(const WindowEventCallbackFn& fn)
 
 void Window::swapBuffers()
 {
+	if (Keyboard::getInstance().isKeyActive(VOX_KEY_LEFT_SHIFT))
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	else
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+
 	glfwSwapBuffers(m_window);
 	glfwPollEvents();
 }

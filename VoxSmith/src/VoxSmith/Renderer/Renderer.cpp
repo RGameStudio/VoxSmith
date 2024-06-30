@@ -13,7 +13,14 @@ void Renderer::draw(const Buffer& buffer, const Shader& shader, const int32_t co
 {
 	shader.use();
 	buffer.use();
-	glDrawArrays(GL_LINE_LOOP, 0, count);
+	
+	auto mode = GL_TRIANGLES;
+	if (m_showEdges)
+	{
+		mode = GL_LINE_STRIP_ADJACENCY;
+	}
+
+	glDrawArrays(mode, 0, count);
 }
 
 void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const

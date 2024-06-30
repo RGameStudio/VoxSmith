@@ -21,16 +21,24 @@ Chunk::Chunk(const glm::vec3& pos)
 		{
 			for (uint32_t x = 0; x < g_dims.x; x++)
 			{
-				Voxel voxel = { VoxelType::Opaque };
+				Voxel voxel;
+				if (y < 40)
+				{
+					voxel = { VoxelType::Opaque };
+				}
+				else
+				{
+					voxel = { VoxelType::Empty };
+				}
 				m_voxels.emplace_back(std::move(voxel));
 			}
 		}
 	}
 }
 
-void Chunk::draw(const Renderer& renderer, const Shader& shader) const
+void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const
 {
-	if (m_mesh == nullptr)
+	if (m_mesh == nullptr || renderer == nullptr)
 	{
 		return;
 	}
@@ -50,6 +58,6 @@ void Chunk::constructMesh()
 		return;
 	}
 	
-	m_mesh->bakeStupid(m_voxels, m_pos, g_dims);
+	m_mesh->bakeCulled(m_voxels, g_dims);
 	m_mesh->loadToBuffer();
 }

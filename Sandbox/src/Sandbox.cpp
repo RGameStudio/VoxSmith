@@ -11,7 +11,6 @@ constexpr float g_focalLength = 1.0f;
 class Sandbox final : public VoxSmith::Application
 {
 	VoxSmith::Buffer buff;
-	VoxSmith::Renderer renderer;
 	VoxSmith::Shader shader;
 	VoxSmith::Chunk chunk;
 	std::shared_ptr<VoxSmith::Mesh> mesh;
@@ -55,7 +54,8 @@ public:
 		}
 
 		m_camera->updateCameraPos(vel, dt);
-		if (VoxSmith::Mouse::getInstance().moved())
+		if (VoxSmith::Mouse::getInstance().moved() &&
+			VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_LEFT_SHIFT))
 		{
 			auto mousePos = VoxSmith::Mouse::getInstance().getMousePos();
 			m_camera->updateCameraAngle(mousePos.x, mousePos.y);
@@ -65,7 +65,7 @@ public:
 
 	void draw(const float dt, const float cframe) override
 	{
-		chunk.draw(renderer, shader);
+		chunk.draw(m_renderer, shader);
 	}
 
 	~Sandbox() noexcept

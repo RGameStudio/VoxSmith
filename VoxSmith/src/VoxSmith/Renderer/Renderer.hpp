@@ -23,5 +23,8 @@ namespace VoxSmith
 		void draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const;
 
 	private:
+		friend class Application;
+
+		bool m_showEdges = false;
 	};
 }

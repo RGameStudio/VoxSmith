@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <glm/glm.hpp>
 
@@ -29,11 +30,16 @@ namespace VoxSmith
 		~Mesh() = default;
 
 		void loadToBuffer();
-		void bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& pos, const glm::vec3& dims);
-		
-		void draw(const Renderer& renderer, const Shader& shader) const;
+		void bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& dims);
+		void bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& dims);
+		void bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& dims);
+		void bakeBinGreedy(const std::vector<Voxel>& voxels, const glm::vec3& dims);
+
+		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
 
 	private:
+		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v);
+		
 		std::vector<Vertex> m_vertices;
 
 		Buffer m_buffer;

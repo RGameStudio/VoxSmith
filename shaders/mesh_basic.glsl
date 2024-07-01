@@ -11,7 +11,7 @@ uniform vec3 u_chunkPos;
 
 void main()
 {
-    gl_Position = u_projection * u_view * vec4(u_chunkPos + pos, 1.0f);
+    gl_Position = u_projection * u_view * vec4(u_chunkPos + pos, 1.0);
 }
 
 #shader GEOMETRY
@@ -23,5 +23,13 @@ out vec4 o_color;
 
 void main()
 {
-    o_color = vec4(gl_FragCoord.xy, 0.0f, 1.0f);
+    if (gl_FragCoord.x == 1 && gl_FragCoord.y == 1)
+    {
+        o_color = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+    else
+    {
+        o_color = vec4(0.0, 1.0, 0.0, 1.0);
+    }
+
 }

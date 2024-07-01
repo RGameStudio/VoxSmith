@@ -7,6 +7,19 @@
 
 using namespace VoxSmith;
 
+const glm::vec3 g_dirs[2][3] = {
+	{
+		{-1, 0, 0},
+	{0, -1, 0},
+	{0, 0, -1}
+	},
+	{
+		{1, 0, 0},
+	{0, 1, 0},
+	{0, 0, 1},
+	},
+};
+
 void Mesh::bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 {
 	for (int32_t y = 0; y < cSize.y; y++)
@@ -22,18 +35,18 @@ void Mesh::bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 				}
 
 				const glm::vec3 xv = { x, y, z };
-				for (int32_t iDir = 0; iDir < 3; iDir++)
+				for (int32_t iAxis = 0; iAxis < 3; iAxis++)
 				{
 					glm::vec3 voxelPos = { x, y, z };
 					glm::vec3 u = glm::vec3(0.0f);
 					glm::vec3 v = glm::vec3(0.0f);
 
-					u[(iDir + 1) % 3] = 1;
-					v[(iDir + 2) % 3] = 1;
+					u[(iAxis + 1) % 3] = 1;
+					v[(iAxis + 2) % 3] = 1;
 
 					for (int32_t iSide = 0; iSide < 2; iSide++)
 					{
-						voxelPos[iDir] = xv[iDir] + iSide;
+						voxelPos[iAxis] = xv[iAxis] + iSide;
 						addQuadFace(voxelPos, u, v);
 					}
 				}
@@ -44,12 +57,6 @@ void Mesh::bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 
 void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 {
-	const glm::vec3 dirs[3] = {
-		{1, 0, 0},
-		{0, 1, 0},
-		{0, 0, 1}
-	};
-
 	for (int32_t y = 0; y < cSize.y; y++)
 	{
 		for (int32_t z = 0; z < cSize.z; z++)
@@ -58,34 +65,49 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 			{
 				const int32_t id = cSize.x * (y * cSize.z + z) + x;
 
-				const glm::vec3 iDirs = {
-					id + 1,
-					id + cSize.x * cSize.z,
-					id + cSize.x
+				const glm::vec3 surroundingIDs[2] = {
+					{
+						id - 1,
+						id - cSize.x * cSize.z,
+						id - cSize.x
+					},
+					{
+						id + 1,
+						id + cSize.x * cSize.z,
+						id + cSize.x
+					}
 				};
 
-				for (int32_t iDir = 0; iDir < 3; iDir++)
+				if (voxels[id].type == VoxelType::Empty)
 				{
-					glm::vec3 voxelPos = { x, y, z };
-					glm::vec3 u = glm::vec3(0.0f);
-					glm::vec3 v = glm::vec3(0.0f);
+					continue;
+				}
 
-					u[(iDir + 1) % 3] = 1;
-					v[(iDir + 2) % 3] = 1;
-
-					if (voxels.at(id).type != VoxelType::Empty)
+				glm::vec3 voxelPos = { x, y, z };
+				for (int32_t iAxis = 0; iAxis < 3; iAxis++)
+				{					
+					for (int32_t iSide = 0; iSide < 2; iSide++)
 					{
-						if (iDirs[iDir] < voxels.size() && voxels.at(iDirs[iDir]).type == VoxelType::Empty)
+						glm::vec3 u = glm::vec3(0.0f);
+						glm::vec3 v = glm::vec3(0.0f);
+
+						if (iSide > 0)
 						{
-							voxelPos += dirs[iDir];
-							addQuadFace(voxelPos, u, v);
+							u[(iAxis + 1) % 3] = 1;
+							v[(iAxis + 2) % 3] = 1;
 						}
-					}
-					else
-					{
-						if (iDirs[iDir] < voxels.size() && voxels.at(iDirs[iDir]).type == VoxelType::Opaque)
+						else
 						{
-							voxelPos += dirs[iDir];
+							u[(iAxis + 2) % 3] = 1;
+							v[(iAxis + 1) % 3] = 1;
+						}
+
+						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
+						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
+						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize[iAxis] ||
+							voxels.at(neighbourID).type == VoxelType::Empty)
+						{
+							voxelPos[iAxis] += iSide;
 							addQuadFace(voxelPos, u, v);
 						}
 					}
@@ -94,7 +116,6 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 		}
 	}
 }
-
 
 void Mesh::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v)
 {

@@ -8,7 +8,7 @@
 
 using namespace VoxSmith;
 
-constexpr glm::ivec3 g_dims = glm::ivec3(64);
+constexpr glm::ivec3 g_dims = glm::ivec3(8);
 constexpr uint32_t g_voxelsPerChunk = g_dims.x * g_dims.y * g_dims.z;
 
 Chunk::Chunk(const glm::vec3& pos)
@@ -21,15 +21,8 @@ Chunk::Chunk(const glm::vec3& pos)
 		{
 			for (uint32_t x = 0; x < g_dims.x; x++)
 			{
-				Voxel voxel;
-				if (y < 40)
-				{
-					voxel = { VoxelType::Opaque };
-				}
-				else
-				{
-					voxel = { VoxelType::Empty };
-				}
+				Voxel voxel = { VoxelType::Opaque };
+
 				m_voxels.emplace_back(std::move(voxel));
 			}
 		}
@@ -57,7 +50,8 @@ void Chunk::constructMesh()
 	{
 		return;
 	}
-	
+
 	m_mesh->bakeCulled(m_voxels, g_dims);
+	//m_mesh->bakeStupid(m_voxels, g_dims);
 	m_mesh->loadToBuffer();
 }

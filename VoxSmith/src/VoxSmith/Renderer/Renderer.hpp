@@ -16,8 +16,10 @@ namespace VoxSmith
 	class VOX_SMITH_API Renderer
 	{
 	public:
-		Renderer() = default;
+		Renderer();
 		~Renderer() = default;
+
+		void switchCulling() const;
 
 		void draw(const Buffer& buffer, const Shader& shader, const int32_t count = 6) const;
 		void draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const;
@@ -26,5 +28,6 @@ namespace VoxSmith
 		friend class Application;
 
 		bool m_showEdges = false;
+		bool m_cullingStatus = true;
 	};
 }

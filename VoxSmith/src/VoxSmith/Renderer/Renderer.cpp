@@ -9,6 +9,11 @@
 
 using namespace VoxSmith;
 
+Renderer::Renderer()
+{
+	glEnable(GL_CULL_FACE);
+}
+
 void Renderer::draw(const Buffer& buffer, const Shader& shader, const int32_t count) const
 {
 	shader.use();
@@ -29,4 +34,16 @@ void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& t
 	buffer.use();
 	texture.use();
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Renderer::switchCulling() const
+{
+	if (m_cullingStatus)
+	{
+		glEnable(GL_CULL_FACE);
+	}
+	else
+	{
+		glDisable(GL_CULL_FACE);
+	}
 }

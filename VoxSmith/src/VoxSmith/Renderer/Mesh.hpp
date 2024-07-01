@@ -39,10 +39,10 @@ namespace VoxSmith
 
 	private:
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v);
-		
+		void defineUV(glm::vec3& u, glm::vec3& v, const int32_t iSide, const int32_t iAxis) const;
+
 		std::vector<Vertex> m_vertices;
 
 		Buffer m_buffer;
-		//const std::shared_ptr<Renderer> m_renderer;
 	};
 }

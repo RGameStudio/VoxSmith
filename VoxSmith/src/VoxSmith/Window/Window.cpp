@@ -96,7 +96,6 @@ Window::Window(const size_t width, const size_t height, const char* title)
 		});
 	
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
 }
 
 Window::~Window() noexcept

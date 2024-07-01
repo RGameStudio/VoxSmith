@@ -35,20 +35,21 @@ void UICanvasIMGUI::update()
 		ImGui::Begin("Framerate & Frametime");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
-    }
-
-	// Chunks info
-	{
-		ImGui::Begin("Chunk Info");
-		ImGui::Checkbox("Show edges", &m_showEdges);
-		ImGui::End();
-	}
+    }	
 }
 
 void UICanvasIMGUI::setCameraInfo(const glm::vec3& pos)
 {
 	ImGui::Begin("Camera Info");
 	ImGui::Text("Camera position { %.1f, %.1f, %.1f}", pos.x, pos.y, pos.z);
+	ImGui::End();
+}
+
+void UICanvasIMGUI::setChunkInfo(bool& cullingStatus)
+{
+	ImGui::Begin("Chunk Info");
+	ImGui::Checkbox("Show edges", &m_showEdges);
+	ImGui::Checkbox("Enable culling", &cullingStatus);
 	ImGui::End();
 }
 

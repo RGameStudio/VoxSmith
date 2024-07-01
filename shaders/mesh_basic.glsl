@@ -23,13 +23,5 @@ out vec4 o_color;
 
 void main()
 {
-    if (gl_FragCoord.x == 1 && gl_FragCoord.y == 1)
-    {
-        o_color = vec4(0.0, 0.0, 0.0, 1.0);
-    }
-    else
-    {
-        o_color = vec4(0.0, 1.0, 0.0, 1.0);
-    }
-
+    o_color = vec4(0.0, 1.0, 0.0, 1.0);
 }

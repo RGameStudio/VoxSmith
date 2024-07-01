@@ -65,6 +65,11 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 			{
 				const int32_t id = cSize.x * (y * cSize.z + z) + x;
 
+				if (voxels[id].type == VoxelType::Empty)
+				{
+					continue;
+				}
+
 				const glm::vec3 surroundingIDs[2] = {
 					{
 						id - 1,
@@ -78,14 +83,9 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 					}
 				};
 
-				if (voxels[id].type == VoxelType::Empty)
-				{
-					continue;
-				}
-
-				glm::vec3 voxelPos = { x, y, z };
 				for (int32_t iAxis = 0; iAxis < 3; iAxis++)
-				{					
+				{
+					glm::vec3 voxelPos = { x, y, z };
 					for (int32_t iSide = 0; iSide < 2; iSide++)
 					{
 						glm::vec3 u = glm::vec3(0.0f);

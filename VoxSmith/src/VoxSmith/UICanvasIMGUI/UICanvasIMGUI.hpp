@@ -19,6 +19,8 @@ namespace VoxSmith
 		bool getEdgesRenderStatus() const { return m_showEdges; }
 
 		void setCameraInfo(const glm::vec3& pos);
+		void setChunkInfo(bool& cullingStatus);
+
 		void update();
 		void render();
 

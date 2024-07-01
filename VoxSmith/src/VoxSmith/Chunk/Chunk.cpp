@@ -52,6 +52,5 @@ void Chunk::constructMesh()
 	}
 
 	m_mesh->bakeCulled(m_voxels, g_dims);
-	//m_mesh->bakeStupid(m_voxels, g_dims);
 	m_mesh->loadToBuffer();
 }

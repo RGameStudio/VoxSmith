@@ -91,16 +91,7 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 						glm::vec3 u = glm::vec3(0.0f);
 						glm::vec3 v = glm::vec3(0.0f);
 
-						if (iSide > 0)
-						{
-							u[(iAxis + 1) % 3] = 1;
-							v[(iAxis + 2) % 3] = 1;
-						}
-						else
-						{
-							u[(iAxis + 2) % 3] = 1;
-							v[(iAxis + 1) % 3] = 1;
-						}
+						defineUV(u, v, iSide, iAxis);
 
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
@@ -114,6 +105,25 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 				}
 			}
 		}
+	}
+}
+
+void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
+{
+
+}
+
+void Mesh::defineUV(glm::vec3& u, glm::vec3& v, const int32_t iSide, const int32_t iAxis) const
+{
+	if (iSide > 0)
+	{
+		u[(iAxis + 1) % 3] = 1;
+		v[(iAxis + 2) % 3] = 1;
+	}
+	else
+	{
+		u[(iAxis + 2) % 3] = 1;
+		v[(iAxis + 1) % 3] = 1;
 	}
 }
 

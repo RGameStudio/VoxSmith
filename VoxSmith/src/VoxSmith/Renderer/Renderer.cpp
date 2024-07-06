@@ -22,7 +22,8 @@ void Renderer::draw(const Buffer& buffer, const Shader& shader, const int32_t co
 	auto mode = GL_TRIANGLES;
 	if (m_showEdges)
 	{
-		mode = GL_LINES;
+		// mode = GL_LINE;
+		mode = GL_LINE_LOOP;
 	}
 
 	glDrawArrays(mode, 0, count);

@@ -57,6 +57,7 @@ void Application::run()
 		m_UICanvas->setCameraInfo(m_camera->getPos());
 		m_UICanvas->setChunkInfo(m_renderer->m_cullingStatus);
 
+		m_renderer->switchCulling();
 		m_renderer->m_showEdges = m_UICanvas->getEdgesRenderStatus();
 
 		draw(dt, currentFrame);

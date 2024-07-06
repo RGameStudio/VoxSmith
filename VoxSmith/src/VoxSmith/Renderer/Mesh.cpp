@@ -108,9 +108,106 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 	}
 }
 
+int32_t Mesh::getId(const glm::vec3& v, const glm::vec3& cSize)
+{
+	return cSize.x * (v.y * cSize.z + v.z) + v.x;
+}
+
 void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 {
+	for (bool backFace = true, b = false; b != backFace; backFace = backFace && b, b = !b)
+	{
+		for (int32_t iDim = 0; iDim < 3; iDim++)
+		{
+			int32_t u = (iDim + 1) % 3;
+			int32_t v = (iDim + 2) % 3;
 
+			std::vector<bool> mask;
+			mask.reserve(cSize[u] * cSize[v]);
+
+			glm::vec3 x = { 0.0f, 0.0f, 0.0f };
+			glm::vec3 q = { 0.0f, 0.0f, 0.0f };
+			q[iDim] = 1.0f;
+
+			for (x[iDim] = -1; x[iDim] < cSize.x; )
+			{
+				for (x[v] = 0; x[v] < cSize.y; x[v]++)
+				{
+					for (x[u] = 0; x[u] < cSize.x; x[u]++)
+					{
+						mask.push_back(
+							(0 <= x[iDim] ? voxels.at(getId(x, cSize)).type : VoxelType::Empty) !=
+							(x[iDim] < cSize[iDim] - 1 ? voxels.at(getId(x + q, cSize)).type : VoxelType::Empty)
+						);
+					}
+				}
+				
+				x[iDim]++;
+				int32_t n = 0;
+
+				for (int32_t j = 0; j < cSize[v]; j++)
+				{
+					for (int32_t i = 0; i < cSize[u];)
+					{
+						if (mask[n])
+						{
+							// Compute width
+							int32_t w;
+							for (w = 1; mask[n + w] && i + w < cSize[u]; w++)
+							{
+
+							}
+
+							// Compute height
+							bool done = false;
+							int32_t h;
+							for (h = 1; j + h < cSize[v]; h++)
+							{
+								for (int32_t k = 0; k < w; k++)
+								{
+									if (!mask[n + k + h * cSize[u]])
+									{
+										done = true;
+										break;
+									}
+								}
+								if (done)
+								{
+									break;
+								}
+							}
+
+							x[u] = i;
+							x[v] = j;
+
+							glm::vec3 du = glm::vec3(0.0f);
+							glm::vec3 dv = glm::vec3(0.0f);
+							du[u] = w;
+							dv[v] = h;
+
+							addQuadFace(x, du, dv);
+
+							for (int32_t l = 0; l < h; l++)
+							{
+								for (int32_t k = 0; k < w; k++)
+								{
+									mask[n + k + l * cSize[u]] = false;
+								}
+							}
+
+							i += w;
+							n += w;
+						}
+						else
+						{
+							i++;
+							n++;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void Mesh::defineUV(glm::vec3& u, glm::vec3& v, const int32_t iSide, const int32_t iAxis) const

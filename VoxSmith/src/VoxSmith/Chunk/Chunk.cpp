@@ -8,7 +8,7 @@
 
 using namespace VoxSmith;
 
-constexpr glm::ivec3 g_dims = glm::ivec3(32);
+constexpr glm::ivec3 g_dims = glm::ivec3(2);
 constexpr uint32_t g_voxelsPerChunk = g_dims.x * g_dims.y * g_dims.z;
 
 Chunk::Chunk(const glm::vec3& pos)

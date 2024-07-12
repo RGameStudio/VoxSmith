@@ -113,98 +113,58 @@ int32_t Mesh::getId(const glm::vec3& v, const glm::vec3& cSize)
 	return cSize.x * (v.y * cSize.z + v.z) + v.x;
 }
 
+bool checkRow()
+{
+	return false;
+}
+
 void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 {
-	for (bool backFace = true, b = false; b != backFace; backFace = backFace && b, b = !b)
+	std::vector<bool> mask;
+	mask.reserve(cSize.x * cSize.y);
+
+
+	for (int32_t y = 0; y < cSize.y; y++)
 	{
-		for (int32_t iDim = 0; iDim < 3; iDim++)
+		glm::vec3 startPos;
+		glm::vec3 u = glm::vec3(1, 0, 0);
+		glm::vec3 v = glm::vec3(0, 1, 0);
+		bool start = true;
+		for (int32_t x = 0; x < cSize.x; x)
 		{
-			int32_t u = (iDim + 1) % 3;
-			int32_t v = (iDim + 2) % 3;
-
-			std::vector<bool> mask;
-			mask.reserve(cSize[u] * cSize[v]);
-
-			glm::vec3 x = { 0.0f, 0.0f, 0.0f };
-			glm::vec3 q = { 0.0f, 0.0f, 0.0f };
-			q[iDim] = 1.0f;
-
-			for (x[iDim] = -1; x[iDim] < cSize.x; )
+			if (voxels.at(getId({ x, y, 0 }, cSize)).type == VoxelType::Opaque)
 			{
-				for (x[v] = 0; x[v] < cSize.y; x[v]++)
+				int32_t width;
+				for (width = 1; 
+					x + width < cSize.x && voxels.at(getId({ x + width, y, 0 }, cSize)).type != VoxelType::Empty; 
+					width++)
 				{
-					for (x[u] = 0; x[u] < cSize.x; x[u]++)
-					{
-						mask.push_back(
-							(0 <= x[iDim] ? voxels.at(getId(x, cSize)).type : VoxelType::Empty) !=
-							(x[iDim] < cSize[iDim] - 1 ? voxels.at(getId(x + q, cSize)).type : VoxelType::Empty)
-						);
-					}
 				}
-				
-				x[iDim]++;
-				int32_t n = 0;
 
-				for (int32_t j = 0; j < cSize[v]; j++)
+				bool done = false;
+				int32_t height;
+				for (height = 1; y + height < cSize.y; height++)
 				{
-					for (int32_t i = 0; i < cSize[u];)
+					for (int32_t w = 1; w < width; w++)
 					{
-						if (mask[n])
+						if (voxels.at(getId({ x + w, height + y, 0 }, cSize)).type == VoxelType::Empty)
 						{
-							// Compute width
-							int32_t w;
-							for (w = 1; mask[n + w] && i + w < cSize[u]; w++)
-							{
-
-							}
-
-							// Compute height
-							bool done = false;
-							int32_t h;
-							for (h = 1; j + h < cSize[v]; h++)
-							{
-								for (int32_t k = 0; k < w; k++)
-								{
-									if (!mask[n + k + h * cSize[u]])
-									{
-										done = true;
-										break;
-									}
-								}
-								if (done)
-								{
-									break;
-								}
-							}
-
-							x[u] = i;
-							x[v] = j;
-
-							glm::vec3 du = glm::vec3(0.0f);
-							glm::vec3 dv = glm::vec3(0.0f);
-							du[u] = w;
-							dv[v] = h;
-
-							addQuadFace(x, du, dv);
-
-							for (int32_t l = 0; l < h; l++)
-							{
-								for (int32_t k = 0; k < w; k++)
-								{
-									mask[n + k + l * cSize[u]] = false;
-								}
-							}
-
-							i += w;
-							n += w;
-						}
-						else
-						{
-							i++;
-							n++;
+							done = true;
+							break;
 						}
 					}
+					if (done)
+					{
+						break;
+					}
 				}
+
+				addQuadFace({ x, y, 0 }, { width, 0, 0 }, {0, height, 0});
+				x += width;
+			}
+			else
+			{
+				x++;
 			}
 		}
 	}

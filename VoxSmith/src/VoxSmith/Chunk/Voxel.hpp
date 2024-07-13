@@ -10,8 +10,5 @@ namespace VoxSmith
 		Opaque
 	};
 
-	struct VOX_SMITH_API Voxel final
-	{
-		VoxelType type;
-	};
+	using Voxel = VoxelType;
 }

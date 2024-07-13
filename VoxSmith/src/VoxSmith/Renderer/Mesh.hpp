@@ -4,7 +4,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-//#include "../Chunk/Voxel.hpp"
+#include "../Chunk/Voxel.hpp"
 
 #include "Buffer.hpp"
 #include "../Core.hpp"
@@ -14,8 +14,6 @@ namespace VoxSmith
 	class Renderer;
 	class Shader;
 	class Buffer;
-
-	struct Voxel;
 
 	struct VOX_SMITH_API Vertex final
 	{

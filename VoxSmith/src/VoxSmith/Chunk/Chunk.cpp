@@ -21,9 +21,7 @@ Chunk::Chunk(const glm::vec3& pos)
 		{
 			for (uint32_t x = 0; x < g_dims.x; x++)
 			{
-				Voxel voxel = { VoxelType::Opaque };
-
-				m_voxels.emplace_back(std::move(voxel));
+				m_voxels.emplace_back(VoxelType::Opaque);
 			}
 		}
 	}

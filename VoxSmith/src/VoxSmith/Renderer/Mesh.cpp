@@ -29,7 +29,7 @@ void Mesh::bakeStupid(const std::vector<Voxel>& voxels, const float cSize)
 			for (int32_t x = 0; x < cSize; x++)
 			{
 				const int32_t id = cSize * (y * cSize + z) + x;
-				if (voxels[id].type == VoxelType::Empty)
+				if (voxels.at(id) == VoxelType::Empty)
 				{
 					continue;
 				}
@@ -65,7 +65,7 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 			{
 				const int32_t id = cSize * (y * cSize + z) + x;
 
-				if (voxels[id].type == VoxelType::Empty)
+				if (voxels.at(id) == VoxelType::Empty)
 				{
 					continue;
 				}
@@ -96,7 +96,7 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
 						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize ||
-							voxels.at(neighbourID).type == VoxelType::Empty)
+							voxels.at(neighbourID) == VoxelType::Empty)
 						{
 							voxelPos[iAxis] += iSide;
 							addQuadFace(voxelPos, u, v);
@@ -207,13 +207,13 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 		for (x[iAxis] = -1; x[iAxis] < cSize;)
 		{
 			int32_t n = 0;
-			int32_t side;
+			int32_t side = 0;
 			for (x[v] = 0; x[v] < cSize; x[v]++)
 			{
 				for (x[u] = 0; x[u] < cSize; x[u]++)
 				{
-					auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)).type : VoxelType::Empty;
-					auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)).type : VoxelType::Empty;
+					auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
+					auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
 					
 					side = (bCurrent == VoxelType::Opaque) ? 1 : 0;
 
@@ -257,15 +257,10 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						glm::vec3 du = glm::vec3(0.0f);
 						glm::vec3 dv = glm::vec3(0.0f);
 
-						//glm::vec3 pos = x;
-
 						x[u] = i;
 						x[v] = j;
 
 						defineUV(du, dv, { width, height }, side, iAxis);
-
-						//du[u] = width;
-						//dv[v] = height;
 
 						addQuadFace(x, du, dv);
 

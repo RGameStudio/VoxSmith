@@ -20,15 +20,15 @@ const glm::vec3 g_dirs[2][3] = {
 	},
 };
 
-void Mesh::bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
+void Mesh::bakeStupid(const std::vector<Voxel>& voxels, const float cSize)
 {
-	for (int32_t y = 0; y < cSize.y; y++)
+	for (int32_t y = 0; y < cSize; y++)
 	{
-		for (int32_t z = 0; z < cSize.z; z++)
+		for (int32_t z = 0; z < cSize; z++)
 		{
-			for (int32_t x = 0; x < cSize.x; x++)
+			for (int32_t x = 0; x < cSize; x++)
 			{
-				const int32_t id = cSize.x * (y * cSize.z + z) + x;
+				const int32_t id = cSize * (y * cSize + z) + x;
 				if (voxels[id].type == VoxelType::Empty)
 				{
 					continue;
@@ -55,15 +55,15 @@ void Mesh::bakeStupid(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 	}
 }
 
-void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
+void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 {
-	for (int32_t y = 0; y < cSize.y; y++)
+	for (int32_t y = 0; y < cSize; y++)
 	{
-		for (int32_t z = 0; z < cSize.z; z++)
+		for (int32_t z = 0; z < cSize; z++)
 		{
-			for (int32_t x = 0; x < cSize.x; x++)
+			for (int32_t x = 0; x < cSize; x++)
 			{
-				const int32_t id = cSize.x * (y * cSize.z + z) + x;
+				const int32_t id = cSize * (y * cSize + z) + x;
 
 				if (voxels[id].type == VoxelType::Empty)
 				{
@@ -73,13 +73,13 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 				const glm::vec3 surroundingIDs[2] = {
 					{
 						id - 1,
-						id - cSize.x * cSize.z,
-						id - cSize.x
+						id - cSize * cSize,
+						id - cSize
 					},
 					{
 						id + 1,
-						id + cSize.x * cSize.z,
-						id + cSize.x
+						id + cSize * cSize,
+						id + cSize
 					}
 				};
 
@@ -95,7 +95,7 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
-						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize[iAxis] ||
+						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize ||
 							voxels.at(neighbourID).type == VoxelType::Empty)
 						{
 							voxelPos[iAxis] += iSide;
@@ -108,9 +108,9 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 	}
 }
 
-int32_t Mesh::getId(const glm::vec3& v, const glm::vec3& cSize)
+int32_t Mesh::getId(const glm::vec3& v, const float cSize)
 {
-	return cSize.x * (v.y * cSize.z + v.z) + v.x;
+	return cSize * (v.y * cSize + v.z) + v.x;
 }
 
 bool checkRow()
@@ -118,8 +118,9 @@ bool checkRow()
 	return false;
 }
 
-void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
-{
+#define GREEDY_2D 0
+#ifndef GREEDY_2D
+void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 	std::vector<bool> mask;
 	mask.reserve(cSize.x * cSize.y);
 
@@ -142,8 +143,8 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 			if (mask.at(n))
 			{
 				int32_t width;
-				for (width = 1; 
-					x + width < cSize.x && voxels.at(getId({ x + width, y, 0 }, cSize)).type != VoxelType::Empty; 
+				for (width = 1;
+					x + width < cSize.x && voxels.at(getId({ x + width, y, 0 }, cSize)).type != VoxelType::Empty;
 					width++)
 				{
 				}
@@ -188,7 +189,102 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 			}
 		}
 	}
+#else
+void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
+{
+	for (int32_t iDir = 0; iDir < 3; iDir++)
+	{
+		int32_t u = (iDir + 1) % 3;
+		int32_t v = (iDir + 2) % 3;
+
+		glm::vec3 x = glm::vec3(0.0f);
+		glm::vec3 q = glm::vec3(0.0f);
+
+		std::vector<bool> mask;
+		mask.reserve(cSize * cSize);
+
+		q[iDir] = 1;
+
+		for (x[iDir] = -1; x[iDir] < cSize;)
+		{
+			int32_t n = 0;
+			for (x[v] = 0; x[v] < cSize; x[v]++)
+			{
+				for (x[u] = 0; x[u] < cSize; x[u]++)
+				{
+					auto bCurrent = 0 <= x[iDir] ? voxels.at(getId(x, cSize)).type : VoxelType::Empty;
+					auto bCompare = x[iDir] < cSize - 1 ? voxels.at(getId(x + q, cSize)).type : VoxelType::Empty;
+
+					mask.push_back(bCurrent != bCompare);
+					n++;
+				}
+			}
+
+			x[iDir]++;
+			n = 0;
+
+			for (int32_t j = 0; j < cSize; j++)
+			{
+				for (int32_t i = 0; i < cSize; i)
+				{
+					if (mask[n])
+					{
+						int32_t width;
+						for (width = 1; i + width < cSize && mask[n + width]; width++)
+						{
+						}
+
+						bool done = false;
+						int32_t height;
+						for (height = 1; j + height < cSize; height++)
+						{
+							for (int32_t w = 0; w < width; w++)
+							{
+								if (!mask[n + w + height * cSize])
+								{
+									done = true;
+									break;
+								}
+							}
+							if (done)
+							{
+								break;
+							}
+						}
+
+						glm::vec3 du = glm::vec3(0.0f);
+						glm::vec3 dv = glm::vec3(0.0f);
+						
+						x[u] = i;
+						x[v] = j;
+
+						du[u] = width;
+						dv[v] = height;
+
+						addQuadFace(x, du, dv);
+
+						for (int32_t h = 0; h < height; h++)
+						{
+							for (int32_t w = 0; w < width; w++)
+							{
+								mask[n + w + h * cSize] = false;
+							}
+						}
+
+						n += width;
+						i += width;
+					}
+					else
+					{
+						n++;
+						i++;
+					}
+				}
+			}
+		}
+	}
 }
+#endif
 
 void Mesh::defineUV(glm::vec3& u, glm::vec3& v, const int32_t iSide, const int32_t iAxis) const
 {

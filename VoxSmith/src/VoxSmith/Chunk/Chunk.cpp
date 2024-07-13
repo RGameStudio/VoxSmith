@@ -51,6 +51,6 @@ void Chunk::constructMesh()
 		return;
 	}
 
-	m_mesh->bakeGreedy(m_voxels, g_dims);
+	m_mesh->bakeGreedy(m_voxels, g_dims.x);
 	m_mesh->loadToBuffer();
 }

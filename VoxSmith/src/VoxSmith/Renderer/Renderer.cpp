@@ -24,8 +24,8 @@ void Renderer::draw(const Buffer& buffer, const Shader& shader, const int32_t co
 	{
 		//mode = GL_LINE;
 		//mode = GL_LINE_LOOP;
-		//mode = GL_LINE_STRIP_ADJACENCY;
-		mode = GL_LINES;
+		mode = GL_LINE_STRIP_ADJACENCY;
+		//mode = GL_LINES;
 	}
 
 	glDrawArrays(mode, 0, count);

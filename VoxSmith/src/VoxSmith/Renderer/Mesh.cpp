@@ -123,16 +123,23 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 	std::vector<bool> mask;
 	mask.reserve(cSize.x * cSize.y);
 
-
 	for (int32_t y = 0; y < cSize.y; y++)
 	{
-		glm::vec3 startPos;
-		glm::vec3 u = glm::vec3(1, 0, 0);
-		glm::vec3 v = glm::vec3(0, 1, 0);
-		bool start = true;
-		for (int32_t x = 0; x < cSize.x; x)
+		for (int32_t x = 0; x < cSize.x; x++)
 		{
 			if (voxels.at(getId({ x, y, 0 }, cSize)).type == VoxelType::Opaque)
+			{
+				mask.push_back(true);
+			}
+		}
+	}
+
+	int32_t n = 0;
+	for (int32_t y = 0; y < cSize.y; y++)
+	{
+		for (int32_t x = 0; x < cSize.x; x)
+		{
+			if (mask.at(n))
 			{
 				int32_t width;
 				for (width = 1; 
@@ -145,9 +152,10 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 				int32_t height;
 				for (height = 1; y + height < cSize.y; height++)
 				{
-					for (int32_t w = 1; w < width; w++)
+					for (int32_t w = 0; w < width; w++)
 					{
-						if (voxels.at(getId({ x + w, height + y, 0 }, cSize)).type == VoxelType::Empty)
+						int32_t id = n + w + height * cSize.x;
+						if (!mask.at(id))
 						{
 							done = true;
 							break;
@@ -159,12 +167,24 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const glm::vec3& cSize)
 					}
 				}
 
-				addQuadFace({ x, y, 0 }, { width, 0, 0 }, {0, height, 0});
+				addQuadFace({ x, y, 0 }, { width, 0, 0 }, { 0, height, 0 });
+
+				for (int32_t h = 0; h < height; h++)
+				{
+					for (int32_t w = 0; w < width; w++)
+					{
+						auto maskId = n + w + h * cSize.x;
+						mask.at(maskId) = false;
+					}
+				}
+
 				x += width;
+				n += width;
 			}
 			else
 			{
 				x++;
+				n++;
 			}
 		}
 	}

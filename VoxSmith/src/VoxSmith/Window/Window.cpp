@@ -1,13 +1,14 @@
 #include <memory>
 
-#include "../Logger/Log.hpp"
-#include "../Event/Event.hpp"
+#include "VoxSmith/Logger/Log.hpp"
+#include "VoxSmith/Event/Event.hpp"
+#include "VoxSmith/Input/Input.hpp"
 
 #include "Window.hpp"
 
 using namespace VoxSmith;
 
-std::unique_ptr<Window> Window::create(const size_t width, const size_t height, const char* title)
+std::shared_ptr<Window> VoxSmith::createWindow(const size_t width, const size_t height, const char* title)
 {
 	static bool created = false;
 	if (created)
@@ -15,7 +16,7 @@ std::unique_ptr<Window> Window::create(const size_t width, const size_t height, 
 		return nullptr;
 	}
 
-	return std::unique_ptr<Window>(new Window(width, height, title));
+	return std::shared_ptr<Window>(new Window(width, height, title));
 }
 
 Window::Window(const size_t width, const size_t height, const char* title)
@@ -94,6 +95,7 @@ Window::Window(const size_t width, const size_t height, const char* title)
 			wrapper->fn(CloseEvent());
 		});
 	
+	glEnable(GL_DEPTH_TEST);
 }
 
 Window::~Window() noexcept
@@ -108,12 +110,21 @@ void Window::setWindowCallback(const WindowEventCallbackFn& fn)
 
 void Window::swapBuffers()
 {
+	if (Keyboard::getInstance().isKeyActive(VOX_KEY_LEFT_SHIFT))
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	else
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+
 	glfwSwapBuffers(m_window);
 	glfwPollEvents();
 }
 
 void Window::clearBuffers()
 {
-	glClearColor(0.9f, 0.2f, 0.7f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClearColor(0.1f, 0.3f, 0.9f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

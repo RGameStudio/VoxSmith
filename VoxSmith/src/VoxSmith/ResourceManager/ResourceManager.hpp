@@ -7,9 +7,9 @@
 
 namespace VoxSmith
 {
-	class Texture;
-	class Shader;
-	class ComputeShader;
+	struct Texture;
+	struct Shader;
+	struct ComputeShader;
 
 	class VOX_SMITH_API ResourceManager final
 	{
@@ -31,7 +31,7 @@ namespace VoxSmith
 
 	private:
 		ResourceManager() = default;
-		~ResourceManager() = default;
+		~ResourceManager();
 
 		static ResourceManager* s_manager;
 

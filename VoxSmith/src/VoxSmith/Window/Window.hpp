@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -15,7 +16,7 @@ namespace VoxSmith
 	class VOX_SMITH_API Window final
 	{
 	public:
-		static std::unique_ptr<Window> create(const size_t width, const size_t height, const char* title = "");
+		friend std::shared_ptr<Window> createWindow(const size_t width, const size_t height, const char* title = "");
 
 		~Window() noexcept;
 		
@@ -41,5 +42,6 @@ namespace VoxSmith
 		{
 			WindowEventCallbackFn fn;
 		} m_wrapper;
+
 	};
 }

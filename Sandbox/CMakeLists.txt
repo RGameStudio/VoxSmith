@@ -15,4 +15,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Debug-x64)
 
 add_executable(Sandbox ${SOURCE_FILES} ${HEADER_FILES})
 
-target_link_libraries(Sandbox VoxSmith.lib)
+target_link_libraries(Sandbox VoxSmith.lib glad.lib)

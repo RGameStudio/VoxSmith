@@ -3,43 +3,50 @@
 #include "../Shader/Shader.hpp"
 #include "../Texture/Texture.hpp"
 
+#include "Buffer.hpp"
+#include "Mesh.hpp"
 #include "Renderer.hpp"
 
 using namespace VoxSmith;
 
 Renderer::Renderer()
 {
-
+	glEnable(GL_CULL_FACE);
 }
 
-void Renderer::draw(const Buffer& buffer, const Shader& shader) const
+void Renderer::draw(const Buffer& buffer, const Shader& shader, const int32_t count) const
 {
 	shader.use();
-	glBindVertexArray(buffer.VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	buffer.use();
+	
+	auto mode = GL_TRIANGLES;
+	if (m_showEdges)
+	{
+		//mode = GL_LINE;
+		//mode = GL_LINE_LOOP;
+		//mode = GL_LINE_STRIP_ADJACENCY;
+		mode = GL_LINES;
+	}
+
+	glDrawArrays(mode, 0, count);
 }
 
 void Renderer::draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const
 {
 	shader.use();
+	buffer.use();
 	texture.use();
-	glBindVertexArray(buffer.VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void VoxSmith::initBuffer(Buffer& buffer, const std::vector<float>& data)
+void Renderer::switchCulling() const
 {
-	glGenVertexArrays(1, &buffer.VAO);
-	glGenBuffers(1, &buffer.VBO);
-
-	glBindVertexArray(buffer.VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer.VBO);
-
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
-		
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+	if (m_cullingStatus)
+	{
+		glEnable(GL_CULL_FACE);
+	}
+	else
+	{
+		glDisable(GL_CULL_FACE);
+	}
 }

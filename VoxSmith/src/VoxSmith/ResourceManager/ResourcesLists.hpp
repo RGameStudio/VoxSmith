@@ -2,5 +2,8 @@
 
 namespace VoxSmith
 {
+	namespace Shaders
+	{
 
+	}
 }

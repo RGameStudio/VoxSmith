@@ -1,20 +1,32 @@
 #pragma once
 
+#include <memory>
+
+#include <glm/glm.hpp>
+
 #include "../Core.hpp"
 
-struct GLFWwindow;
+class Window;
 
 namespace VoxSmith
 {
-	class VOX_SMITH_API UICanvasIMGUI
+	class VOX_SMITH_API UICanvasIMGUI final
 	{
 	public:
-		UICanvasIMGUI(GLFWwindow* window);
+		UICanvasIMGUI(const std::shared_ptr<Window>& window);
 		~UICanvasIMGUI() = default;
 
+		bool getEdgesRenderStatus() const { return m_showEdges; }
+
+		void setCameraInfo(const glm::vec3& pos);
+		void setChunkInfo(bool& cullingStatus);
+
 		void update();
+		void render();
 
 	private:
-		GLFWwindow* m_windowPtr;
+		std::shared_ptr<Window> m_window;
+
+		bool m_showEdges = false;
 	};
 }

@@ -1,28 +1,27 @@
 #pragma once
 
+#include <queue>
 #include <memory>
 
 #include "../Core.hpp"
 #include "../Window/Window.hpp"
+#include "../Camera/Camera.hpp"
+#include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
 #include "../Renderer/Renderer.hpp"
 
 namespace VoxSmith
 {
 	struct WindowEvent;
-	class UICanvasIMGUI;
 
 	class VOX_SMITH_API Application
 	{
 	public:
-		Application(uint32_t width, uint32_t height);
+		Application(const uint32_t width, const uint32_t height);
 		virtual ~Application() noexcept;
-
-		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
-		virtual void update(float dt);
-		virtual void draw(float dt, float cframe);
 
 		void run();
 		void handleEvents(WindowEvent& e);
+		void handleClientInput();
 
 		Application() = delete;
 		Application(const Application&) = delete;
@@ -31,10 +30,19 @@ namespace VoxSmith
 		Application& operator=(Application&&) = delete;
 
 	private:
-		std::unique_ptr<Window> m_window = nullptr;
-		UICanvasIMGUI* m_UICanvas = nullptr;
+		std::shared_ptr<Window> m_window = nullptr;
+		std::unique_ptr<UICanvasIMGUI> m_UICanvas = nullptr;
 
 		bool m_isRunning = false;
+
+	protected:
+		std::unique_ptr<Camera> m_camera = nullptr;
+		std::shared_ptr<Renderer> m_renderer = nullptr;
+
+		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
+		virtual void update(const float dt);
+		virtual void draw(const float dt, const float cframe);
+		virtual void updateCamera(const float dt);
 	};
 
 	Application* createApplication();

@@ -2,35 +2,40 @@
 
 #include "../Event/Event.hpp"
 #include "../Logger/Log.hpp"
-#include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
 #include "../Shader/Shader.hpp"
+#include "../Input/Input.hpp"
 
 #include "Application.hpp"
 
 using namespace VoxSmith;
 
-Application::Application(uint32_t width, uint32_t height)
+Application::Application(const uint32_t width, const uint32_t height)
 	: m_isRunning(true)
 {
 	Log::init();
 
-	m_window = Window::create(width, height, "VoxSmithDemo");
+	m_window = createWindow(width, height, "VoxSmithDemo");
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
-
-	m_UICanvas = new UICanvasIMGUI(m_window->getInstance());
+	m_renderer = std::make_shared<Renderer>();
+	m_UICanvas = std::make_unique<UICanvasIMGUI>(m_window);
+	m_camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 5.0f), width, height);
 }
 
 Application::~Application() noexcept
 {
-	delete m_UICanvas;
 }
 
-void Application::update(float dt)
+void Application::update(const float dt)
 {
 
 }
 
-void Application::draw(float dt, float cframe)
+void Application::updateCamera(const float dt)
+{
+		
+}
+
+void Application::draw(const float dt, const float cframe)
 {
 
 }
@@ -48,9 +53,16 @@ void Application::run()
 		m_window->clearBuffers();
 
 		update(dt);
-		draw(dt, currentFrame);
-
 		m_UICanvas->update();
+		m_UICanvas->setCameraInfo(m_camera->getPos());
+		m_UICanvas->setChunkInfo(m_renderer->m_cullingStatus);
+
+		m_renderer->switchCulling();
+		m_renderer->m_showEdges = m_UICanvas->getEdgesRenderStatus();
+
+		draw(dt, currentFrame);
+		m_UICanvas->render();
+
 		m_window->swapBuffers();
 	}
 }
@@ -60,7 +72,8 @@ void Application::handleEvents(WindowEvent& e)
 	switch (e.getType())
 	{
 	case WindowEventType::MOUSE_MOVE: {
-		MouseMoveEvent event = static_cast<MouseMoveEvent&>(e);
+		auto event = static_cast<MouseMoveEvent&>(e);
+		Mouse::getInstance().setMousePos(event.x, event.y);
 		break;
 	}
 
@@ -68,7 +81,8 @@ void Application::handleEvents(WindowEvent& e)
 		break;
 
 	case WindowEventType::KEYBOARD: {
-		KeyboardEvent event = static_cast<KeyboardEvent&>(e);
+		auto event = static_cast<KeyboardEvent&>(e);
+		Keyboard::getInstance().setKeyStatus(event.m_key, static_cast<KeyStatus>(event.m_action));
 		break;
 	}
 

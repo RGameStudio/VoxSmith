@@ -91,7 +91,7 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 						glm::vec3 u = glm::vec3(0.0f);
 						glm::vec3 v = glm::vec3(0.0f);
 
-						defineUV(u, v, iSide, iAxis);
+						defineUV(u, v, {1, 1}, iSide, iAxis);
 
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
@@ -192,35 +192,37 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 #else
 void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 {
-	for (int32_t iDir = 0; iDir < 3; iDir++)
+	for (int32_t iAxis = 0; iAxis < 3; iAxis++)
 	{
-		int32_t u = (iDir + 1) % 3;
-		int32_t v = (iDir + 2) % 3;
+		int32_t u = (iAxis + 1) % 3;
+		int32_t v = (iAxis + 2) % 3;
 
 		glm::vec3 x = glm::vec3(0.0f);
 		glm::vec3 q = glm::vec3(0.0f);
 
-		std::vector<bool> mask;
-		mask.reserve(cSize * cSize);
+		std::vector<bool> mask(cSize * cSize, false);
 
-		q[iDir] = 1;
+		q[iAxis] = 1;
 
-		for (x[iDir] = -1; x[iDir] < cSize;)
+		for (x[iAxis] = -1; x[iAxis] < cSize;)
 		{
 			int32_t n = 0;
+			int32_t side;
 			for (x[v] = 0; x[v] < cSize; x[v]++)
 			{
 				for (x[u] = 0; x[u] < cSize; x[u]++)
 				{
-					auto bCurrent = 0 <= x[iDir] ? voxels.at(getId(x, cSize)).type : VoxelType::Empty;
-					auto bCompare = x[iDir] < cSize - 1 ? voxels.at(getId(x + q, cSize)).type : VoxelType::Empty;
+					auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)).type : VoxelType::Empty;
+					auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)).type : VoxelType::Empty;
+					
+					side = (bCurrent == VoxelType::Opaque) ? 1 : 0;
 
-					mask.push_back(bCurrent != bCompare);
+					mask.at(n) = bCurrent != bCompare;
 					n++;
 				}
 			}
 
-			x[iDir]++;
+			x[iAxis]++;
 			n = 0;
 
 			for (int32_t j = 0; j < cSize; j++)
@@ -254,12 +256,16 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 
 						glm::vec3 du = glm::vec3(0.0f);
 						glm::vec3 dv = glm::vec3(0.0f);
-						
+
+						//glm::vec3 pos = x;
+
 						x[u] = i;
 						x[v] = j;
 
-						du[u] = width;
-						dv[v] = height;
+						defineUV(du, dv, { width, height }, side, iAxis);
+
+						//du[u] = width;
+						//dv[v] = height;
 
 						addQuadFace(x, du, dv);
 
@@ -267,7 +273,7 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						{
 							for (int32_t w = 0; w < width; w++)
 							{
-								mask[n + w + h * cSize] = false;
+								mask.at(n + w + h * cSize) = false;
 							}
 						}
 
@@ -286,17 +292,17 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 }
 #endif
 
-void Mesh::defineUV(glm::vec3& u, glm::vec3& v, const int32_t iSide, const int32_t iAxis) const
+void Mesh::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iSide, const int32_t iAxis) const
 {
 	if (iSide > 0)
 	{
-		u[(iAxis + 1) % 3] = 1;
-		v[(iAxis + 2) % 3] = 1;
+		u[(iAxis + 1) % 3] = size.x;
+		v[(iAxis + 2) % 3] = size.y;
 	}
 	else
 	{
-		u[(iAxis + 2) % 3] = 1;
-		v[(iAxis + 1) % 3] = 1;
+		u[(iAxis + 2) % 3] = size.y;
+		v[(iAxis + 1) % 3] = size.x;
 	}
 }
 

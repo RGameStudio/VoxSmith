@@ -2,26 +2,25 @@
 #include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/Renderer/Mesh.hpp"
 
-#include "Voxel.hpp"
-
 #include "Chunk.hpp"
 
 using namespace VoxSmith;
 
-constexpr glm::ivec3 g_dims = glm::ivec3(2);
-constexpr uint32_t g_voxelsPerChunk = g_dims.x * g_dims.y * g_dims.z;
+constexpr float g_sAxis = 2;
+constexpr uint32_t g_voxelsPerChunk = g_sAxis;
 
 Chunk::Chunk(const glm::vec3& pos)
 	: m_pos(pos)
 {
 	m_voxels.reserve(g_voxelsPerChunk);
-	for (uint32_t y = 0; y < g_dims.y; y++)
+	for (uint32_t y = 0; y < g_sAxis; y++)
 	{
-		for (uint32_t z = 0; z < g_dims.z; z++)
+		for (uint32_t z = 0; z < g_sAxis; z++)
 		{
-			for (uint32_t x = 0; x < g_dims.x; x++)
+			for (uint32_t x = 0; x < g_sAxis; x++)
 			{
-				m_voxels.emplace_back(VoxelType::Opaque);
+				auto type = rand() % 2 == 1 ? VoxelType::Opaque : VoxelType::Empty;
+				m_voxels.emplace_back(type);
 			}
 		}
 	}
@@ -49,6 +48,6 @@ void Chunk::constructMesh()
 		return;
 	}
 
-	m_mesh->bakeGreedy(m_voxels, g_dims.x);
+	m_mesh->bakeGreedy(m_voxels, g_sAxis);
 	m_mesh->loadToBuffer();
 }

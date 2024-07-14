@@ -190,6 +190,14 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 		}
 	}
 #else
+
+enum FaceType
+{
+	None,
+	FrontFace,
+	BackFace,
+};
+
 void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 {
 	for (int32_t iAxis = 0; iAxis < 3; iAxis++)
@@ -200,24 +208,22 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 		glm::vec3 x = glm::vec3(0.0f);
 		glm::vec3 q = glm::vec3(0.0f);
 
-		std::vector<bool> mask(cSize * cSize, false);
+		std::vector<FaceType> mask(cSize * cSize, None);
 
 		q[iAxis] = 1;
 
 		for (x[iAxis] = -1; x[iAxis] < cSize;)
 		{
 			int32_t n = 0;
-			int32_t side = 0;
 			for (x[v] = 0; x[v] < cSize; x[v]++)
 			{
 				for (x[u] = 0; x[u] < cSize; x[u]++)
 				{
 					auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
 					auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
-					
-					side = (bCurrent == VoxelType::Opaque) ? 1 : 0;
 
-					mask.at(n) = bCurrent != bCompare;
+					mask.at(n) = (bCurrent == bCompare) ? None : 
+						bCurrent == VoxelType::Opaque ? FrontFace : BackFace;
 					n++;
 				}
 			}
@@ -229,10 +235,10 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 			{
 				for (int32_t i = 0; i < cSize; i)
 				{
-					if (mask[n])
+					if (mask[n] != None)
 					{
 						int32_t width;
-						for (width = 1; i + width < cSize && mask[n + width]; width++)
+						for (width = 1; i + width < cSize && mask[n + width] != None; width++)
 						{
 						}
 
@@ -242,7 +248,7 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						{
 							for (int32_t w = 0; w < width; w++)
 							{
-								if (!mask[n + w + height * cSize])
+								if (mask[n + w + height * cSize] == None)
 								{
 									done = true;
 									break;
@@ -260,7 +266,16 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						x[u] = i;
 						x[v] = j;
 
-						defineUV(du, dv, { width, height }, side, iAxis);
+						if (mask[n] == FrontFace)
+						{
+							du[(iAxis + 1) % 3] = width;
+							dv[(iAxis + 2) % 3] = height;
+						}
+						else
+						{
+							du[(iAxis + 2) % 3] = height;
+							dv[(iAxis + 1) % 3] = width;
+						}
 
 						addQuadFace(x, du, dv);
 
@@ -268,7 +283,7 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						{
 							for (int32_t w = 0; w < width; w++)
 							{
-								mask.at(n + w + h * cSize) = false;
+								mask.at(n + w + h * cSize) = None;
 							}
 						}
 

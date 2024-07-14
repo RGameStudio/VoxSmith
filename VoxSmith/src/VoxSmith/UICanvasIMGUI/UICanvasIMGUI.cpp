@@ -35,13 +35,17 @@ void UICanvasIMGUI::update()
 		ImGui::Begin("Framerate & Frametime");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
-    }	
+    }
+
 }
 
 void UICanvasIMGUI::setCameraInfo(const glm::vec3& pos)
 {
+	float v;
+
 	ImGui::Begin("Camera Info");
 	ImGui::Text("Camera position { %.1f, %.1f, %.1f}", pos.x, pos.y, pos.z);
+	ImGui::SliderFloat("Camera speed", &v, 0.0f, 100.0f);
 	ImGui::End();
 }
 

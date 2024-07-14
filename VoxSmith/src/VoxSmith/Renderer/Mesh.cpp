@@ -91,7 +91,7 @@ void Mesh::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 						glm::vec3 u = glm::vec3(0.0f);
 						glm::vec3 v = glm::vec3(0.0f);
 
-						defineUV(u, v, {1, 1}, iSide, iAxis);
+						defineUV(u, v, {1, 1}, static_cast<FaceType>(iSide), iAxis);
 
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
@@ -266,16 +266,7 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						x[u] = i;
 						x[v] = j;
 
-						if (mask[n] == FrontFace)
-						{
-							du[(iAxis + 1) % 3] = width;
-							dv[(iAxis + 2) % 3] = height;
-						}
-						else
-						{
-							du[(iAxis + 2) % 3] = height;
-							dv[(iAxis + 1) % 3] = width;
-						}
+						defineUV(du, dv, { width, height }, mask[n], iAxis);
 
 						addQuadFace(x, du, dv);
 
@@ -302,14 +293,14 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 }
 #endif
 
-void Mesh::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iSide, const int32_t iAxis) const
+void Mesh::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const FaceType face, const int32_t iAxis) const
 {
-	if (iSide > 0)
+	if (face == FrontFace)
 	{
 		u[(iAxis + 1) % 3] = size.x;
 		v[(iAxis + 2) % 3] = size.y;
 	}
-	else
+	else if (face == BackFace)
 	{
 		u[(iAxis + 2) % 3] = size.y;
 		v[(iAxis + 1) % 3] = size.x;

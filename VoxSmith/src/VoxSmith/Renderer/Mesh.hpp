@@ -36,8 +36,15 @@ namespace VoxSmith
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
 
 	private:
+		enum FaceType : int8_t
+		{
+			None = -1,
+			BackFace = 0,
+			FrontFace = 1,
+		};
+
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v);
-		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iSide, const int32_t iAxis) const;
+		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const FaceType face, const int32_t iAxis) const;
 
 		int32_t getId(const glm::vec3& v, const float cSize);
 

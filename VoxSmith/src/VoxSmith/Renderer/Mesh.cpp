@@ -206,11 +206,6 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 
 			q[iAxis] = 1;
 
-			if (backFace == false)
-			{
-				int a = 5;
-			}
-
 			for (x[iAxis] = -1; x[iAxis] < cSize;)
 			{
 				int32_t n = 0;

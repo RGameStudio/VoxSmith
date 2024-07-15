@@ -190,101 +190,103 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 		}
 	}
 #else
-
-enum FaceType
-{
-	None,
-	FrontFace,
-	BackFace,
-};
-
 void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 {
-	for (int32_t iAxis = 0; iAxis < 3; iAxis++)
+	std::vector<FaceType> mask(cSize * cSize, None);
+
+	for (bool backFace = true, b = false; b != backFace; backFace = b && backFace, b = !b)
 	{
-		int32_t u = (iAxis + 1) % 3;
-		int32_t v = (iAxis + 2) % 3;
-
-		glm::vec3 x = glm::vec3(0.0f);
-		glm::vec3 q = glm::vec3(0.0f);
-
-		std::vector<FaceType> mask(cSize * cSize, None);
-
-		q[iAxis] = 1;
-
-		for (x[iAxis] = -1; x[iAxis] < cSize;)
+		for (int32_t iAxis = 0; iAxis < 3; iAxis++)
 		{
-			int32_t n = 0;
-			for (x[v] = 0; x[v] < cSize; x[v]++)
-			{
-				for (x[u] = 0; x[u] < cSize; x[u]++)
-				{
-					auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
-					auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
+			int32_t u = (iAxis + 1) % 3;
+			int32_t v = (iAxis + 2) % 3;
 
-					mask.at(n) = (bCurrent == bCompare) ? None : 
-						bCurrent == VoxelType::Opaque ? FrontFace : BackFace;
-					n++;
-				}
+			glm::vec3 x = glm::vec3(0.0f);
+			glm::vec3 q = glm::vec3(0.0f);
+
+			q[iAxis] = 1;
+
+			if (backFace == false)
+			{
+				int a = 5;
 			}
 
-			x[iAxis]++;
-			n = 0;
-
-			for (int32_t j = 0; j < cSize; j++)
+			for (x[iAxis] = -1; x[iAxis] < cSize;)
 			{
-				for (int32_t i = 0; i < cSize; i)
+				int32_t n = 0;
+				for (x[v] = 0; x[v] < cSize; x[v]++)
 				{
-					if (mask[n] != None)
+					for (x[u] = 0; x[u] < cSize; x[u]++)
 					{
-						int32_t width;
-						for (width = 1; i + width < cSize && mask[n + width] != None; width++)
-						{
-						}
+						auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
+						auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
 
-						bool done = false;
-						int32_t height;
-						for (height = 1; j + height < cSize; height++)
+						mask.at(n) = backFace 
+							? bCurrent == VoxelType::Empty && bCompare == VoxelType::Opaque ? BackFace : None 
+							: bCurrent == VoxelType::Opaque && bCompare == VoxelType::Empty ? FrontFace : None;
+
+						n++;
+					}
+				}
+
+				x[iAxis]++;
+				n = 0;
+
+				for (int32_t j = 0; j < cSize; j++)
+				{
+					for (int32_t i = 0; i < cSize; i)
+					{
+						if (mask[n] != None)
 						{
-							for (int32_t w = 0; w < width; w++)
+							int32_t width;
+							for (width = 1; i + width < cSize && mask[n + width] != None; width++)
 							{
-								if (mask[n + w + height * cSize] == None)
+							}
+
+							bool done = false;
+							int32_t height;
+							for (height = 1; j + height < cSize; height++)
+							{
+								for (int32_t w = 0; w < width; w++)
 								{
-									done = true;
+									if (mask[n + w + height * cSize] == None)
+									{
+										done = true;
+										break;
+									}
+								}
+								if (done)
+								{
 									break;
 								}
 							}
-							if (done)
+
+							glm::vec3 du = glm::vec3(0.0f);
+							glm::vec3 dv = glm::vec3(0.0f);
+
+							x[u] = i;
+							x[v] = j;
+
+							defineUV(du, dv, { width, height }, mask[n], iAxis);
+
+							addQuadFace(x, du, dv);
+
+							for (int32_t h = 0; h < height; h++)
 							{
-								break;
+								for (int32_t w = 0; w < width; w++)
+								{
+									mask.at(n + w + h * cSize) = None;
+								}
 							}
+
+							n += width;
+							i += width;
 						}
-
-						glm::vec3 du = glm::vec3(0.0f);
-						glm::vec3 dv = glm::vec3(0.0f);
-
-						x[u] = i;
-						x[v] = j;
-
-						defineUV(du, dv, { width, height }, mask[n], iAxis);
-
-						addQuadFace(x, du, dv);
-
-						for (int32_t h = 0; h < height; h++)
+						else
 						{
-							for (int32_t w = 0; w < width; w++)
-							{
-								mask.at(n + w + h * cSize) = None;
-							}
+							n++;
+							i++;
 						}
-
-						n += width;
-						i += width;
-					}
-					else
-					{
-						n++;
-						i++;
 					}
 				}
 			}

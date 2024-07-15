@@ -6,7 +6,7 @@
 
 using namespace VoxSmith;
 
-constexpr float g_sAxis = 3;
+constexpr float g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
 
 Chunk::Chunk(const glm::vec3& pos)

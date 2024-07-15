@@ -221,11 +221,9 @@ void Mesh::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
 						auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
 
-						mask.at(n) = backFace 
+						mask.at(n++) = backFace 
 							? bCurrent == VoxelType::Empty && bCompare == VoxelType::Opaque ? BackFace : None 
 							: bCurrent == VoxelType::Opaque && bCompare == VoxelType::Empty ? FrontFace : None;
-
-						n++;
 					}
 				}
 

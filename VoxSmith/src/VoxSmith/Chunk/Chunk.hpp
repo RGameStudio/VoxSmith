@@ -29,5 +29,17 @@ namespace VoxSmith
 
 		std::shared_ptr<Mesh> m_mesh = nullptr;
 		std::vector<Voxel> m_voxels;
+
+		enum Direction : int8_t
+		{
+			FRONT = 0,
+			BACK = 1,
+			LEFT = 2, 
+			RIGHT,
+			BOTTOM, 
+			TOP
+		};
+		
+		std::vector<std::shared_ptr<Chunk>> m_neighbours;
 	};
 }

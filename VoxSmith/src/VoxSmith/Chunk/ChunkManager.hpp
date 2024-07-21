@@ -4,8 +4,10 @@
 
 namespace VoxSmith
 {
-	class VOX_SMITH_API World
+	class VOX_SMITH_API ChunkManager
 	{
+	public:
 
+	private:
 	};
 }

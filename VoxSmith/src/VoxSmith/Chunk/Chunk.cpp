@@ -6,7 +6,7 @@
 
 using namespace VoxSmith;
 
-constexpr float g_sAxis = 32;
+constexpr float g_sAxis = 3;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
 
 Chunk::Chunk(const glm::vec3& pos)
@@ -19,7 +19,7 @@ Chunk::Chunk(const glm::vec3& pos)
 		{
 			for (uint32_t x = 0; x < g_sAxis; x++)
 			{
-				auto type = rand() % 2 == 0 ? VoxelType::Opaque : VoxelType::Empty;
+				auto type = VoxelType::Opaque;
 				m_voxels.emplace_back(type);
 			}
 		}

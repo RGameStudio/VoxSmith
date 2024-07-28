@@ -41,6 +41,11 @@ Chunk::Chunk(const glm::vec3& pos)
 	}
 }
 
+void Chunk::addNeighbour(Direction dir, Chunk* chunk)
+{
+	m_neighbours.at(static_cast<int32_t>(dir)) = chunk;
+}
+
 int32_t Chunk::getId(const glm::vec3& v, const float cSize)
 {
 	return cSize * (v.y * cSize + v.z) + v.x;
@@ -122,21 +127,34 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
 
-						bool opaqueNeighbour;
-						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize)
+						bool emptyNeighbourVoxel = neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize;
+						if (emptyNeighbourVoxel)
 						{
 							if (m_neighbours[iSide * 3 + iAxis] != nullptr)
 							{
-								int a = 5;
+								glm::vec3 neighbourVoxelPos = glm::vec3(x, y, z);
+								neighbourVoxelPos[iAxis] = neighbourPos[iAxis] < 0 ? cSize - 1 : 0;
+								
+								if (m_neighbours[iSide * 3 + iAxis]->m_voxels[getId(neighbourVoxelPos, cSize)] != VoxelType::Empty)
+								{
+									emptyNeighbourVoxel = false;
+								}
 							}
 							else
 							{
-								opaqueNeighbour = false;
+								emptyNeighbourVoxel = true;
 							}
 						}
 
-						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize ||
-							voxels.at(neighbourID) == VoxelType::Empty)
+						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize)
+						{
+							if (emptyNeighbourVoxel)
+							{
+								voxelPos[iAxis] += iSide;
+								addQuadFace(voxelPos, u, v);
+							}
+						}
+						else if (voxels.at(neighbourID) == VoxelType::Empty)
 						{
 							voxelPos[iAxis] += iSide;
 							addQuadFace(voxelPos, u, v);
@@ -293,6 +311,6 @@ void Chunk::constructMesh()
 		return;
 	}
 
-	bakeCulled(m_voxels, g_sAxis);
+	bakeGreedy(m_voxels, g_sAxis);
 	m_mesh->loadToBuffer(m_vertices);
 }

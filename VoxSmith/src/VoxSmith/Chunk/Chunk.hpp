@@ -15,12 +15,23 @@ namespace VoxSmith
 	class Shader;
 	struct Vertex;
 
+	enum VOX_SMITH_API Direction : int8_t
+	{
+		LEFT = 0,
+		BOTTOM = 1,
+		BACK = 2,
+		RIGHT = 3,
+		TOP = 4,
+		FRONT = 5
+	};
+
 	class VOX_SMITH_API Chunk final
 	{
 	public:
 		Chunk(const glm::vec3& pos);
 		~Chunk() = default;
 
+		void addNeighbour(Direction dir, Chunk* chunk);
 		void setMesh(const std::shared_ptr<Mesh>& mesh);
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
 		void constructMesh();
@@ -33,17 +44,7 @@ namespace VoxSmith
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
 
-		enum Direction : int8_t
-		{
-			LEFT	= 0,
-			BOTTOM	= 1,
-			BACK	= 2, 
-			RIGHT	= 3,
-			TOP		= 4, 
-			FRONT	= 5
-		};
-
-		std::vector<std::shared_ptr<Chunk>> m_neighbours;
+		std::vector<Chunk*> m_neighbours;
 
 		enum FaceType : int8_t
 		{

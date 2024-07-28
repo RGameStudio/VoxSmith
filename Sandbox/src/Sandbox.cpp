@@ -12,18 +12,29 @@ class Sandbox final : public VoxSmith::Application
 {
 	VoxSmith::Buffer buff;
 	VoxSmith::Shader shader;
-	VoxSmith::Chunk chunk;
-	std::shared_ptr<VoxSmith::Mesh> mesh;
+	VoxSmith::Chunk chunk1;
+	VoxSmith::Chunk chunk2;
+
+	std::shared_ptr<VoxSmith::Mesh> mesh1;
+	std::shared_ptr<VoxSmith::Mesh> mesh2;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
 		, shader("shaders/mesh_basic.glsl")
-		, chunk(glm::vec3(0.0f))
+		, chunk1(glm::vec3(0.0f))
+		, chunk2(glm::vec3(3.0f, 0.0f, 0.0f))
 	{
-		mesh = std::make_shared<VoxSmith::Mesh>();
-		chunk.setMesh(mesh);
-		chunk.constructMesh();
-		shader.setUniform3fv("u_chunkPos", glm::vec3(0.0f));
+		chunk1.addNeighbour(VoxSmith::RIGHT, &chunk2);
+		chunk2.addNeighbour(VoxSmith::LEFT, &chunk1);
+
+		mesh1 = std::make_shared<VoxSmith::Mesh>();
+		mesh2 = std::make_shared<VoxSmith::Mesh>();
+		
+		chunk1.setMesh(mesh1);
+		chunk1.constructMesh();
+		chunk2.setMesh(mesh2);
+		chunk2.constructMesh();
+
  		shader.setUniform4m("u_projection", m_camera->getProjection());
 		shader.setUniform4m("u_view", m_camera->getView());
 	}
@@ -65,7 +76,10 @@ public:
 
 	void draw(const float dt, const float cframe) override
 	{
-		chunk.draw(m_renderer, shader);
+		shader.setUniform3fv("u_chunkPos", glm::vec3(0.0f));
+		chunk1.draw(m_renderer, shader);
+		shader.setUniform3fv("u_chunkPos", glm::vec3(3.0f, 0.0f, 0.0f));
+		chunk2.draw(m_renderer, shader);
 	}
 
 	~Sandbox() noexcept

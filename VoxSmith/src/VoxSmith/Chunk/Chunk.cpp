@@ -51,41 +51,6 @@ int32_t Chunk::getId(const glm::vec3& v, const float cSize)
 	return cSize * (v.y * cSize + v.z) + v.x;
 }
 
-void Chunk::bakeStupid(const std::vector<Voxel>& voxels, const float cSize)
-{
-	for (int32_t y = 0; y < cSize; y++)
-	{
-		for (int32_t z = 0; z < cSize; z++)
-		{
-			for (int32_t x = 0; x < cSize; x++)
-			{
-				const int32_t id = cSize * (y * cSize + z) + x;
-				if (voxels.at(id) == VoxelType::Empty)
-				{
-					continue;
-				}
-
-				const glm::vec3 xv = { x, y, z };
-				for (int32_t iAxis = 0; iAxis < 3; iAxis++)
-				{
-					glm::vec3 voxelPos = { x, y, z };
-					glm::vec3 u = glm::vec3(0.0f);
-					glm::vec3 v = glm::vec3(0.0f);
-
-					u[(iAxis + 1) % 3] = 1;
-					v[(iAxis + 2) % 3] = 1;
-
-					for (int32_t iSide = 0; iSide < 2; iSide++)
-					{
-						voxelPos[iAxis] = xv[iAxis] + iSide;
-						addQuadFace(voxelPos, u, v);
-					}
-				}
-			}
-		}
-	}
-}
-
 void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 {
 	for (int32_t y = 0; y < cSize; y++)
@@ -127,37 +92,27 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
 
-						bool emptyNeighbourVoxel = neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize;
-						if (emptyNeighbourVoxel)
+						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize)
 						{
 							if (m_neighbours[iSide * 3 + iAxis] != nullptr)
 							{
 								glm::vec3 neighbourVoxelPos = glm::vec3(x, y, z);
 								neighbourVoxelPos[iAxis] = neighbourPos[iAxis] < 0 ? cSize - 1 : 0;
-								
-								if (m_neighbours[iSide * 3 + iAxis]->m_voxels[getId(neighbourVoxelPos, cSize)] != VoxelType::Empty)
+
+								const auto& neighbourVoxels = m_neighbours[iSide * 3 + iAxis]->m_voxels;
+								if (neighbourVoxels[getId(neighbourVoxelPos, cSize)] == VoxelType::Empty)
 								{
-									emptyNeighbourVoxel = false;
+									addQuadFace(voxelPos, iSide, iAxis, u, v);
 								}
 							}
 							else
 							{
-								emptyNeighbourVoxel = true;
-							}
-						}
-
-						if (neighbourPos[iAxis] < 0 || neighbourPos[iAxis] >= cSize)
-						{
-							if (emptyNeighbourVoxel)
-							{
-								voxelPos[iAxis] += iSide;
-								addQuadFace(voxelPos, u, v);
+								addQuadFace(voxelPos, iSide, iAxis, u, v);
 							}
 						}
 						else if (voxels.at(neighbourID) == VoxelType::Empty)
 						{
-							voxelPos[iAxis] += iSide;
-							addQuadFace(voxelPos, u, v);
+							addQuadFace(voxelPos, iSide, iAxis, u, v);
 						}
 					}
 				}
@@ -189,8 +144,50 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 				{
 					for (x[u] = 0; x[u] < cSize; x[u]++)
 					{
+#define CHECK_NEIGHBOURS true
+#ifdef CHECK_NEIGHBOURS
+						VoxelType bCurrent = VoxelType::Empty;
+						VoxelType bCompare = VoxelType::Empty;
+
+						if (0 <= x[iAxis])
+						{
+							bCurrent = voxels.at(getId(x, cSize));
+						}
+						else
+						{
+							if (m_neighbours[iAxis])
+							{
+								glm::vec3 pos = x;
+								pos[iAxis] = cSize - 1;
+								bCurrent = m_neighbours[iAxis]->m_voxels.at(getId(pos, cSize));
+							}
+							else
+							{
+								bCurrent = VoxelType::Empty;
+							}
+						}
+
+						if (x[iAxis] < cSize - 1)
+						{
+							bCompare = voxels.at(getId(x + q, cSize));
+						}
+						else
+						{
+							if (m_neighbours[3 + iAxis])
+							{
+								glm::vec3 pos = x;
+								pos[iAxis] = cSize - 1;
+								bCompare = m_neighbours[3 + iAxis]->m_voxels.at(getId(pos, cSize));
+							}
+							else
+							{
+								bCompare = VoxelType::Empty;
+							}
+						}
+#else
 						auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
 						auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
+#endif
 
 						mask.at(n++) = backFace
 							? bCurrent == VoxelType::Empty && bCompare == VoxelType::Opaque ? BackFace : None
@@ -277,6 +274,19 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const Fa
 	}
 }
 
+void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v)
+{
+	pos[iAxis] += iSide;
+
+	m_vertices.push_back({ pos });
+	m_vertices.push_back({ pos + u });
+	m_vertices.push_back({ pos + v });
+
+	m_vertices.push_back({ pos + v });
+	m_vertices.push_back({ pos + u });
+	m_vertices.push_back({ pos + u + v });
+}
+
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v)
 {
 	m_vertices.push_back({ pos });
@@ -287,7 +297,6 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.push_back({ pos + u });
 	m_vertices.push_back({ pos + u + v });
 }
-
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const
 {

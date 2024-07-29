@@ -55,12 +55,13 @@ namespace VoxSmith
 
 		int32_t getId(const glm::vec3& v, const float cSize);
 
-		void bakeStupid(const std::vector<Voxel>& voxels, const float size);
 		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
 		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 
+		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v);
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v);
+		
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const FaceType face, const int32_t iAxis) const;
 	};
 }

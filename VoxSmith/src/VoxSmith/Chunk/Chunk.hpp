@@ -5,15 +5,16 @@
 
 #include <glm/glm.hpp>
 
+#include "VoxSmith/Renderer/Mesh.hpp"
 #include "Voxel.hpp"
 
-#include "../Core.hpp"
+#include "VoxSmith/Core.hpp"
 
 namespace VoxSmith
 {
 	class Renderer;
 	class Shader;
-	struct Vertex;
+	class Mesh;
 
 	enum VOX_SMITH_API Direction : int8_t
 	{
@@ -29,6 +30,7 @@ namespace VoxSmith
 	{
 	public:
 		Chunk(const glm::vec3& pos);
+		Chunk() = default;
 		~Chunk() = default;
 
 		void addNeighbour(Direction dir, Chunk* chunk);

@@ -1,3 +1,4 @@
+#include "VoxSmith/Logger/Log.hpp"
 #include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/Renderer/Mesh.hpp"
@@ -300,8 +301,15 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const
 {
-	if (m_mesh == nullptr || renderer == nullptr)
+	if (renderer == nullptr)
 	{
+		LOG_CORE_ERROR("CHUNK::DRAW::Renderer is not specified!");
+		return;
+	}
+
+	if (m_mesh == nullptr)
+	{
+		LOG_CORE_ERROR("CHUNK::DRAW::Mesh is not initialized!");
 		return;
 	}
 
@@ -317,6 +325,7 @@ void Chunk::constructMesh()
 {
 	if (m_mesh == nullptr)
 	{
+		LOG_CORE_ERROR("CHUNK::MESH::CONSTRUCTION::Can't construct mesh!");
 		return;
 	}
 

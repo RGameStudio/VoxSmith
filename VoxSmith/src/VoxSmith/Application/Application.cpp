@@ -1,9 +1,10 @@
 #include <functional>
 
-#include "../Event/Event.hpp"
-#include "../Logger/Log.hpp"
-#include "../Shader/Shader.hpp"
-#include "../Input/Input.hpp"
+#include "VoxSmith/Event/Event.hpp"
+#include "VoxSmith/Logger/Log.hpp"
+#include "VoxSmith/Shader/Shader.hpp"
+#include "VoxSmith/Input/Input.hpp"
+#include "VoxSmith/ResourceManager/ResourceManager.hpp"
 
 #include "Application.hpp"
 
@@ -18,7 +19,9 @@ Application::Application(const uint32_t width, const uint32_t height)
 	m_window->setWindowCallback(std::bind(&Application::handleEvents, this, std::placeholders::_1));
 	m_renderer = std::make_shared<Renderer>();
 	m_UICanvas = std::make_unique<UICanvasIMGUI>(m_window);
-	m_camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 5.0f), width, height);
+	m_camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 5.0f), width, height);	
+
+	ResourceManager::getInstance().initShaders();
 }
 
 Application::~Application() noexcept

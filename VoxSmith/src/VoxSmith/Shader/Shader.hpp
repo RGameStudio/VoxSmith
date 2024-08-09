@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include <glm/glm.hpp>
 
@@ -11,7 +12,7 @@ namespace VoxSmith
 	class VOX_SMITH_API Shader final
 	{
 	public:
-		Shader(const char* sPath);
+		Shader(const std::string& cPath);
 		~Shader() noexcept;
 		
 		void use() const;

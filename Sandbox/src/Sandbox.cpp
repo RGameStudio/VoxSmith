@@ -11,7 +11,6 @@ constexpr float g_focalLength = 1.0f;
 class Sandbox final : public VoxSmith::Application
 {
 	VoxSmith::Buffer buff;
-	VoxSmith::Shader shader;
 	VoxSmith::World world;
 
 	std::shared_ptr<VoxSmith::Mesh> mesh1;
@@ -19,13 +18,15 @@ class Sandbox final : public VoxSmith::Application
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
-		, shader("shaders/mesh_basic.glsl")	
 	{
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
+			.setUniform4m("u_projection", m_camera->getProjection());
 	}
 
 	void update(const float dt) override
 	{
 		updateCamera(dt);
+		world.update();
 	}
 
 	void updateCamera(const float dt) override
@@ -55,12 +56,14 @@ public:
 			auto mousePos = VoxSmith::Mouse::getInstance().getMousePos();
 			m_camera->updateCameraAngle(mousePos.x, mousePos.y);
 		}
-		shader.setUniform4m("u_view", m_camera->getView());
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
+			.setUniform4m("u_view", m_camera->getView());
 	}
 
 	void draw(const float dt, const float cframe) override
 	{
-		world.draw(m_renderer, VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh));
+		world.draw(m_renderer, 
+			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh));
 	}
 
 	~Sandbox() noexcept

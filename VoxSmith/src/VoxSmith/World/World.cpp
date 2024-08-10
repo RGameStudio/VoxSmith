@@ -12,6 +12,7 @@ constexpr float cSize = 32;
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 {
+	int32_t meshCounter = 0;
 	for (int32_t y = minBoundary.y; y < maxBoundary.y; y += cSize)
 	{
 		for (int32_t z = minBoundary.z; z < maxBoundary.z; z += cSize)
@@ -20,7 +21,9 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 			{
 				auto pos = glm::vec3(x, y, z);
 				m_chunks[pos] = Chunk(pos);
-				sepcifyChunkNeighbours(pos);
+				
+				m_meshes.push_back(std::make_shared<Mesh>());
+				m_chunks[pos].setMesh(m_meshes[meshCounter++]);
 			}
 		}
 	}
@@ -33,14 +36,21 @@ World::~World()
 
 void World::update()
 {
-
+	for (auto& [pos, chunk] : m_chunks)
+	{
+		if (!chunk.isMeshConstructed())
+		{
+			sepcifyChunkNeighbours(pos);
+			chunk.constructMesh();
+		}
+	}
 }
 
 void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader)
 {
-	for each (auto& pair in m_chunks)
+	for (auto& [key, chunk] : m_chunks)
 	{
-		pair.second.draw(renderer, shader);
+		chunk.draw(renderer, shader);
 	}
 }
 

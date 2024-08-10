@@ -92,6 +92,7 @@ void Mesh::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader)
 
 void Mesh::loadToBuffer(const std::vector<Vertex>& vertices)
 {
+	m_isConstructed = true;
 	m_vertexCount = vertices.size();
 	m_buffer.init(vertices);
 }

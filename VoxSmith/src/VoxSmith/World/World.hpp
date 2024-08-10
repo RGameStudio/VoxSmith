@@ -42,5 +42,6 @@ namespace VoxSmith
 		};
 
 		std::unordered_map<glm::vec3, Chunk, KeyFuncs> m_chunks;
+		std::vector<std::shared_ptr<Mesh>> m_meshes;
 	};
 }

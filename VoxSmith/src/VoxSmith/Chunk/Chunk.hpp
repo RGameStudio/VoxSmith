@@ -38,6 +38,8 @@ namespace VoxSmith
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
 		void constructMesh();
 
+		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
+
 	private:
 		glm::vec3 m_pos;
 

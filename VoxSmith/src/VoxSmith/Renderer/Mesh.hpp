@@ -28,11 +28,14 @@ namespace VoxSmith
 		~Mesh() = default;
 
 		void loadToBuffer(const std::vector<Vertex>& vertices);
-
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
+
+		inline bool isMeshConstructed() const { return m_isConstructed; }
 
 	private:
 		Buffer m_buffer;
+
+		bool m_isConstructed = false;
 
 		uint32_t m_vertexCount = 0;
 	};

@@ -7,7 +7,7 @@
 
 using namespace VoxSmith;
 
-constexpr float g_sAxis = 3;
+constexpr float g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
 
 const glm::vec3 g_dirs[2][3] = {
@@ -313,6 +313,7 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 		return;
 	}
 
+	shader.setUniform3fv("u_chunkPos", m_pos);
 	m_mesh->draw(renderer, shader);
 }
 

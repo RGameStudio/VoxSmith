@@ -15,14 +15,14 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 5, 32 * 5, 32 * 5));
+			const glm::vec3 maxBoundary = glm::vec3(32 * 2, 32, 32 * 2));
 		~World();
 
 		void update();
 		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader);
 
 	private:
-		void sepcifyChunkNeighbours(const glm::vec3& pos);
+		void notifyChunkNeighbours(const glm::vec3& pos);
 
 		struct KeyFuncs
 		{

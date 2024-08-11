@@ -19,6 +19,7 @@ namespace VoxSmith
 	{
 		// int16_t data;
 		glm::vec3 pos;
+		glm::vec3 color;
 	};
 
 	class VOX_SMITH_API Mesh final

@@ -4,7 +4,7 @@
 #include "VoxSmith/Chunk/Chunk.hpp"
 #include "VoxSmith/Shader/Shader.hpp"
 
-#include "world.hpp"
+#include "World.hpp"
 
 using namespace VoxSmith;
 
@@ -40,7 +40,7 @@ void World::update()
 	{
 		if (!chunk.isMeshConstructed())
 		{
-			sepcifyChunkNeighbours(pos);
+			notifyChunkNeighbours(pos);
 			chunk.constructMesh();
 		}
 	}
@@ -48,13 +48,13 @@ void World::update()
 
 void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader)
 {
-	for (auto& [key, chunk] : m_chunks)
+	for (auto& [pos, chunk] : m_chunks)
 	{
 		chunk.draw(renderer, shader);
 	}
 }
 
-void World::sepcifyChunkNeighbours(const glm::vec3& pos)
+void World::notifyChunkNeighbours(const glm::vec3& pos)
 {
 	auto checkAndAddNeighbour = [this, pos](const glm::vec3& neighbourPos, Direction dir) {
 		if (m_chunks.find(neighbourPos) != m_chunks.end())

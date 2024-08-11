@@ -35,7 +35,11 @@ Chunk::Chunk(const glm::vec3& pos)
 		{
 			for (uint32_t x = 0; x < g_sAxis; x++)
 			{
-				auto type = VoxelType::Opaque;
+				auto type = VoxelType::Dirt;
+				if (y == g_sAxis - 1)
+				{
+					type = VoxelType::Grass;
+				}
 				m_voxels.emplace_back(type);
 			}
 		}
@@ -103,17 +107,17 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 								const auto& neighbourVoxels = m_neighbours[iSide * 3 + iAxis]->m_voxels;
 								if (neighbourVoxels[getId(neighbourVoxelPos, cSize)] == VoxelType::Empty)
 								{
-									addQuadFace(voxelPos, iSide, iAxis, u, v);
+									addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)]);
 								}
 							}
 							else
 							{
-								addQuadFace(voxelPos, iSide, iAxis, u, v);
+								addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)]);
 							}
 						}
 						else if (voxels.at(neighbourID) == VoxelType::Empty)
 						{
-							addQuadFace(voxelPos, iSide, iAxis, u, v);
+							addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)]);
 						}
 					}
 				}
@@ -124,7 +128,8 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 
 void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 {
-	std::vector<FaceType> mask(cSize * cSize, None);
+	std::vector<VoxelType> faceMask(cSize * cSize, VoxelType::Empty);
+	//std::vector<VoxelType> voxelmask(cSize * cSize, VoxelType::Empty);
 
 	for (bool backFace = true, b = false; b != backFace; backFace = b && backFace, b = !b)
 	{
@@ -190,9 +195,9 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
 #endif
 
-						mask.at(n++) = backFace
-							? bCurrent == VoxelType::Empty && bCompare == VoxelType::Opaque ? BackFace : None
-							: bCurrent == VoxelType::Opaque && bCompare == VoxelType::Empty ? FrontFace : None;
+						faceMask.at(n++) = backFace
+							? bCurrent == VoxelType::Empty && bCompare != VoxelType::Empty ? bCompare : VoxelType::Empty
+							: bCurrent != VoxelType::Empty && bCompare == VoxelType::Empty ? bCurrent : VoxelType::Empty;
 					}
 				}
 
@@ -203,10 +208,10 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 				{
 					for (int32_t i = 0; i < cSize; i)
 					{
-						if (mask[n] != None)
+						if (faceMask[n] != VoxelType::Empty)
 						{
 							int32_t width;
-							for (width = 1; i + width < cSize && mask[n + width] != None; width++)
+							for (width = 1; i + width < cSize && faceMask[n + width] == faceMask[n]; width++)
 							{
 							}
 
@@ -216,7 +221,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 							{
 								for (int32_t w = 0; w < width; w++)
 								{
-									if (mask[n + w + height * cSize] == None)
+									if (faceMask[n + w + height * cSize] != faceMask[n])
 									{
 										done = true;
 										break;
@@ -234,15 +239,15 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 							x[u] = i;
 							x[v] = j;
 
-							defineUV(du, dv, { width, height }, mask[n], iAxis);
+							defineUV(du, dv, { width, height }, backFace, iAxis);
 
-							addQuadFace(x, du, dv);
+							addQuadFace(x, du, dv, s_voxelColors[faceMask.at(n)]);
 
 							for (int32_t h = 0; h < height; h++)
 							{
 								for (int32_t w = 0; w < width; w++)
 								{
-									mask.at(n + w + h * cSize) = None;
+									faceMask.at(n + w + h * cSize) = VoxelType::Empty;
 								}
 							}
 
@@ -261,42 +266,42 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 	}
 }
 
-void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const FaceType face, const int32_t iAxis) const
+void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const
 {
-	if (face == FrontFace)
-	{
-		u[(iAxis + 1) % 3] = size.x;
-		v[(iAxis + 2) % 3] = size.y;
-	}
-	else if (face == BackFace)
+	if (backFace)
 	{
 		u[(iAxis + 2) % 3] = size.y;
 		v[(iAxis + 1) % 3] = size.x;
 	}
+	else
+	{
+		u[(iAxis + 1) % 3] = size.x;
+		v[(iAxis + 2) % 3] = size.y;
+	}
 }
 
-void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v)
+void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color)
 {
 	pos[iAxis] += iSide;
 
-	m_vertices.push_back({ pos });
-	m_vertices.push_back({ pos + u });
-	m_vertices.push_back({ pos + v });
+	m_vertices.push_back({ pos, color });
+	m_vertices.push_back({ pos + u, color });
+	m_vertices.push_back({ pos + v, color });
 
-	m_vertices.push_back({ pos + v });
-	m_vertices.push_back({ pos + u });
-	m_vertices.push_back({ pos + u + v });
+	m_vertices.push_back({ pos + v, color });
+	m_vertices.push_back({ pos + u, color });
+	m_vertices.push_back({ pos + u + v, color });
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v)
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color)
 {
-	m_vertices.push_back({ pos });
-	m_vertices.push_back({ pos + u });
-	m_vertices.push_back({ pos + v });
+	m_vertices.push_back({ pos, color });
+	m_vertices.push_back({ pos + u, color });
+	m_vertices.push_back({ pos + v, color });
 
-	m_vertices.push_back({ pos + v });
-	m_vertices.push_back({ pos + u });
-	m_vertices.push_back({ pos + u + v });
+	m_vertices.push_back({ pos + v, color });
+	m_vertices.push_back({ pos + u, color });
+	m_vertices.push_back({ pos + u + v, color });
 }
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const

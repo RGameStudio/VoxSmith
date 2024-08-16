@@ -37,11 +37,15 @@ Chunk::Chunk(const glm::vec3& pos, const FastNoiseLite& noiseGenerator)
 			{
 				auto type = VoxelType::Empty;
 
-				float height = 10 * noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+				int32_t height = 30 + 20 * noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
 
-				if (y + pos.y < height)
+				if (y + pos.y < height - 1)
 				{
 					type = VoxelType::Dirt;
+				}
+				else if (y + pos.y == height - 1)
+				{
+					type = VoxelType::Grass;
 				}
 				m_voxels.emplace_back(type);
 			}

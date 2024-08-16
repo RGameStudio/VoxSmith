@@ -24,7 +24,7 @@ const glm::vec3 g_dirs[2][3] = {
 };
 
 
-Chunk::Chunk(const glm::vec3& pos)
+Chunk::Chunk(const glm::vec3& pos, const FastNoiseLite& noiseGenerator)
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
@@ -35,10 +35,13 @@ Chunk::Chunk(const glm::vec3& pos)
 		{
 			for (uint32_t x = 0; x < g_sAxis; x++)
 			{
-				auto type = VoxelType::Dirt;
-				if (y == g_sAxis - 1)
+				auto type = VoxelType::Empty;
+
+				float height = 10 * noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+
+				if (y + pos.y < height)
 				{
-					type = VoxelType::Grass;
+					type = VoxelType::Dirt;
 				}
 				m_voxels.emplace_back(type);
 			}
@@ -92,7 +95,8 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 						glm::vec3 u = glm::vec3(0.0f);
 						glm::vec3 v = glm::vec3(0.0f);
 
-						defineUV(u, v, { 1, 1 }, static_cast<FaceType>(iSide), iAxis);
+						bool isBackFace = !static_cast<bool>(iSide);
+						defineUV(u, v, { 1, 1 }, isBackFace, iAxis);
 
 						const int32_t neighbourID = surroundingIDs[iSide][iAxis];
 						const glm::vec3 neighbourPos = voxelPos + g_dirs[iSide][iAxis];
@@ -129,9 +133,8 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 {
 	std::vector<VoxelType> faceMask(cSize * cSize, VoxelType::Empty);
-	//std::vector<VoxelType> voxelmask(cSize * cSize, VoxelType::Empty);
 
-	for (bool backFace = true, b = false; b != backFace; backFace = b && backFace, b = !b)
+	for (bool backFace = true, frontFace = false; frontFace != backFace; backFace = frontFace && backFace, frontFace = !frontFace)
 	{
 		for (int32_t iAxis = 0; iAxis < 3; iAxis++)
 		{
@@ -182,7 +185,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 							if (m_neighbours[3 + iAxis])
 							{
 								glm::vec3 pos = x;
-								pos[iAxis] = cSize - 1;
+								pos[iAxis] = 0;
 								bCompare = m_neighbours[3 + iAxis]->m_voxels.at(getId(pos, cSize));
 							}
 							else

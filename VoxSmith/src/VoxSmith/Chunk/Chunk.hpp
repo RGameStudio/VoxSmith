@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include <FastNoiseLite.h>
 #include <glm/glm.hpp>
 
 #include "VoxSmith/Renderer/Mesh.hpp"
@@ -29,7 +30,7 @@ namespace VoxSmith
 	class VOX_SMITH_API Chunk final
 	{
 	public:
-		Chunk(const glm::vec3& pos);
+		Chunk(const glm::vec3& pos, const FastNoiseLite& noiseGenerator);
 		Chunk() = default;
 		~Chunk() = default;
 
@@ -67,5 +68,6 @@ namespace VoxSmith
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color);
 		
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;
+		
 	};
 }

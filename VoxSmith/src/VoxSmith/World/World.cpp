@@ -20,7 +20,7 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 			for (int32_t x = minBoundary.x; x < maxBoundary.x; x += cSize)
 			{
 				auto pos = glm::vec3(x, y, z);
-				m_chunks[pos] = Chunk(pos);
+				m_chunks[pos] = Chunk(pos, m_noiseGenerator);
 				
 				m_meshes.push_back(std::make_shared<Mesh>());
 				m_chunks[pos].setMesh(m_meshes[meshCounter++]);

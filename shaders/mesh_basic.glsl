@@ -4,6 +4,16 @@
 
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec3 color;
+// layout (location = 2) in int faceId;
+
+const float g_fadeFactors[6] = {
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6
+}
 
 uniform mat4 u_projection;
 uniform mat4 u_view;

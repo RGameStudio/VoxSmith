@@ -10,3 +10,9 @@
 [submodule "VoxSmith/vendor/glm"]
 	path = VoxSmith/vendor/glm
 	url = https://github.com/g-truc/glm
+[submodule "VoxSmith/VoxSmith/vendor"]
+	path = VoxSmith/VoxSmith/vendor
+	url = https://github.com/eXpl0it3r/libnoise
+[submodule "VoxSmith/vendor/fastNoise"]
+	path = VoxSmith/vendor/fastNoise
+	url = https://github.com/Auburn/FastNoiseLite.git

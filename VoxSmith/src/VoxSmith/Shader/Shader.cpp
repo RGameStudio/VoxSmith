@@ -19,7 +19,7 @@ enum class ShaderMode {
 	COMPUTE,
 };
 
-Shader::Shader(const char* sPath)
+Shader::Shader(const std::string& sPath)
 {
 	std::ifstream sFile(sPath);
 

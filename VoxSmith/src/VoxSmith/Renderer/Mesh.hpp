@@ -19,6 +19,8 @@ namespace VoxSmith
 	{
 		// int16_t data;
 		glm::vec3 pos;
+		glm::vec3 color;
+		int32_t id;
 	};
 
 	class VOX_SMITH_API Mesh final
@@ -27,29 +29,16 @@ namespace VoxSmith
 		Mesh() = default;
 		~Mesh() = default;
 
-		void loadToBuffer();
-		void bakeStupid(const std::vector<Voxel>& voxels, const float size);
-		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
-		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
-		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
-
+		void loadToBuffer(const std::vector<Vertex>& vertices);
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
 
+		inline bool isMeshConstructed() const { return m_isConstructed; }
+
 	private:
-		enum FaceType : int8_t
-		{
-			None = -1,
-			BackFace = 0,
-			FrontFace = 1,
-		};
-
-		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v);
-		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const FaceType face, const int32_t iAxis) const;
-
-		int32_t getId(const glm::vec3& v, const float cSize);
-
-		std::vector<Vertex> m_vertices;
-
 		Buffer m_buffer;
+
+		bool m_isConstructed = false;
+
+		uint32_t m_vertexCount = 0;
 	};
 }

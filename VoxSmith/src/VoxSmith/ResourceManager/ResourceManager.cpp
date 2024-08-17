@@ -1,8 +1,9 @@
-#include "../Shader/Shader.hpp"
-#include "../Texture/Texture.hpp"
+#include "VoxSmith/Shader/Shader.hpp"
+#include "VoxSmith/Texture/Texture.hpp"
 
-#include "../Logger/Log.hpp"
+#include "VoxSmith/Logger/Log.hpp"
 
+#include "ResourcesLists.hpp"
 #include "ResourceManager.hpp"
 
 using namespace VoxSmith;
@@ -16,6 +17,14 @@ std::unordered_map<std::string, Texture> ResourceManager::s_textures = {};
 ResourceManager::~ResourceManager()
 {
 
+}
+
+void ResourceManager::initShaders()
+{
+	for (auto [key, value] : s_shaderPaths)
+	{
+		setShader(key, Shader(value));
+	}
 }
 
 ResourceManager& ResourceManager::getInstance()
@@ -61,7 +70,7 @@ void ResourceManager::setTexture(const std::string& tName, Texture& texture)
 	s_textures[tName] = texture;
 }
 
-Shader& ResourceManager::getShader(const std::string& sName)
+Shader& ResourceManager::getShader(const std::string& sName) const
 {
 	if (s_shaders.find(sName) == s_shaders.end())
 	{
@@ -71,7 +80,7 @@ Shader& ResourceManager::getShader(const std::string& sName)
 	return s_shaders[sName];
 }
 
-Texture& ResourceManager::getTexture(const std::string& tName)
+Texture& ResourceManager::getTexture(const std::string& tName) const
 {
 	if (s_textures.find(tName) == s_textures.end())
 	{
@@ -81,7 +90,7 @@ Texture& ResourceManager::getTexture(const std::string& tName)
 	return s_textures[tName];
 }
 
-ComputeShader& ResourceManager::getCShader(const std::string& cName)
+ComputeShader& ResourceManager::getCShader(const std::string& cName) const
 {
 	if (s_computeShaders.find(cName) == s_computeShaders.end())
 	{

@@ -16,13 +16,15 @@ namespace VoxSmith
 	public:
 		static ResourceManager& getInstance();
 	
+		void initShaders();
+
 		void setShader(const std::string& sName, Shader& shader);
 		void setCShader(const std::string& cName, ComputeShader& shader);
 		void setTexture(const std::string& tName, Texture& texture);
 		
-		Shader& getShader(const std::string& sName);
-		ComputeShader& getCShader(const std::string& cName);
-		Texture& getTexture(const std::string& tName);
+		Shader& getShader(const std::string& sName) const;
+		ComputeShader& getCShader(const std::string& cName) const;
+		Texture& getTexture(const std::string& tName) const;
 
 		ResourceManager(const ResourceManager&) = delete; 
 		ResourceManager& operator=(const ResourceManager&) = delete;

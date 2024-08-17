@@ -24,10 +24,15 @@ const glm::vec3 g_dirs[2][3] = {
 };
 
 
-Chunk::Chunk(const glm::vec3& pos, const FastNoiseLite& noiseGenerator)
+Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator)
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
+	noiseGenerator.SetNoiseType(noiseGenerator.NoiseType_OpenSimplex2);
+	noiseGenerator.SetFractalOctaves(16);
+	noiseGenerator.SetFrequency(0.05f);
+	noiseGenerator.SetFractalLacunarity(2.0f);
+
 	m_voxels.reserve(g_voxelsPerChunk);
 	for (uint32_t y = 0; y < g_sAxis; y++)
 	{
@@ -37,7 +42,7 @@ Chunk::Chunk(const glm::vec3& pos, const FastNoiseLite& noiseGenerator)
 			{
 				auto type = VoxelType::Empty;
 
-				int32_t height = 30 + 20 * noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+				int32_t height = 30 + 30 * noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
 
 				if (y + pos.y < height - 1)
 				{
@@ -248,7 +253,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 
 							defineUV(du, dv, { width, height }, backFace, iAxis);
 
-							addQuadFace(x, du, dv, s_voxelColors[faceMask.at(n)]);
+							addQuadFace(x, du, dv, s_voxelColors[faceMask.at(n)], iAxis);
 
 							for (int32_t h = 0; h < height; h++)
 							{
@@ -300,15 +305,15 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 	m_vertices.push_back({ pos + u + v, color });
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color)
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
-	m_vertices.push_back({ pos, color });
-	m_vertices.push_back({ pos + u, color });
-	m_vertices.push_back({ pos + v, color });
+	m_vertices.push_back({ pos, color, id });
+	m_vertices.push_back({ pos + u, color, id });
+	m_vertices.push_back({ pos + v, color, id });
 
-	m_vertices.push_back({ pos + v, color });
-	m_vertices.push_back({ pos + u, color });
-	m_vertices.push_back({ pos + u + v, color });
+	m_vertices.push_back({ pos + v, color, id });
+	m_vertices.push_back({ pos + u, color, id });
+	m_vertices.push_back({ pos + u + v, color, id });
 }
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const

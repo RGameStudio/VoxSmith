@@ -8,7 +8,7 @@ constexpr float g_fov = 45.0f;
 
 constexpr glm::vec3 m_up = glm::vec3(0.0f, 1.0f, 0.0f);
 constexpr float g_near = 0.1f;
-constexpr float g_far = 100.0f;
+constexpr float g_far = 400.0f;
 
 Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 	: m_pos(pos)

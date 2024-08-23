@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <memory>
 #include <unordered_map>
 #include <FastNoiseLite.h>
@@ -16,7 +17,7 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 4, 32 * 16));
+			const glm::vec3 maxBoundary = glm::vec3(32 * 8, 32 * 4, 32 * 8));
 		~World();
 
 		void update();
@@ -45,6 +46,7 @@ namespace VoxSmith
 		std::unordered_map<glm::vec3, Chunk, KeyFuncs> m_chunks;
 		std::vector<std::shared_ptr<Mesh>> m_meshes;
 
-		FastNoiseLite m_noiseGenerator;
+		FastNoiseLite m_baseNoiseGen;
+		FastNoiseLite m_mountainNoiseGen;
 	};
 }

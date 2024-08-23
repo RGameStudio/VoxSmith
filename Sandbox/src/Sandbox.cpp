@@ -49,7 +49,7 @@ public:
 			vel -= glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
 
-		m_camera->updateCameraPos(5.0f * vel, dt);
+		m_camera->updateCameraPos(15.0f * vel, dt);
 		if (VoxSmith::Mouse::getInstance().moved() &&
 			VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_LEFT_SHIFT))
 		{

@@ -12,7 +12,7 @@ constexpr float g_far = 400.0f;
 
 Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 	: m_pos(pos)
-	, m_front({ 0.0f, 0.0f, -1.0f })
+	, m_front({ 10.0f, 0.0f, 10.0f })
 	, m_dir(glm::normalize(m_front - m_pos))
 	, m_lastX(width / 2)
 	, m_lastY(height / 2)

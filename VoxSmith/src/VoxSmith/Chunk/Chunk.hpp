@@ -27,24 +27,40 @@ namespace VoxSmith
 		FRONT = 5
 	};
 
+	enum VOX_SMITH_API ChunkState : int8_t
+	{
+		EMPTY,
+		VOXELS_GENERATING,
+		MESH_BAKING,
+		READY
+	};
+
 	class VOX_SMITH_API Chunk final
 	{
 	public:
-		Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator);
-		Chunk() = default;
-		~Chunk() = default;
+		Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator);
 
 		void addNeighbour(Direction dir, Chunk* chunk);
 		void setMesh(const std::shared_ptr<Mesh>& mesh);
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
-		void constructMesh();
+		glm::vec3 constructMesh();
+		void loadVerticesToBuffer();
 
+		inline ChunkState getState() const { return m_state; }
 		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
-
+		inline bool isMeshBaked() const { return m_bakingOrBaked; }
+		
+		Chunk() = default;
+		~Chunk() = default;
+		
 	private:
 		glm::vec3 m_pos;
 
+		ChunkState m_state;
+
 		std::shared_ptr<Mesh> m_mesh = nullptr;
+
+		bool m_bakingOrBaked = false;
 		
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
@@ -64,10 +80,9 @@ namespace VoxSmith
 		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 
-		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color);
+		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
 		
-		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;
-		
+		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;	
 	};
 }

@@ -7,7 +7,7 @@
 
 using namespace VoxSmith;
 
-constexpr float g_sAxis = 32;
+constexpr int32_t g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
 
 const glm::vec3 g_dirs[2][3] = {
@@ -24,14 +24,21 @@ const glm::vec3 g_dirs[2][3] = {
 };
 
 
-Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator)
+Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
-	noiseGenerator.SetNoiseType(noiseGenerator.NoiseType_OpenSimplex2);
-	noiseGenerator.SetFractalOctaves(16);
-	noiseGenerator.SetFrequency(0.05f);
-	noiseGenerator.SetFractalLacunarity(2.0f);
+	std::array<uint32_t, g_sAxis * g_sAxis> heightMap;
+	for (uint32_t z = 0; z < g_sAxis; z++)
+	{
+		for (uint32_t x = 0; x < g_sAxis; x++)
+		{
+			heightMap[z * g_sAxis + x] = 50 + 50 *
+				((noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z) +
+					mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z)) / 3.414f + 0.5f);
+		}
+	}
+
 
 	m_voxels.reserve(g_voxelsPerChunk);
 	for (uint32_t y = 0; y < g_sAxis; y++)
@@ -42,7 +49,7 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator)
 			{
 				auto type = VoxelType::Empty;
 
-				int32_t height = 30 + 30 * noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+				int32_t height = heightMap[z * g_sAxis + x];
 
 				if (y + pos.y < height - 1)
 				{
@@ -120,17 +127,17 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 								const auto& neighbourVoxels = m_neighbours[iSide * 3 + iAxis]->m_voxels;
 								if (neighbourVoxels[getId(neighbourVoxelPos, cSize)] == VoxelType::Empty)
 								{
-									addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)]);
+									addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
 								}
 							}
 							else
 							{
-								addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)]);
+								addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
 							}
 						}
 						else if (voxels.at(neighbourID) == VoxelType::Empty)
 						{
-							addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)]);
+							addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
 						}
 					}
 				}
@@ -292,17 +299,17 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 	}
 }
 
-void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color)
+void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
 	pos[iAxis] += iSide;
 
-	m_vertices.push_back({ pos, color });
-	m_vertices.push_back({ pos + u, color });
-	m_vertices.push_back({ pos + v, color });
+	m_vertices.push_back({ pos, color, id });
+	m_vertices.push_back({ pos + u, color, id });
+	m_vertices.push_back({ pos + v, color, id });
 
-	m_vertices.push_back({ pos + v, color });
-	m_vertices.push_back({ pos + u, color });
-	m_vertices.push_back({ pos + u + v, color });
+	m_vertices.push_back({ pos + v, color, id });
+	m_vertices.push_back({ pos + u, color, id });
+	m_vertices.push_back({ pos + u + v, color, id });
 }
 
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
@@ -339,7 +346,15 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 	m_mesh = mesh;
 }
 
-void Chunk::constructMesh()
+glm::vec3 Chunk::constructMesh()
+{
+	m_bakingOrBaked = true;
+	bakeCulled(m_voxels, g_sAxis);
+
+	return m_pos;
+}
+
+void Chunk::loadVerticesToBuffer()
 {
 	if (m_mesh == nullptr)
 	{
@@ -347,6 +362,7 @@ void Chunk::constructMesh()
 		return;
 	}
 
-	bakeGreedy(m_voxels, g_sAxis);
 	m_mesh->loadToBuffer(m_vertices);
+
+	m_bakingOrBaked = m_mesh->isMeshConstructed();
 }

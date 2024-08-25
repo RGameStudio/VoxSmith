@@ -23,22 +23,21 @@ const glm::vec3 g_dirs[2][3] = {
 	},
 };
 
-
 Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
-	std::array<uint32_t, g_sAxis * g_sAxis> heightMap;
+	m_state = ChunkState::VOXELS_GENERATING;
+	std::vector<int32_t> heightMap;
 	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
 		for (uint32_t x = 0; x < g_sAxis; x++)
 		{
-			heightMap[z * g_sAxis + x] = 50 + 50 *
+			heightMap.push_back(50 + 50 *
 				((noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z) +
-					mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z)) / 3.414f + 0.5f);
+					mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z)) / 2.414f + 0.5f));
 		}
 	}
-
 
 	m_voxels.reserve(g_voxelsPerChunk);
 	for (uint32_t y = 0; y < g_sAxis; y++)
@@ -63,6 +62,7 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 			}
 		}
 	}
+	m_state = ChunkState::VOXESLS_GENERATED;
 }
 
 void Chunk::addNeighbour(Direction dir, Chunk* chunk)
@@ -303,24 +303,24 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 {
 	pos[iAxis] += iSide;
 
-	m_vertices.push_back({ pos, color, id });
-	m_vertices.push_back({ pos + u, color, id });
-	m_vertices.push_back({ pos + v, color, id });
+	m_vertices.emplace_back(pos, color, id);
+	m_vertices.emplace_back(pos + u, color, id);
+	m_vertices.emplace_back(pos + v, color, id);
 
-	m_vertices.push_back({ pos + v, color, id });
-	m_vertices.push_back({ pos + u, color, id });
-	m_vertices.push_back({ pos + u + v, color, id });
+	m_vertices.emplace_back(pos + v, color, id);
+	m_vertices.emplace_back(pos + u, color, id);
+	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
-	m_vertices.push_back({ pos, color, id });
-	m_vertices.push_back({ pos + u, color, id });
-	m_vertices.push_back({ pos + v, color, id });
+	m_vertices.emplace_back(pos, color, id);
+	m_vertices.emplace_back(pos + u, color, id);
+	m_vertices.emplace_back(pos + v, color, id);
 
-	m_vertices.push_back({ pos + v, color, id });
-	m_vertices.push_back({ pos + u, color, id });
-	m_vertices.push_back({ pos + u + v, color, id });
+	m_vertices.emplace_back(pos + v, color, id);
+	m_vertices.emplace_back(pos + u, color, id);
+	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const
@@ -348,8 +348,9 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 glm::vec3 Chunk::constructMesh()
 {
-	m_bakingOrBaked = true;
-	bakeCulled(m_voxels, g_sAxis);
+	m_state = ChunkState::MESH_BAKING;
+	bakeGreedy(m_voxels, g_sAxis);
+	m_state = ChunkState::MESH_BAKED;
 
 	return m_pos;
 }
@@ -364,5 +365,5 @@ void Chunk::loadVerticesToBuffer()
 
 	m_mesh->loadToBuffer(m_vertices);
 
-	m_bakingOrBaked = m_mesh->isMeshConstructed();
+	m_state = m_mesh->isMeshConstructed() ? ChunkState::READY : ChunkState::EMPTY;
 }

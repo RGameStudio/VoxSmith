@@ -9,7 +9,10 @@
 
 using namespace VoxSmith;
 
-constexpr float cSize = 32;
+constexpr float g_cSize = 32;
+constexpr int32_t g_maxThreads = 3;
+int32_t g_threadCounter = 0;
+
 
 std::vector<std::future<glm::vec3>> m_tasks;
 
@@ -27,18 +30,17 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 	m_mountainNoiseGen.SetFrequency(0.0005f);
 	m_mountainNoiseGen.SetFractalLacunarity(2.0f);
 
-	int32_t meshCounter = 0;
-	for (int32_t y = minBoundary.y; y < maxBoundary.y; y += cSize)
+	for (int32_t y = minBoundary.y; y < maxBoundary.y; y += g_cSize)
 	{
-		for (int32_t z = minBoundary.z; z < maxBoundary.z; z += cSize)
+		for (int32_t z = minBoundary.z; z < maxBoundary.z; z += g_cSize)
 		{
-			for (int32_t x = minBoundary.x; x < maxBoundary.x; x += cSize)
+			for (int32_t x = minBoundary.x; x < maxBoundary.x; x += g_cSize)
 			{
 				auto pos = glm::vec3(x, y, z);
-				m_chunks[pos] = Chunk(pos, m_baseNoiseGen, m_mountainNoiseGen);
-				
 				m_meshes.push_back(std::make_shared<Mesh>());
-				m_chunks[pos].setMesh(m_meshes[meshCounter++]);
+
+				m_chunks[pos] = Chunk(pos, m_baseNoiseGen, m_mountainNoiseGen);				
+				m_chunks[pos].setMesh(m_meshes.back());
 			}
 		}
 	}
@@ -60,6 +62,7 @@ void World::update()
 				{
 					auto pos = task.get();
 					m_chunks[pos].loadVerticesToBuffer();
+					g_threadCounter--;
 					return true;
 				}
 				return false;
@@ -69,10 +72,11 @@ void World::update()
 
 	for (auto& [pos, chunk] : m_chunks)
 	{
-		if (!chunk.isMeshBaked())
+		if (chunk.getState() == ChunkState::VOXESLS_GENERATED && g_threadCounter < g_maxThreads)
 		{
 			notifyChunkNeighbours(pos);
 			m_tasks.push_back(std::async(&Chunk::constructMesh, std::ref(chunk)));
+			g_threadCounter++;
 		}
 	}
 }
@@ -81,7 +85,10 @@ void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader)
 {
 	for (auto& [pos, chunk] : m_chunks)
 	{
-		chunk.draw(renderer, shader);
+		if (chunk.getState() == ChunkState::READY)
+		{
+			chunk.draw(renderer, shader);
+		}
 	}
 }
 
@@ -94,10 +101,10 @@ void World::notifyChunkNeighbours(const glm::vec3& pos)
 		}
 	};
 
-	checkAndAddNeighbour({ pos.x - cSize, pos.y, pos.z }, LEFT);
-	checkAndAddNeighbour({ pos.x + cSize, pos.y, pos.z }, RIGHT);
-	checkAndAddNeighbour({ pos.x, pos.y - cSize, pos.z }, BOTTOM);
-	checkAndAddNeighbour({ pos.x, pos.y + cSize, pos.z }, TOP);
-	checkAndAddNeighbour({ pos.x, pos.y, pos.z - cSize }, BACK);
-	checkAndAddNeighbour({ pos.x, pos.y, pos.z + cSize }, FRONT);
+	checkAndAddNeighbour({ pos.x - g_cSize, pos.y, pos.z }, LEFT);
+	checkAndAddNeighbour({ pos.x + g_cSize, pos.y, pos.z }, RIGHT);
+	checkAndAddNeighbour({ pos.x, pos.y - g_cSize, pos.z }, BOTTOM);
+	checkAndAddNeighbour({ pos.x, pos.y + g_cSize, pos.z }, TOP);
+	checkAndAddNeighbour({ pos.x, pos.y, pos.z - g_cSize }, BACK);
+	checkAndAddNeighbour({ pos.x, pos.y, pos.z + g_cSize }, FRONT);
 }

@@ -31,7 +31,9 @@ namespace VoxSmith
 	{
 		EMPTY,
 		VOXELS_GENERATING,
+		VOXESLS_GENERATED,
 		MESH_BAKING,
+		MESH_BAKED,
 		READY
 	};
 
@@ -48,7 +50,6 @@ namespace VoxSmith
 
 		inline ChunkState getState() const { return m_state; }
 		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
-		inline bool isMeshBaked() const { return m_bakingOrBaked; }
 		
 		Chunk() = default;
 		~Chunk() = default;
@@ -56,11 +57,9 @@ namespace VoxSmith
 	private:
 		glm::vec3 m_pos;
 
-		ChunkState m_state;
+		ChunkState m_state = ChunkState::EMPTY;
 
 		std::shared_ptr<Mesh> m_mesh = nullptr;
-
-		bool m_bakingOrBaked = false;
 		
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;

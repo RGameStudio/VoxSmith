@@ -17,7 +17,7 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 8, 32 * 4, 32 * 8));
+			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 4, 32 * 16));
 		~World();
 
 		void update();

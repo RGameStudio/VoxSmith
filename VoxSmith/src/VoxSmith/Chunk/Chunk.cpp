@@ -10,6 +10,8 @@ using namespace VoxSmith;
 constexpr int32_t g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
 
+std::mutex g_mutex; // maybe it will be need for chunk state changes but not sure yet
+
 const glm::vec3 g_dirs[2][3] = {
 	{
 		{-1, 0, 0},
@@ -27,15 +29,18 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
-	m_state = ChunkState::VOXELS_GENERATING;
+	m_state = ChunkState::EMPTY;
 	std::vector<int32_t> heightMap;
 	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
 		for (uint32_t x = 0; x < g_sAxis; x++)
 		{
-			heightMap.push_back(50 + 50 *
-				((noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z) +
-					mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z)) / 2.414f + 0.5f));
+			auto n1 = noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+			auto n2 = mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+			n2 = std::pow(n2, 2.0f);
+
+			heightMap.push_back(100 + 50 *
+				(n1 + n2));
 		}
 	}
 
@@ -53,16 +58,28 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 				if (y + pos.y < height - 1)
 				{
 					type = VoxelType::Dirt;
+					m_state = ChunkState::VOXELS_GENERATING;
 				}
 				else if (y + pos.y == height - 1)
 				{
 					type = VoxelType::Grass;
+					m_state = ChunkState::VOXELS_GENERATING;
 				}
 				m_voxels.emplace_back(type);
 			}
 		}
 	}
-	m_state = ChunkState::VOXESLS_GENERATED;
+
+	if (m_state != ChunkState::EMPTY)
+	{
+		m_state = ChunkState::VOXELS_GENERATED;
+	}
+}
+
+ChunkState Chunk::getState() const
+{
+	std::lock_guard<std::mutex> lock(g_mutex);
+	return m_state;
 }
 
 void Chunk::addNeighbour(Direction dir, Chunk* chunk)
@@ -259,7 +276,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 							x[v] = j;
 
 							defineUV(du, dv, { width, height }, backFace, iAxis);
-
+							
 							addQuadFace(x, du, dv, s_voxelColors[faceMask.at(n)], iAxis);
 
 							for (int32_t h = 0; h < height; h++)
@@ -348,13 +365,24 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 glm::vec3 Chunk::constructMesh()
 {
+	if (getState() == ChunkState::EMPTY)
+	{
+		return m_pos;
+	}
+
+	std::unique_lock<std::mutex> lock(g_mutex);
 	m_state = ChunkState::MESH_BAKING;
+	lock.unlock();
+
 	bakeGreedy(m_voxels, g_sAxis);
+	
+	lock.lock();
 	m_state = ChunkState::MESH_BAKED;
 
 	return m_pos;
 }
 
+// This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
 	if (m_mesh == nullptr)
@@ -363,7 +391,13 @@ void Chunk::loadVerticesToBuffer()
 		return;
 	}
 
+	if (m_state != ChunkState::MESH_BAKED)
+	{
+		LOG_CORE_WARN("CHUNK::MESH::CONSTRUCTION::Mesh for this chunks is already generated");
+		return;
+	}
+
 	m_mesh->loadToBuffer(m_vertices);
 
-	m_state = m_mesh->isMeshConstructed() ? ChunkState::READY : ChunkState::EMPTY;
+	m_state = ChunkState::READY;
 }

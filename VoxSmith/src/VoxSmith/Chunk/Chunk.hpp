@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include <FastNoiseLite.h>
@@ -31,7 +32,7 @@ namespace VoxSmith
 	{
 		EMPTY,
 		VOXELS_GENERATING,
-		VOXESLS_GENERATED,
+		VOXELS_GENERATED,
 		MESH_BAKING,
 		MESH_BAKED,
 		READY
@@ -48,12 +49,11 @@ namespace VoxSmith
 		glm::vec3 constructMesh();
 		void loadVerticesToBuffer();
 
-		inline ChunkState getState() const { return m_state; }
+		ChunkState getState() const;
 		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
 		
 		Chunk() = default;
 		~Chunk() = default;
-		
 	private:
 		glm::vec3 m_pos;
 

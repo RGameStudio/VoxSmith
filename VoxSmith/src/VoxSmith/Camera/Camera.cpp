@@ -8,11 +8,11 @@ constexpr float g_fov = 45.0f;
 
 constexpr glm::vec3 m_up = glm::vec3(0.0f, 1.0f, 0.0f);
 constexpr float g_near = 0.1f;
-constexpr float g_far = 400.0f;
+constexpr float g_far = 500.0f;
 
 Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 	: m_pos(pos)
-	, m_front({ 10.0f, 0.0f, 10.0f })
+	, m_front({ 20.0f, -10.0f, 20.0f })
 	, m_dir(glm::normalize(m_front - m_pos))
 	, m_lastX(width / 2)
 	, m_lastY(height / 2)
@@ -22,7 +22,7 @@ Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 {
 	m_projection = 
 		glm::perspective(glm::radians(g_fov), static_cast<float>(width) / static_cast<float>(height), g_near, g_far);
-	m_view = glm::lookAt(m_pos, m_front, m_up);
+	m_view = glm::lookAt(m_pos, m_pos + m_front, m_up);
 }
 
 void Camera::updateCameraPos(const glm::vec3& dv, const float dt)

@@ -17,14 +17,18 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 8, 32 * 16));
-		~World();
+			const glm::vec3 maxBoundary = glm::vec3(32 * 12, 32 * 12, 32 * 12));
+		~World() = default;
 
 		void update();
 		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader);
 
+		World(const World&) = delete;
+		World& operator=(const World&) = delete;
+
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
+		Chunk createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLite& mountain);
 
 		struct KeyFuncs
 		{
@@ -50,5 +54,8 @@ namespace VoxSmith
 
 		FastNoiseLite m_baseNoiseGen;
 		FastNoiseLite m_mountainNoiseGen;
+
+		std::vector<std::future<glm::vec3>> m_meshTasks;
+		std::vector<std::future<Chunk>> m_chunkTasks;
 	};
 }

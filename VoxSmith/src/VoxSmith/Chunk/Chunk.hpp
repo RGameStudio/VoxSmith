@@ -50,7 +50,9 @@ namespace VoxSmith
 		void loadVerticesToBuffer();
 
 		ChunkState getState() const;
+
 		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
+		inline glm::vec3 getPos() const { return m_pos; }
 		
 		Chunk() = default;
 		~Chunk() = default;

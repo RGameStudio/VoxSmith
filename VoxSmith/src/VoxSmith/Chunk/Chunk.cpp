@@ -29,21 +29,26 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
-	m_state = ChunkState::EMPTY;
 	std::vector<int32_t> heightMap;
-	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
-		for (uint32_t x = 0; x < g_sAxis; x++)
+		//std::lock_guard<std::mutex> lock(g_mutex);
+		m_state = ChunkState::EMPTY;
+		for (uint32_t z = 0; z < g_sAxis; z++)
 		{
-			auto n1 = noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
-			auto n2 = mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
-			n2 = std::pow(n2, 2.0f);
+			for (uint32_t x = 0; x < g_sAxis; x++)
+			{
+				auto n1 = noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+				auto n2 = mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
 
-			heightMap.push_back(100 + 50 *
-				(n1 + n2));
+				int32_t coeff = n2 > 0.6f ? 100 : 50;
+
+				// n1 = std::pow(n2, 2.0f);
+
+				heightMap.push_back(100 + coeff *
+					(n1 + n2));
+			}
 		}
 	}
-
 	m_voxels.reserve(g_voxelsPerChunk);
 	for (uint32_t y = 0; y < g_sAxis; y++)
 	{

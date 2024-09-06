@@ -45,7 +45,7 @@ namespace VoxSmith
 
 		void addNeighbour(Direction dir, Chunk* chunk);
 		void setMesh(const std::shared_ptr<Mesh>& mesh);
-		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
+		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline) const;
 		glm::vec3 constructMesh();
 		void loadVerticesToBuffer();
 

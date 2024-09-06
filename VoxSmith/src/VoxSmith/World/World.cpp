@@ -34,30 +34,29 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 			{
 				auto pos = glm::vec3(x, y, z);
 
-				m_chunkTasks.push_back(
+				m_chunkTasks.push(
 					std::async(&World::createChunk, this, pos, std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
 
-				if (m_chunkTasks.size() >= m_maxThreads)
+				if (m_chunkTasks.size() >= 8)
 				{
-					m_chunkTasks.erase(
-						std::remove_if(
-							m_chunkTasks.begin(),
-							m_chunkTasks.end(),
-							[this](auto& task) {
-								auto chunk = task.get();
-								m_chunks[chunk.getPos()] = chunk;
-								m_meshes.push_back(std::make_shared<Mesh>());
-								m_chunks[chunk.getPos()].setMesh(m_meshes.back());
-
-								return true;
-							}),
-						m_chunkTasks.end());
+					auto chunk = m_chunkTasks.front().get();
+					m_chunks[chunk.getPos()] = chunk;
+					m_meshes.push_back(std::make_shared<Mesh>());
+					m_chunks[chunk.getPos()].setMesh(m_meshes.back());
+					m_chunkTasks.pop();
 				}
 			}
 		}
 	}
 
-	LOG_CORE_INFO(m_chunkTasks.size());
+	while (!m_chunkTasks.empty())
+	{
+		auto chunk = m_chunkTasks.front().get();
+		m_chunks[chunk.getPos()] = chunk;
+		m_meshes.push_back(std::make_shared<Mesh>());
+		m_chunks[chunk.getPos()].setMesh(m_meshes.back());
+		m_chunkTasks.pop();
+	}
 }
 
 Chunk World::createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLite& mountain)
@@ -94,13 +93,13 @@ void World::update()
 	}
 }
 
-void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader)
+void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, bool isOutlineActive)
 {
 	for (const auto& [pos, chunk] : m_chunks)
 	{
 		if (chunk.getState() == ChunkState::READY && chunk.getState() != ChunkState::EMPTY)
 		{
-			chunk.draw(renderer, shader);
+			chunk.draw(renderer, shader, isOutlineActive);
 		}
 	}
 }

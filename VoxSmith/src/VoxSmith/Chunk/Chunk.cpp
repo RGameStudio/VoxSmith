@@ -2,6 +2,8 @@
 #include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/Renderer/Mesh.hpp"
+#include "VoxSmith/ResourceManager/ResourceManager.hpp"
+#include "VoxSmith/ResourceManager/ResourcesLists.hpp"
 
 #include "Chunk.hpp"
 
@@ -40,12 +42,12 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 				auto n1 = noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
 				auto n2 = mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
 
-				int32_t coeff = n2 > 0.6f ? 100 : 50;
+				//int32_t coeff = n2 > 0.6f ? 100 : 50;
 
-				// n1 = std::pow(n2, 2.0f);
+				n2 = std::pow(n2, 2.0f);
 
-				heightMap.push_back(100 + coeff *
-					(n1 + n2));
+				heightMap.push_back(100 + 
+					(n1 * 50.0f + 100.0f * n2));
 			}
 		}
 	}
@@ -345,7 +347,7 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const
+void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline) const
 {
 	if (renderer == nullptr)
 	{
@@ -361,6 +363,10 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 
 	shader.setUniform3fv("u_chunkPos", m_pos);
 	m_mesh->draw(renderer, shader);
+	if (drawOutline)
+	{
+		renderer->drawOutline(ResourceManager::getInstance().getShader(s_chunkOutline), m_pos);
+	}
 }
 
 void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
@@ -387,7 +393,7 @@ glm::vec3 Chunk::constructMesh()
 	return m_pos;
 }
 
-// This method must work only on the main thread
+// @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
 	if (m_mesh == nullptr)

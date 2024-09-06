@@ -2,6 +2,8 @@
 
 #include <future>
 #include <memory>
+#include <vector>
+#include <queue>
 #include <unordered_map>
 #include <FastNoiseLite.h>
 
@@ -17,11 +19,11 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 12, 32 * 12, 32 * 12));
+			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 8, 32 * 16));
 		~World() = default;
 
 		void update();
-		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader);
+		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, bool isOutlineActive = false);
 
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;
@@ -56,6 +58,6 @@ namespace VoxSmith
 		FastNoiseLite m_mountainNoiseGen;
 
 		std::vector<std::future<glm::vec3>> m_meshTasks;
-		std::vector<std::future<Chunk>> m_chunkTasks;
+		std::queue<std::future<Chunk>> m_chunkTasks;
 	};
 }

@@ -3,11 +3,11 @@
 #include <queue>
 #include <memory>
 
-#include "../Core.hpp"
-#include "../Window/Window.hpp"
-#include "../Camera/Camera.hpp"
-#include "../UICanvasIMGUI/UICanvasIMGUI.hpp"
-#include "../Renderer/Renderer.hpp"
+#include "VoxSmith/Core.hpp"
+#include "VoxSmith/Window/Window.hpp"
+#include "VoxSmith/Camera/Camera.hpp"
+#include "VoxSmith/UICanvasIMGUI/UICanvasIMGUI.hpp"
+#include "VoxSmith/Renderer/Renderer.hpp"
 
 namespace VoxSmith
 {
@@ -39,10 +39,12 @@ namespace VoxSmith
 		std::unique_ptr<Camera> m_camera = nullptr;
 		std::shared_ptr<Renderer> m_renderer = nullptr;
 
-		// @WORK_FOR_NOW: these functions are derived in Sandbox where the client code is allowed
+		// @NOTE: these functions are derived in Sandbox where the client code is allowed
 		virtual void update(const float dt);
 		virtual void draw(const float dt, const float cframe);
 		virtual void updateCamera(const float dt);
+
+		bool chunkOutlineStatus() { return m_UICanvas->getChunkOutlineStatus(); }
 	};
 
 	Application* createApplication();

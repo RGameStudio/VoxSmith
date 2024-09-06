@@ -16,7 +16,8 @@ namespace VoxSmith
 		UICanvasIMGUI(const std::shared_ptr<Window>& window);
 		~UICanvasIMGUI() = default;
 
-		bool getEdgesRenderStatus() const { return m_showEdges; }
+		inline bool getEdgesRenderStatus() const { return m_showEdges; }
+		inline bool getChunkOutlineStatus() const { return m_showOutline; }
 
 		void setCameraInfo(const glm::vec3& pos);
 		void setChunkInfo(bool& cullingStatus);
@@ -28,5 +29,6 @@ namespace VoxSmith
 		std::shared_ptr<Window> m_window;
 
 		bool m_showEdges = false;
+		bool m_showOutline = false;
 	};
 }

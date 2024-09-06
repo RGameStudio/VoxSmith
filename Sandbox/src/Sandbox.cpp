@@ -21,6 +21,8 @@ public:
 	{
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
 			.setUniform4m("u_projection", m_camera->getProjection());
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
+			.setUniform4m("u_projection", m_camera->getProjection());
 	}
 
 	void update(const float dt) override
@@ -58,12 +60,14 @@ public:
 		}
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
 			.setUniform4m("u_view", m_camera->getView());
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
+			.setUniform4m("u_view", m_camera->getView());
 	}
 
 	void draw(const float dt, const float cframe) override
 	{
 		world.draw(m_renderer, 
-			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh));
+			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), chunkOutlineStatus());
 	}
 
 	~Sandbox() noexcept

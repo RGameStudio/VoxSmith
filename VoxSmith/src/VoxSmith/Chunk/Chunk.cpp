@@ -11,8 +11,8 @@ using namespace VoxSmith;
 
 constexpr int32_t g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
-
-std::mutex g_mutex; // maybe it will be need for chunk state changes but not sure yet
+ 
+// maybe it will be need for chunk state changes but not sure yet
 
 const glm::vec3 g_dirs[2][3] = {
 	{
@@ -26,6 +26,8 @@ const glm::vec3 g_dirs[2][3] = {
 		{0, 0, 1},
 	},
 };
+
+std::mutex m_mutex;
 
 Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
 	: m_pos(pos)
@@ -85,7 +87,7 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 
 ChunkState Chunk::getState() const
 {
-	std::lock_guard<std::mutex> lock(g_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_state;
 }
 
@@ -326,14 +328,14 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
 	pos[iAxis] += iSide;
+	
+	m_vertices.push_back({ pos, color, id });
+	m_vertices.push_back({ pos + u, color, id });
+	m_vertices.push_back({ pos + v, color, id });
 
-	m_vertices.emplace_back(pos, color, id);
-	m_vertices.emplace_back(pos + u, color, id);
-	m_vertices.emplace_back(pos + v, color, id);
-
-	m_vertices.emplace_back(pos + v, color, id);
-	m_vertices.emplace_back(pos + u, color, id);
-	m_vertices.emplace_back(pos + u + v, color, id);
+	m_vertices.push_back({pos + v, color, id});
+	m_vertices.push_back({pos + u, color, id});
+	m_vertices.push_back({ pos + u + v, color, id });
 }
 
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
@@ -375,18 +377,13 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 }
 
 glm::vec3 Chunk::constructMesh()
-{
-	if (getState() == ChunkState::EMPTY)
-	{
-		return m_pos;
-	}
-
-	std::unique_lock<std::mutex> lock(g_mutex);
+{	
+	std::unique_lock<std::mutex> lock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	lock.unlock();
 
-	bakeGreedy(m_voxels, g_sAxis);
-	
+	bakeCulled(m_voxels, g_sAxis);
+
 	lock.lock();
 	m_state = ChunkState::MESH_BAKED;
 
@@ -402,13 +399,18 @@ void Chunk::loadVerticesToBuffer()
 		return;
 	}
 
-	if (m_state != ChunkState::MESH_BAKED)
+	if (m_state == ChunkState::READY)
 	{
-		LOG_CORE_WARN("CHUNK::MESH::CONSTRUCTION::Mesh for this chunks is already generated");
+		LOG_CORE_WARN("CHUNK::MESH::CONSTRUCTION::Mesh for this chunks is already generated!");
 		return;
 	}
 
-	m_mesh->loadToBuffer(m_vertices);
+	std::unique_lock<std::mutex> lock(m_mutex);
+	m_state = LOADING;
+	lock.unlock();
 
+	m_mesh->loadToBuffer(m_vertices);
+	
+	lock.lock();
 	m_state = ChunkState::READY;
 }

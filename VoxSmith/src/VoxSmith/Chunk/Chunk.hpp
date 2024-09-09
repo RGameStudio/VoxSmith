@@ -35,6 +35,7 @@ namespace VoxSmith
 		VOXELS_GENERATED,
 		MESH_BAKING,
 		MESH_BAKED,
+		LOADING,
 		READY
 	};
 

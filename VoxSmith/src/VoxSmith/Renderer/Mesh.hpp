@@ -17,7 +17,7 @@ namespace VoxSmith
 
 	struct VOX_SMITH_API Vertex final
 	{
-		Vertex(const glm::vec3& pos_, const glm::vec3& color_, const int32_t id_) 
+		Vertex(const glm::vec3 pos_, const glm::vec3 color_, const int32_t id_) 
 			: pos(pos_)
 			, color(color_)
 			, id(id_)

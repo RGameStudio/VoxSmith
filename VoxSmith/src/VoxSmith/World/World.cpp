@@ -37,7 +37,7 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 				m_chunkTasks.push(
 					std::async(&World::createChunk, this, pos, std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
 
-				if (m_chunkTasks.size() >= 8)
+				if (m_chunkTasks.size() >= m_maxThreads)
 				{
 					auto chunk = m_chunkTasks.front().get();
 					m_chunks[chunk.getPos()] = chunk;
@@ -66,31 +66,28 @@ Chunk World::createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLit
 
 void World::update()
 {
-	m_meshTasks.erase(
-		std::remove_if(
-			m_meshTasks.begin(),
-			m_meshTasks.end(),
-			[this](auto& task) {
-				if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-				{
-					auto pos = task.get();
-					auto& chunk = m_chunks[pos];
-					m_chunks[pos].loadVerticesToBuffer();
-					return true;
-
-				}
-				return false;
-			}),
-		m_meshTasks.end());
-
 	for (auto& [pos, chunk] : m_chunks)
 	{
 		if (chunk.getState() == ChunkState::VOXELS_GENERATED && m_meshTasks.size() < m_maxThreads)
 		{
 			notifyChunkNeighbours(pos);
-			m_meshTasks.emplace_back(std::async(&Chunk::constructMesh, std::ref(chunk)));
+			m_meshTasks.emplace_back(
+				std::move(std::async(std::launch::async, &World::constructMesh, this, pos)));
 		}
 	}
+
+	m_meshTasks.erase(
+		std::remove_if(m_meshTasks.begin(), m_meshTasks.end(),
+			[this](auto& task) {
+				if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+				{
+					glm::vec3 pos = task.get();
+					m_chunks[pos].loadVerticesToBuffer();
+					return true;
+				}
+				return false;
+			}),
+		m_meshTasks.end());
 }
 
 void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, bool isOutlineActive)
@@ -102,6 +99,11 @@ void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, bool
 			chunk.draw(renderer, shader, isOutlineActive);
 		}
 	}
+}
+
+glm::vec3 World::constructMesh(const glm::vec3& pos)
+{
+	return m_chunks[pos].constructMesh();
 }
 
 void World::notifyChunkNeighbours(const glm::vec3& pos)

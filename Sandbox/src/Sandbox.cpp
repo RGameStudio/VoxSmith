@@ -21,6 +21,8 @@ public:
 	{
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
 			.setUniform4m("u_projection", m_camera->getProjection());
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
+			.setUniform4m("u_projection", m_camera->getProjection());
 	}
 
 	void update(const float dt) override
@@ -49,7 +51,7 @@ public:
 			vel -= glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
 
-		m_camera->updateCameraPos(5.0f * vel, dt);
+		m_camera->updateCameraPos(15.0f * vel, dt);
 		if (VoxSmith::Mouse::getInstance().moved() &&
 			VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_LEFT_SHIFT))
 		{
@@ -58,12 +60,14 @@ public:
 		}
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
 			.setUniform4m("u_view", m_camera->getView());
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
+			.setUniform4m("u_view", m_camera->getView());
 	}
 
 	void draw(const float dt, const float cframe) override
 	{
 		world.draw(m_renderer, 
-			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh));
+			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), chunkOutlineStatus());
 	}
 
 	~Sandbox() noexcept

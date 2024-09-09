@@ -17,6 +17,14 @@ namespace VoxSmith
 
 	struct VOX_SMITH_API Vertex final
 	{
+		Vertex(const glm::vec3& pos_, const glm::vec3& color_, const int32_t id_) 
+			: pos(pos_)
+			, color(color_)
+			, id(id_)
+		{
+
+		}
+
 		// int16_t data;
 		glm::vec3 pos;
 		glm::vec3 color;

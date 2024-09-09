@@ -16,7 +16,7 @@ namespace VoxSmith
 		static std::shared_ptr<spdlog::logger>& getAppLogger();
 
 	private:
-		static std::shared_ptr<spdlog::logger> s_coreLogger;
+		static std::shared_ptr<spdlog::logger> s_coreLogger; 
 		static std::shared_ptr<spdlog::logger> s_clientLogger;
 	};
 }

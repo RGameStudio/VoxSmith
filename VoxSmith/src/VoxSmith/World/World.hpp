@@ -1,6 +1,9 @@
 #pragma once
 
+#include <future>
 #include <memory>
+#include <vector>
+#include <queue>
 #include <unordered_map>
 #include <FastNoiseLite.h>
 
@@ -16,14 +19,19 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 4, 32 * 16));
-		~World();
+			const glm::vec3 maxBoundary = glm::vec3(32 * 8, 32 * 8, 32 * 8));
+		~World() = default;
 
 		void update();
-		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader);
+		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, bool isOutlineActive = false);
+
+		World(const World&) = delete;
+		World& operator=(const World&) = delete;
 
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
+		Chunk createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLite& mountain);
+		glm::vec3 constructMesh(const glm::vec3& pos);
 
 		struct KeyFuncs
 		{
@@ -45,6 +53,12 @@ namespace VoxSmith
 		std::unordered_map<glm::vec3, Chunk, KeyFuncs> m_chunks;
 		std::vector<std::shared_ptr<Mesh>> m_meshes;
 
-		FastNoiseLite m_noiseGenerator;
+		uint32_t m_maxThreads = 3;
+
+		FastNoiseLite m_baseNoiseGen;
+		FastNoiseLite m_mountainNoiseGen;
+		
+		std::vector<std::future<glm::vec3>> m_meshTasks;
+		std::queue<std::future<Chunk>> m_chunkTasks;
 	};
 }

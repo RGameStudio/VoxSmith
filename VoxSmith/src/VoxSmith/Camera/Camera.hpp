@@ -20,7 +20,6 @@ namespace VoxSmith
 		inline glm::vec3 getPos() const { return m_pos; }
 		inline glm::vec3 getFront() const { return m_front; }
 		inline glm::vec3 getDir() const { return m_dir; }
-
 	private:
 		glm::mat4 m_projection;
 		glm::mat4 m_view;
@@ -36,5 +35,9 @@ namespace VoxSmith
 		bool m_firstMove = false;
 		float m_yaw = -90.0f;
 		float m_pitch = 0.0f;
+
+		float m_speed = 0.0f;
+
+		friend class UICanvasIMGUI;
 	};
 }

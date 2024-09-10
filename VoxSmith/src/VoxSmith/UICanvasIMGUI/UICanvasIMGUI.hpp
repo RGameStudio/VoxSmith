@@ -10,6 +10,8 @@ class Window;
 
 namespace VoxSmith
 {
+	class Camera;
+
 	class VOX_SMITH_API UICanvasIMGUI final
 	{
 	public:
@@ -19,7 +21,7 @@ namespace VoxSmith
 		inline bool getEdgesRenderStatus() const { return m_showEdges; }
 		inline bool getChunkOutlineStatus() const { return m_showOutline; }
 
-		void setCameraInfo(const glm::vec3& pos);
+		void setCameraInfo(const std::unique_ptr<Camera>& camera);
 		void setChunkInfo(bool& cullingStatus);
 
 		void update();

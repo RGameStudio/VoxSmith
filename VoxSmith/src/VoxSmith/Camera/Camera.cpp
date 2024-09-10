@@ -27,7 +27,7 @@ Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 
 void Camera::updateCameraPos(const glm::vec3& dv, const float dt)
 {
-	m_pos += dv * dt;
+	m_pos += m_speed * dv * dt;
 	m_view = glm::lookAt(m_pos, m_pos + m_front, m_up);
 }
 

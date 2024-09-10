@@ -2,7 +2,8 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include "../Window/Window.hpp"
+#include "VoxSmith/Window/Window.hpp"
+#include "VoxSmith/Camera/Camera.hpp"
 
 #include "UICanvasIMGUI.hpp"
 
@@ -39,13 +40,11 @@ void UICanvasIMGUI::update()
 
 }
 
-void UICanvasIMGUI::setCameraInfo(const glm::vec3& pos)
+void UICanvasIMGUI::setCameraInfo(const std::unique_ptr<Camera>& camera)
 {
-	float v;
-
 	ImGui::Begin("Camera Info");
-	ImGui::Text("Camera position { %.1f, %.1f, %.1f}", pos.x, pos.y, pos.z);
-	ImGui::SliderFloat("Camera speed", &v, 0.0f, 100.0f);
+	ImGui::Text("Camera position { %.1f, %.1f, %.1f}", camera->m_pos.x, camera->m_pos.y, camera->m_pos.z);
+	ImGui::SliderFloat("Camera speed", &camera->m_speed, 0.0f, 100.0f);
 	ImGui::End();
 }
 

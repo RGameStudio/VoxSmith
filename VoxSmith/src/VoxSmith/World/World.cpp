@@ -64,7 +64,7 @@ Chunk World::createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLit
 	return Chunk(pos, base, mountain);
 }
 
-void World::update()
+void World::iniFrame()
 {
 	for (auto& [pos, chunk] : m_chunks)
 	{

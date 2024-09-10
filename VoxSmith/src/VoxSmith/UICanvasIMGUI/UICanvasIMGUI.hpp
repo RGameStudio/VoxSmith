@@ -24,7 +24,7 @@ namespace VoxSmith
 		void setCameraInfo(const std::unique_ptr<Camera>& camera);
 		void setChunkInfo(bool& cullingStatus);
 
-		void update();
+		void iniFrame();
 		void render();
 
 	private:

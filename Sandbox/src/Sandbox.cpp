@@ -25,10 +25,10 @@ public:
 			.setUniform4m("u_projection", m_camera->getProjection());
 	}
 
-	void update(const float dt) override
+	void iniFrame(const float dt) override
 	{
 		updateCamera(dt);
-		world.update();
+		world.iniFrame();
 	}
 
 	void updateCamera(const float dt) override

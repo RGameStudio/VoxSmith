@@ -12,7 +12,7 @@ using namespace VoxSmith;
 const char* g_glVersion = "#version 430";
 
 UICanvasIMGUI::UICanvasIMGUI(const std::shared_ptr<Window>& window)
-    : m_window(window)
+	: m_window(window)
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -23,7 +23,7 @@ UICanvasIMGUI::UICanvasIMGUI(const std::shared_ptr<Window>& window)
 	ImGui_ImplOpenGL3_Init(g_glVersion);
 }
 
-void UICanvasIMGUI::update()
+void UICanvasIMGUI::iniFrame()
 {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -31,13 +31,9 @@ void UICanvasIMGUI::update()
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	// FrameRate
-    {
-		ImGui::Begin("Framerate & Frametime");
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
-    }
-
+	ImGui::Begin("Framerate & Frametime");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+	ImGui::End();
 }
 
 void UICanvasIMGUI::setCameraInfo(const std::unique_ptr<Camera>& camera)

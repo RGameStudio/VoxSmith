@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "../Core.hpp"
+#include "VoxSmith/Core.hpp"
 
 namespace VoxSmith
 {
@@ -20,6 +20,8 @@ namespace VoxSmith
 		inline glm::vec3 getPos() const { return m_pos; }
 		inline glm::vec3 getFront() const { return m_front; }
 		inline glm::vec3 getDir() const { return m_dir; }
+		inline float getViewDistance() const { return m_viewDistance; }
+
 	private:
 		glm::mat4 m_projection;
 		glm::mat4 m_view;
@@ -37,6 +39,7 @@ namespace VoxSmith
 		float m_pitch = 0.0f;
 
 		float m_speed = 0.0f;
+		float m_viewDistance = 0.0f;
 
 		friend class UICanvasIMGUI;
 	};

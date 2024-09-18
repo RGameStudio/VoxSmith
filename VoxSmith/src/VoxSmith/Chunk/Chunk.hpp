@@ -21,11 +21,11 @@ namespace VoxSmith
 	enum VOX_SMITH_API Direction : int8_t
 	{
 		LEFT = 0,
-		BOTTOM = 1,
-		BACK = 2,
-		RIGHT = 3,
-		TOP = 4,
-		FRONT = 5
+		BOTTOM,
+		BACK,
+		RIGHT,
+		TOP,
+		FRONT,	
 	};
 
 	enum VOX_SMITH_API ChunkState : int8_t
@@ -46,7 +46,7 @@ namespace VoxSmith
 
 		void addNeighbour(Direction dir, Chunk* chunk);
 		void setMesh(const std::shared_ptr<Mesh>& mesh);
-		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline) const;
+		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline);
 		glm::vec3 constructMesh();
 		void loadVerticesToBuffer();
 

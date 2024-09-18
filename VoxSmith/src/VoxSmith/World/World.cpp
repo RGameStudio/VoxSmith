@@ -14,6 +14,8 @@ constexpr float g_cSize = 32;
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 {
+	m_chunks.reserve(32 * 32 * 8);
+
 	m_baseNoiseGen.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
 	m_baseNoiseGen.SetFractalType(FastNoiseLite::FractalType_FBm);
 	m_baseNoiseGen.SetFractalOctaves(8);
@@ -34,16 +36,21 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 			{
 				auto pos = glm::vec3(x, y, z);
 
-				m_chunkTasks.push(
+				m_chunkTasks.emplace_back(
 					std::async(&World::createChunk, this, pos, std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
 
 				if (m_chunkTasks.size() >= m_maxThreads)
 				{
-					auto chunk = m_chunkTasks.front().get();
-					m_chunks[chunk.getPos()] = chunk;
+					auto chunk = m_chunkTasks.begin()->get();
 					m_meshes.push_back(std::make_shared<Mesh>());
-					m_chunks[chunk.getPos()].setMesh(m_meshes.back());
-					m_chunkTasks.pop();
+					if (!m_meshes.back()->isFree())
+					{
+						LOG_CORE_WARN("MESH is not free");
+					}
+					chunk->setMesh(m_meshes.back());
+					
+					m_chunks[chunk->getPos()] = chunk;
+					m_chunkTasks.erase(m_chunkTasks.begin());
 				}
 			}
 		}
@@ -51,59 +58,81 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 
 	while (!m_chunkTasks.empty())
 	{
-		auto chunk = m_chunkTasks.front().get();
-		m_chunks[chunk.getPos()] = chunk;
+		auto chunk = m_chunkTasks.begin()->get();
 		m_meshes.push_back(std::make_shared<Mesh>());
-		m_chunks[chunk.getPos()].setMesh(m_meshes.back());
-		m_chunkTasks.pop();
+		if (!m_meshes.back()->isFree())
+		{
+			LOG_CORE_WARN("MESH is not free");
+		}
+
+		chunk->setMesh(m_meshes.back());
+
+		
+		m_chunks[chunk->getPos()] = chunk;
+		m_chunkTasks.erase(m_chunkTasks.begin());
 	}
 }
 
-Chunk World::createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLite& mountain)
+std::shared_ptr<Chunk> World::createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLite& mountain)
 {
-	return Chunk(pos, base, mountain);
+	return std::shared_ptr<Chunk>(new Chunk(pos, base, mountain));
 }
 
-void World::iniFrame()
+void World::update()
 {
+	int32_t loadCounter = 0;
 	for (auto& [pos, chunk] : m_chunks)
 	{
-		if (chunk.getState() == ChunkState::VOXELS_GENERATED && m_meshTasks.size() < m_maxThreads)
+		bool escape = false;
+		switch (chunk->getState())
 		{
-			notifyChunkNeighbours(pos);
-			m_meshTasks.emplace_back(
-				std::move(std::async(std::launch::async, &World::constructMesh, this, pos)));
+		case ChunkState::VOXELS_GENERATED:
+			notifyChunkNeighbours(pos); // for some reason when this call is in if scope mesh brakes
+			if (m_meshTasks.size() <= m_maxThreads)
+			{
+				m_meshTasks.emplace_back(std::async(std::launch::async, &Chunk::constructMesh, chunk.get()));
+			}
+			break;
+
+		case ChunkState::MESH_BAKED:
+			chunk->loadVerticesToBuffer();
+			escape = true;
+			break;
 		}
+
+		// if (escape)
+		// {
+		// 	break;
+		// }
 	}
+
+	// if (!m_meshTasks.empty() && m_meshTasks.front().wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready)
+	// {
+	// 	m_meshTasks.pop_back();
+	// }
 
 	m_meshTasks.erase(
 		std::remove_if(m_meshTasks.begin(), m_meshTasks.end(),
 			[this](auto& task) {
-				if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-				{
-					glm::vec3 pos = task.get();
-					m_chunks[pos].loadVerticesToBuffer();
-					return true;
-				}
-				return false;
+				return task.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 			}),
 		m_meshTasks.end());
 }
 
-void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, bool isOutlineActive)
+void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, const float viewDistance, bool isOutlineActive)
 {
 	for (const auto& [pos, chunk] : m_chunks)
 	{
-		if (chunk.getState() == ChunkState::READY && chunk.getState() != ChunkState::EMPTY)
+		if (chunk->getState() == ChunkState::READY && glm::distance(playerPos, pos) < viewDistance)
 		{
-			chunk.draw(renderer, shader, isOutlineActive);
+			chunk->draw(renderer, shader, isOutlineActive);
 		}
 	}
 }
 
-glm::vec3 World::constructMesh(const glm::vec3& pos)
+glm::vec3 World::constructMesh(const glm::vec3 pos)
 {
-	return m_chunks[pos].constructMesh();
+	return m_chunks[pos]->constructMesh();
 }
 
 void World::notifyChunkNeighbours(const glm::vec3& pos)
@@ -111,7 +140,7 @@ void World::notifyChunkNeighbours(const glm::vec3& pos)
 	const auto checkAndAddNeighbour = [this, pos](const glm::vec3& neighbourPos, Direction dir) {
 		if (m_chunks.find(neighbourPos) != m_chunks.end())
 		{
-			m_chunks[pos].addNeighbour(dir, &m_chunks[neighbourPos]);
+			m_chunks[pos]->addNeighbour(dir, m_chunks[neighbourPos].get());
 		}
 	};
 

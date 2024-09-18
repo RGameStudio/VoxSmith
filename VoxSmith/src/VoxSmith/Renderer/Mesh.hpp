@@ -40,11 +40,15 @@ namespace VoxSmith
 		void loadToBuffer(const std::vector<Vertex>& vertices);
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
 
+		inline void reserveMesh() { m_isFree = false; }
+
 		inline bool isMeshConstructed() const { return m_isConstructed; }
+		inline bool isFree() const { return m_isFree; }
 
 	private:
 		Buffer m_buffer;
 
+		bool m_isFree = true;
 		bool m_isConstructed = false;
 
 		uint32_t m_vertexCount = 0;

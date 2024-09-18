@@ -11,7 +11,7 @@ using namespace VoxSmith;
 
 constexpr int32_t g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
- 
+
 // maybe it will be need for chunk state changes but not sure yet
 
 const glm::vec3 g_dirs[2][3] = {
@@ -33,6 +33,8 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
+	m_vertices.reserve(g_sAxis * g_sAxis * g_sAxis);
+
 	std::vector<int32_t> heightMap;
 	{
 		//std::lock_guard<std::mutex> lock(g_mutex);
@@ -44,11 +46,11 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 				auto n1 = noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
 				auto n2 = mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
 
-				//int32_t coeff = n2 > 0.6f ? 100 : 50;
+				int32_t coeff = n2 > 0.7f ? 100 : 50;
 
 				n2 = std::pow(n2, 2.0f);
 
-				heightMap.push_back(100 + 
+				heightMap.push_back(100 +
 					(n1 * 50.0f + 100.0f * n2));
 			}
 		}
@@ -285,7 +287,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 							x[v] = j;
 
 							defineUV(du, dv, { width, height }, backFace, iAxis);
-							
+
 							addQuadFace(x, du, dv, s_voxelColors[faceMask.at(n)], iAxis);
 
 							for (int32_t h = 0; h < height; h++)
@@ -328,13 +330,24 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
 	pos[iAxis] += iSide;
-	
+
+	/*
+	m_vertices.insert(m_vertices.end(), {
+		{ pos, color, id },
+		{ pos + u, color, id },
+		{ pos + v, color, id },
+
+		{ pos + v, color, id },
+		{ pos + u, color, id },
+		{ pos + u + v, color, id }
+		});
+		*/
 	m_vertices.push_back({ pos, color, id });
 	m_vertices.push_back({ pos + u, color, id });
 	m_vertices.push_back({ pos + v, color, id });
-
-	m_vertices.push_back({pos + v, color, id});
-	m_vertices.push_back({pos + u, color, id});
+	
+	m_vertices.push_back({ pos + v, color, id });
+	m_vertices.push_back({ pos + u, color, id });
 	m_vertices.push_back({ pos + u + v, color, id });
 }
 
@@ -349,7 +362,7 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline) const
+void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline)
 {
 	if (renderer == nullptr)
 	{
@@ -374,10 +387,11 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 {
 	m_mesh = mesh;
+	m_mesh->reserveMesh();
 }
 
 glm::vec3 Chunk::constructMesh()
-{	
+{
 	std::unique_lock<std::mutex> lock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	lock.unlock();
@@ -405,12 +419,12 @@ void Chunk::loadVerticesToBuffer()
 		return;
 	}
 
-	std::unique_lock<std::mutex> lock(m_mutex);
+	//std::unique_lock<std::mutex> lock(m_mutex);
 	m_state = LOADING;
-	lock.unlock();
+	//lock.unlock();
 
 	m_mesh->loadToBuffer(m_vertices);
-	
-	lock.lock();
+
+	//lock.lock();
 	m_state = ChunkState::READY;
 }

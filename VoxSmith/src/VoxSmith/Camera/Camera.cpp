@@ -19,6 +19,7 @@ Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 	, m_yaw(-90.0f)
 	, m_pitch(0.0f)
 	, m_firstMove(true)
+	, m_viewDistance(g_far - g_near)
 {
 	m_projection = 
 		glm::perspective(glm::radians(g_fov), static_cast<float>(width) / static_cast<float>(height), g_near, g_far);

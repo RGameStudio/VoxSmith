@@ -25,10 +25,10 @@ public:
 			.setUniform4m("u_projection", m_camera->getProjection());
 	}
 
-	void iniFrame(const float dt) override
+	void update(const float dt) override
 	{
 		updateCamera(dt);
-		world.iniFrame();
+		world.update();
 	}
 
 	void updateCamera(const float dt) override
@@ -67,7 +67,7 @@ public:
 	void draw(const float dt, const float cframe) override
 	{
 		world.draw(m_renderer, 
-			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), chunkOutlineStatus());
+			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), m_camera->getPos(), m_camera->getViewDistance(), chunkOutlineStatus());
 	}
 
 	~Sandbox() noexcept

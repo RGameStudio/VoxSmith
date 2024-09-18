@@ -57,7 +57,7 @@ void Application::run()
 		
 		{
 			update(dt);
-			m_UICanvas->update();
+			m_UICanvas->iniFrame();
 			m_UICanvas->setCameraInfo(m_camera);
 			m_UICanvas->setChunkInfo(m_renderer->m_cullingStatus);
 		}

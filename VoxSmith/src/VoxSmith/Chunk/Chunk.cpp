@@ -14,27 +14,11 @@ constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
 
 // maybe it will be need for chunk state changes but not sure yet
 
-const glm::vec3 g_dirs[2][3] = {
-	{
-		{-1, 0, 0},
-		{0, -1, 0},
-		{0, 0, -1}
-	},
-	{
-		{1, 0, 0},
-		{0, 1, 0},
-		{0, 0, 1},
-	},
-};
-
-std::mutex m_mutex;
-
 Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
-	m_vertices.reserve(g_sAxis * g_sAxis * g_sAxis);
-
+	m_vertices.reserve(8 * 2048);
 	std::vector<int32_t> heightMap;
 	{
 		//std::lock_guard<std::mutex> lock(g_mutex);
@@ -66,12 +50,12 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 
 				int32_t height = heightMap[z * g_sAxis + x];
 
-				if (y + pos.y < height - 1)
+				if (y + pos.y < height)
 				{
 					type = VoxelType::Dirt;
 					m_state = ChunkState::VOXELS_GENERATING;
 				}
-				else if (y + pos.y == height - 1)
+				else if (y + pos.y == height)
 				{
 					type = VoxelType::Grass;
 					m_state = ChunkState::VOXELS_GENERATING;
@@ -93,7 +77,7 @@ ChunkState Chunk::getState() const
 	return m_state;
 }
 
-void Chunk::addNeighbour(Direction dir, Chunk* chunk)
+void Chunk::addNeighbour(Direction dir, const std::shared_ptr<Chunk>& chunk)
 {
 	m_neighbours.at(static_cast<int32_t>(dir)) = chunk;
 }
@@ -102,6 +86,19 @@ int32_t Chunk::getId(const glm::vec3& v, const float cSize)
 {
 	return cSize * (v.y * cSize + v.z) + v.x;
 }
+
+const glm::vec3 g_dirs[2][3] = {
+{
+	{-1, 0, 0},
+	{0, -1, 0},
+	{0, 0, -1}
+},
+{
+	{1, 0, 0},
+	{0, 1, 0},
+	{0, 0, 1},
+},
+};
 
 void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 {
@@ -236,7 +233,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 							{
 								bCompare = VoxelType::Empty;
 							}
-						}
+					}
 #else
 						auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
 						auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
@@ -245,8 +242,8 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						faceMask.at(n++) = backFace
 							? bCurrent == VoxelType::Empty && bCompare != VoxelType::Empty ? bCompare : VoxelType::Empty
 							: bCurrent != VoxelType::Empty && bCompare == VoxelType::Empty ? bCurrent : VoxelType::Empty;
-					}
 				}
+			}
 
 				x[iAxis]++;
 				n = 0;
@@ -308,9 +305,9 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						}
 					}
 				}
-			}
 		}
 	}
+}
 }
 
 void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const
@@ -327,32 +324,29 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 	}
 }
 
+#define LOCK_BASED 1
+
 void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
+#ifdef LOCK_BASED
+	std::lock_guard<std::mutex> lock(m_mutex);
+#endif
 	pos[iAxis] += iSide;
 
-	/*
-	m_vertices.insert(m_vertices.end(), {
-		{ pos, color, id },
-		{ pos + u, color, id },
-		{ pos + v, color, id },
+	m_vertices.emplace_back(pos, color, id);
+	m_vertices.emplace_back(pos + u, color, id);
+	m_vertices.emplace_back(pos + v, color, id);
 
-		{ pos + v, color, id },
-		{ pos + u, color, id },
-		{ pos + u + v, color, id }
-		});
-		*/
-	m_vertices.push_back({ pos, color, id });
-	m_vertices.push_back({ pos + u, color, id });
-	m_vertices.push_back({ pos + v, color, id });
-	
-	m_vertices.push_back({ pos + v, color, id });
-	m_vertices.push_back({ pos + u, color, id });
-	m_vertices.push_back({ pos + u + v, color, id });
+	m_vertices.emplace_back(pos + v, color, id);
+	m_vertices.emplace_back(pos + u, color, id);
+	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
+#ifdef LOCK_BASED
+	std::lock_guard<std::mutex> lock(m_mutex);
+#endif
 	m_vertices.emplace_back(pos, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + v, color, id);
@@ -390,7 +384,7 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 	m_mesh->reserveMesh();
 }
 
-glm::vec3 Chunk::constructMesh()
+void Chunk::constructMesh()
 {
 	std::unique_lock<std::mutex> lock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
@@ -400,13 +394,12 @@ glm::vec3 Chunk::constructMesh()
 
 	lock.lock();
 	m_state = ChunkState::MESH_BAKED;
-
-	return m_pos;
 }
 
 // @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
+	m_state = LOADING;
 	if (m_mesh == nullptr)
 	{
 		LOG_CORE_ERROR("CHUNK::MESH::CONSTRUCTION::Can't construct mesh!");
@@ -419,12 +412,6 @@ void Chunk::loadVerticesToBuffer()
 		return;
 	}
 
-	//std::unique_lock<std::mutex> lock(m_mutex);
-	m_state = LOADING;
-	//lock.unlock();
-
 	m_mesh->loadToBuffer(m_vertices);
-
-	//lock.lock();
 	m_state = ChunkState::READY;
 }

@@ -44,10 +44,10 @@ namespace VoxSmith
 	public:
 		Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator);
 
-		void addNeighbour(Direction dir, Chunk* chunk);
+		void addNeighbour(Direction dir, const std::shared_ptr<Chunk>& chunk);
 		void setMesh(const std::shared_ptr<Mesh>& mesh);
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline);
-		glm::vec3 constructMesh();
+		void constructMesh();
 		void loadVerticesToBuffer();
 
 		ChunkState getState() const;
@@ -63,11 +63,13 @@ namespace VoxSmith
 		ChunkState m_state = ChunkState::EMPTY;
 
 		std::shared_ptr<Mesh> m_mesh = nullptr;
-		
+
+		mutable std::mutex m_mutex;
+
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
 
-		std::vector<Chunk*> m_neighbours;
+		std::vector<std::shared_ptr<Chunk>> m_neighbours;
 
 		enum FaceType : int8_t
 		{

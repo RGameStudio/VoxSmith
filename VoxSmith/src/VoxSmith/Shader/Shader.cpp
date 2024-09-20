@@ -123,7 +123,7 @@ Shader::Shader(const std::string& sPath)
 	glGetShaderiv(ID, GL_LINK_STATUS, &success);
 	if (!success)
 	{
-		LOG_ERROR("ERROR::SHADER_PROGRAM::LINK_FAILED:{}", infolog);
+		LOG_ERROR("ERROR::SHADER_PROGRAM::LINK_FAILED: {}", infolog);
 	}
 
 	glDeleteShader(vID);
@@ -217,7 +217,7 @@ ComputeShader::ComputeShader(const char* cPath)
 	if (!success)
 	{
 		glGetShaderInfoLog(cID, 512, NULL, infolog);
-		LOG_ERROR("ERROR::COMPUTE_SHADER::COMPILATION_FAILED:\n{}", infolog);
+		LOG_ERROR("ERROR::COMPUTE_SHADER::COMPILATION_FAILED: {}", infolog);
 	}
 
 	ID = glCreateProgram();
@@ -227,7 +227,7 @@ ComputeShader::ComputeShader(const char* cPath)
 	if (!success)
 	{
 		glGetShaderInfoLog(ID, 512, nullptr, infolog);
-		LOG_ERROR("ERROR::COMPUTE_SHADER::LINK_FAILED:{}", infolog);
+		LOG_ERROR("ERROR::COMPUTE_SHADER::LINK_FAILED: {}", infolog);
 	}
 
 	glDeleteShader(cID);

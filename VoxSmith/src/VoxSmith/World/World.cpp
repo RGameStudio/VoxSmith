@@ -12,6 +12,9 @@ using namespace VoxSmith;
 
 constexpr float g_cSize = 32;
 
+constexpr float g_renderDistance = 300.0f;
+constexpr float g_loadDistance = 400.0f;
+
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 {
 	m_chunks.reserve(32 * 32 * 8);
@@ -43,10 +46,6 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 				{
 					auto chunk = m_chunkTasks.begin()->get();
 					m_meshes.push_back(std::make_shared<Mesh>());
-					if (!m_meshes.back()->isFree())
-					{
-						LOG_CORE_WARN("MESH is not free");
-					}
 					chunk->setMesh(m_meshes.back());
 					
 					m_chunks[chunk->getPos()] = chunk;
@@ -60,14 +59,7 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 	{
 		auto chunk = m_chunkTasks.begin()->get();
 		m_meshes.push_back(std::make_shared<Mesh>());
-		if (!m_meshes.back()->isFree())
-		{
-			LOG_CORE_WARN("MESH is not free");
-		}
-
 		chunk->setMesh(m_meshes.back());
-
-		
 		m_chunks[chunk->getPos()] = chunk;
 		m_chunkTasks.erase(m_chunkTasks.begin());
 	}
@@ -80,59 +72,50 @@ std::shared_ptr<Chunk> World::createChunk(const glm::vec3& pos, FastNoiseLite& b
 
 void World::update()
 {
-	int32_t loadCounter = 0;
 	for (auto& [pos, chunk] : m_chunks)
 	{
-		bool escape = false;
 		switch (chunk->getState())
 		{
+		
 		case ChunkState::VOXELS_GENERATED:
-			notifyChunkNeighbours(pos); // for some reason when this call is in if scope mesh brakes
+		{
 			if (m_meshTasks.size() <= m_maxThreads)
 			{
-				m_meshTasks.emplace_back(std::async(std::launch::async, &Chunk::constructMesh, chunk.get()));
+				notifyChunkNeighbours(pos);
+				m_meshTasks.emplace_back(std::move(std::async(&World::constructMesh, this, pos)));
 			}
-			break;
+		}break;
 
 		case ChunkState::MESH_BAKED:
+		{
 			chunk->loadVerticesToBuffer();
-			escape = true;
-			break;
+		}break;
+
 		}
-
-		// if (escape)
-		// {
-		// 	break;
-		// }
 	}
-
-	// if (!m_meshTasks.empty() && m_meshTasks.front().wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready)
-	// {
-	// 	m_meshTasks.pop_back();
-	// }
 
 	m_meshTasks.erase(
 		std::remove_if(m_meshTasks.begin(), m_meshTasks.end(),
-			[this](auto& task) {
-				return task.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+			[](auto& task) {
+				return task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
 			}),
 		m_meshTasks.end());
 }
 
-void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, const float viewDistance, bool isOutlineActive)
+void World::constructMesh(const glm::vec3 pos)
+{
+	m_chunks[pos]->constructMesh();
+}
+
+void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, const float renderDistance, bool isOutlineActive)
 {
 	for (const auto& [pos, chunk] : m_chunks)
 	{
-		if (chunk->getState() == ChunkState::READY && glm::distance(playerPos, pos) < viewDistance)
+		if (chunk->getState() == ChunkState::READY && glm::distance(playerPos, pos) < renderDistance)
 		{
 			chunk->draw(renderer, shader, isOutlineActive);
 		}
 	}
-}
-
-glm::vec3 World::constructMesh(const glm::vec3 pos)
-{
-	return m_chunks[pos]->constructMesh();
 }
 
 void World::notifyChunkNeighbours(const glm::vec3& pos)
@@ -140,7 +123,7 @@ void World::notifyChunkNeighbours(const glm::vec3& pos)
 	const auto checkAndAddNeighbour = [this, pos](const glm::vec3& neighbourPos, Direction dir) {
 		if (m_chunks.find(neighbourPos) != m_chunks.end())
 		{
-			m_chunks[pos]->addNeighbour(dir, m_chunks[neighbourPos].get());
+			m_chunks[pos]->addNeighbour(dir, m_chunks[neighbourPos]);
 		}
 	};
 

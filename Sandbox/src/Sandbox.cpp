@@ -28,7 +28,7 @@ public:
 	void update(const float dt) override
 	{
 		updateCamera(dt);
-		world.update();
+		world.update(m_camera->getPos());
 	}
 
 	void updateCamera(const float dt) override

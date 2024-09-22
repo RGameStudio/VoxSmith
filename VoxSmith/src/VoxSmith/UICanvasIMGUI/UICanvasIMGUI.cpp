@@ -40,7 +40,7 @@ void UICanvasIMGUI::setCameraInfo(const std::unique_ptr<Camera>& camera)
 {
 	ImGui::Begin("Camera Info");
 	ImGui::Text("Camera position { %.1f, %.1f, %.1f}", camera->m_pos.x, camera->m_pos.y, camera->m_pos.z);
-	ImGui::SliderFloat("Camera speed", &camera->m_speed, 0.0f, 200.0f);
+	ImGui::SliderFloat("Camera speed", &camera->m_speed, 2.0f, 200.0f);
 	ImGui::End();
 }
 

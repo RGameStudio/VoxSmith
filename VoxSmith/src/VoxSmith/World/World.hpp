@@ -22,7 +22,7 @@ namespace VoxSmith
 			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 6, 32 * 16));
 		~World() = default;
 
-		void update();
+		void update(const glm::vec3& playerPos);
 		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, const float renderDistance, bool isOutlineActive = false);
 
 		World(const World&) = delete;
@@ -30,7 +30,6 @@ namespace VoxSmith
 
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
-		std::shared_ptr<Chunk> createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLite& mountain);
 		void constructMesh(const glm::vec3 pos);
 
 		struct KeyFuncs
@@ -53,12 +52,11 @@ namespace VoxSmith
 		std::unordered_map<glm::vec3, std::shared_ptr<Chunk>, KeyFuncs> m_chunks;
 		std::vector<std::shared_ptr<Mesh>> m_meshes;
 
-		uint32_t m_maxThreads = 8; // Tweaking this number make chunks fucked
+		uint32_t m_maxThreads = 7;
 
 		FastNoiseLite m_baseNoiseGen;
 		FastNoiseLite m_mountainNoiseGen;
 		
-		std::vector<std::future<void>> m_meshTasks;
-		std::vector<std::future<std::shared_ptr<Chunk>>> m_chunkTasks;
+		std::vector<std::future<void>> m_tasks;
 	};
 }

@@ -53,4 +53,4 @@ namespace VoxSmith
 
 		uint32_t m_vertexCount = 0;
 	};
-}
+}	

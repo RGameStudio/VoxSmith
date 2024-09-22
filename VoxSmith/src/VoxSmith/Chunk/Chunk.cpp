@@ -12,33 +12,52 @@ using namespace VoxSmith;
 constexpr int32_t g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
 
-// maybe it will be need for chunk state changes but not sure yet
+const glm::vec3 g_dirs[2][3] = {
+	{
+		{-1, 0, 0},
+		{0, -1, 0},
+		{0, 0, -1}
+	},
+	{
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, 1},
+	},
+};
 
-Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
+Chunk::Chunk(const glm::vec3& pos)
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
 {
-	m_vertices.reserve(8 * 2048);
+}
+
+Chunk::~Chunk()
+{
+	
+}
+
+void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
+{
+	//m_vertices.reserve(8 * 2048);
 	std::vector<int32_t> heightMap;
+
+	m_state = ChunkState::EMPTY;
+	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
-		//std::lock_guard<std::mutex> lock(g_mutex);
-		m_state = ChunkState::EMPTY;
-		for (uint32_t z = 0; z < g_sAxis; z++)
+		for (uint32_t x = 0; x < g_sAxis; x++)
 		{
-			for (uint32_t x = 0; x < g_sAxis; x++)
-			{
-				auto n1 = noiseGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
-				auto n2 = mountainGenerator.GetNoise(pos.x + (float)x, pos.z + (float)z);
+			auto n1 = noiseGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
+			auto n2 = mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
 
-				int32_t coeff = n2 > 0.7f ? 100 : 50;
+			int32_t coeff = n2 > 0.7f ? 100 : 50;
 
-				n2 = std::pow(n2, 2.0f);
+			n2 = std::pow(n2, 2.0f);
 
-				heightMap.push_back(100 +
-					(n1 * 50.0f + 100.0f * n2));
-			}
+			heightMap.push_back(100 +
+				(n1 * 50.0f + 100.0f * n2));
 		}
 	}
+
 	m_voxels.reserve(g_voxelsPerChunk);
 	for (uint32_t y = 0; y < g_sAxis; y++)
 	{
@@ -50,12 +69,12 @@ Chunk::Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite&
 
 				int32_t height = heightMap[z * g_sAxis + x];
 
-				if (y + pos.y < height)
+				if (y + m_pos.y < height)
 				{
 					type = VoxelType::Dirt;
 					m_state = ChunkState::VOXELS_GENERATING;
 				}
-				else if (y + pos.y == height)
+				else if (y + m_pos.y == height)
 				{
 					type = VoxelType::Grass;
 					m_state = ChunkState::VOXELS_GENERATING;
@@ -81,24 +100,6 @@ void Chunk::addNeighbour(Direction dir, const std::shared_ptr<Chunk>& chunk)
 {
 	m_neighbours.at(static_cast<int32_t>(dir)) = chunk;
 }
-
-int32_t Chunk::getId(const glm::vec3& v, const float cSize)
-{
-	return cSize * (v.y * cSize + v.z) + v.x;
-}
-
-const glm::vec3 g_dirs[2][3] = {
-{
-	{-1, 0, 0},
-	{0, -1, 0},
-	{0, 0, -1}
-},
-{
-	{1, 0, 0},
-	{0, 1, 0},
-	{0, 0, 1},
-},
-};
 
 void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 {
@@ -150,7 +151,7 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 								neighbourVoxelPos[iAxis] = neighbourPos[iAxis] < 0 ? cSize - 1 : 0;
 
 								const auto& neighbourVoxels = m_neighbours[iSide * 3 + iAxis]->m_voxels;
-								if (neighbourVoxels[getId(neighbourVoxelPos, cSize)] == VoxelType::Empty)
+								if (neighbourVoxels.at(getId(neighbourVoxelPos, cSize)) == VoxelType::Empty)
 								{
 									addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
 								}
@@ -233,7 +234,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 							{
 								bCompare = VoxelType::Empty;
 							}
-					}
+						}
 #else
 						auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
 						auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
@@ -242,8 +243,8 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						faceMask.at(n++) = backFace
 							? bCurrent == VoxelType::Empty && bCompare != VoxelType::Empty ? bCompare : VoxelType::Empty
 							: bCurrent != VoxelType::Empty && bCompare == VoxelType::Empty ? bCurrent : VoxelType::Empty;
+					}
 				}
-			}
 
 				x[iAxis]++;
 				n = 0;
@@ -305,9 +306,9 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						}
 					}
 				}
+			}
 		}
 	}
-}
 }
 
 void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const
@@ -324,11 +325,11 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 	}
 }
 
-#define LOCK_BASED 1
+#define LOCK_BASED_ADD_QUAD true
 
 void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
-#ifdef LOCK_BASED
+#ifdef LOCK_BASED_ADD_QUAD
 	std::lock_guard<std::mutex> lock(m_mutex);
 #endif
 	pos[iAxis] += iSide;
@@ -344,7 +345,7 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
-#ifdef LOCK_BASED
+#ifdef LOCK_BASED_ADD_QUAD
 	std::lock_guard<std::mutex> lock(m_mutex);
 #endif
 	m_vertices.emplace_back(pos, color, id);

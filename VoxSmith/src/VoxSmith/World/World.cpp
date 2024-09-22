@@ -12,8 +12,8 @@ using namespace VoxSmith;
 
 constexpr float g_cSize = 32;
 
-constexpr float g_renderDistance = 300.0f;
-constexpr float g_loadDistance = 400.0f;
+constexpr float g_renderDistance = 8 * g_cSize;
+constexpr float g_loadDistance = 12 * g_cSize;
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 {
@@ -31,6 +31,8 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 	m_mountainNoiseGen.SetFrequency(0.0019f);
 	m_mountainNoiseGen.SetFractalLacunarity(2.4f);
 
+#define BOUNDARY_TERRAIN true
+#ifdef BOUNDARY_TERRAIN
 	for (int32_t y = minBoundary.y; y < maxBoundary.y; y += g_cSize)
 	{
 		for (int32_t z = minBoundary.z; z < maxBoundary.z; z += g_cSize)
@@ -39,50 +41,49 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 			{
 				auto pos = glm::vec3(x, y, z);
 
-				m_chunkTasks.emplace_back(
-					std::async(&World::createChunk, this, pos, std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
+				m_chunks[pos] = std::make_shared<Chunk>(pos);
+				m_tasks.emplace_back(
+					std::async(&Chunk::generateChunk,
+						m_chunks[pos],
+						std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
+				m_meshes.push_back(std::make_shared<Mesh>());
+				m_chunks[pos]->setMesh(m_meshes.back());
 
-				if (m_chunkTasks.size() >= m_maxThreads)
+				if (m_tasks.size() >= m_maxThreads)
 				{
-					auto chunk = m_chunkTasks.begin()->get();
-					m_meshes.push_back(std::make_shared<Mesh>());
-					chunk->setMesh(m_meshes.back());
-					
-					m_chunks[chunk->getPos()] = chunk;
-					m_chunkTasks.erase(m_chunkTasks.begin());
+					m_tasks.begin()->get();
+					m_tasks.erase(m_tasks.begin());
 				}
 			}
 		}
 	}
 
-	while (!m_chunkTasks.empty())
+	while (!m_tasks.empty())
 	{
-		auto chunk = m_chunkTasks.begin()->get();
-		m_meshes.push_back(std::make_shared<Mesh>());
-		chunk->setMesh(m_meshes.back());
-		m_chunks[chunk->getPos()] = chunk;
-		m_chunkTasks.erase(m_chunkTasks.begin());
+		m_tasks.begin()->get();
+		m_tasks.erase(m_tasks.begin());
 	}
+#else
+	for (int32_t iMesh = 0; iMesh < 12 * 12 * 12; iMesh++)
+	{
+		m_meshes.emplace_back(std::make_shared<Mesh>());
+	}
+#endif
 }
 
-std::shared_ptr<Chunk> World::createChunk(const glm::vec3& pos, FastNoiseLite& base, FastNoiseLite& mountain)
-{
-	return std::shared_ptr<Chunk>(new Chunk(pos, base, mountain));
-}
-
-void World::update()
+void World::update(const glm::vec3& playerPos)
 {
 	for (auto& [pos, chunk] : m_chunks)
 	{
 		switch (chunk->getState())
 		{
-		
+
 		case ChunkState::VOXELS_GENERATED:
 		{
-			if (m_meshTasks.size() <= m_maxThreads)
+			if (m_tasks.size() <= m_maxThreads)
 			{
 				notifyChunkNeighbours(pos);
-				m_meshTasks.emplace_back(std::move(std::async(&World::constructMesh, this, pos)));
+				m_tasks.emplace_back(std::async(&World::constructMesh, this, pos));
 			}
 		}break;
 
@@ -94,12 +95,12 @@ void World::update()
 		}
 	}
 
-	m_meshTasks.erase(
-		std::remove_if(m_meshTasks.begin(), m_meshTasks.end(),
+	m_tasks.erase(
+		std::remove_if(m_tasks.begin(), m_tasks.end(),
 			[](auto& task) {
 				return task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
 			}),
-		m_meshTasks.end());
+		m_tasks.end());
 }
 
 void World::constructMesh(const glm::vec3 pos)
@@ -120,17 +121,18 @@ void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, cons
 
 void World::notifyChunkNeighbours(const glm::vec3& pos)
 {
-	const auto checkAndAddNeighbour = [this, pos](const glm::vec3& neighbourPos, Direction dir) {
-		if (m_chunks.find(neighbourPos) != m_chunks.end())
+	const auto checkAndAddNeighbour = [this](const glm::vec3& pos, const glm::vec3& neighbourPos, Direction dir) {
+		if (m_chunks.find(neighbourPos) != m_chunks.end() &&
+			m_chunks.find(pos) != m_chunks.end())
 		{
 			m_chunks[pos]->addNeighbour(dir, m_chunks[neighbourPos]);
 		}
 	};
 
-	checkAndAddNeighbour({ pos.x - g_cSize, pos.y, pos.z }, LEFT);
-	checkAndAddNeighbour({ pos.x + g_cSize, pos.y, pos.z }, RIGHT);
-	checkAndAddNeighbour({ pos.x, pos.y - g_cSize, pos.z }, BOTTOM);
-	checkAndAddNeighbour({ pos.x, pos.y + g_cSize, pos.z }, TOP);
-	checkAndAddNeighbour({ pos.x, pos.y, pos.z - g_cSize }, BACK);
-	checkAndAddNeighbour({ pos.x, pos.y, pos.z + g_cSize }, FRONT);
+	checkAndAddNeighbour(pos, { pos.x - g_cSize, pos.y, pos.z }, LEFT);
+	checkAndAddNeighbour(pos, { pos.x + g_cSize, pos.y, pos.z }, RIGHT);
+	checkAndAddNeighbour(pos, { pos.x, pos.y - g_cSize, pos.z }, BOTTOM);
+	checkAndAddNeighbour(pos, { pos.x, pos.y + g_cSize, pos.z }, TOP);
+	checkAndAddNeighbour(pos, { pos.x, pos.y, pos.z - g_cSize }, BACK);
+	checkAndAddNeighbour(pos, { pos.x, pos.y, pos.z + g_cSize }, FRONT);
 }

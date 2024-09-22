@@ -42,13 +42,15 @@ namespace VoxSmith
 	class VOX_SMITH_API Chunk final
 	{
 	public:
-		Chunk(const glm::vec3& pos, FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator);
+		Chunk(const glm::vec3& pos);
+		~Chunk();
 
 		void addNeighbour(Direction dir, const std::shared_ptr<Chunk>& chunk);
 		void setMesh(const std::shared_ptr<Mesh>& mesh);
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline);
 		void constructMesh();
 		void loadVerticesToBuffer();
+		void generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator);
 
 		ChunkState getState() const;
 
@@ -56,7 +58,6 @@ namespace VoxSmith
 		inline glm::vec3 getPos() const { return m_pos; }
 		
 		Chunk() = default;
-		~Chunk() = default;
 	private:
 		glm::vec3 m_pos;
 
@@ -78,7 +79,7 @@ namespace VoxSmith
 			FrontFace = 1,
 		};
 
-		int32_t getId(const glm::vec3& v, const float cSize);
+		inline int32_t getId(const glm::vec3& v, const float cSize) { return cSize * (v.y * cSize + v.z) + v.x; }
 
 		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
 		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);

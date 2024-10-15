@@ -4,6 +4,7 @@
 #include "VoxSmith/Logger/Log.hpp"
 #include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/Input/Input.hpp"
+#include "VoxSmith/Timer/Timestep.hpp"
 #include "VoxSmith/ResourceManager/ResourceManager.hpp"
 
 #include "Application.hpp"
@@ -45,13 +46,14 @@ void Application::draw(const float dt, const float cframe)
 
 void Application::run()
 {
-	float previousFrame = 0.0f;
-
 	while (m_isRunning)
 	{
 		float currentFrame = m_window->getTime();
-		float dt = currentFrame - previousFrame;
-		previousFrame = currentFrame;
+		float dt = currentFrame - m_lastFrame;
+		m_lastFrame = currentFrame;
+
+		Timestep tStep = dt;
+		LOG_CORE_INFO("{0}ms {1}ns", tStep.getMilliseconds(), tStep.getNanoseconds());
 
 		m_window->clearBuffers();
 		

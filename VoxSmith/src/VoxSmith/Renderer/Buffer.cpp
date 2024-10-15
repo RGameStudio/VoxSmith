@@ -8,7 +8,7 @@ void Buffer::use() const
 	glBindVertexArray(VAO);
 }
 
-void Buffer::init(const std::vector<float>& data)
+void Buffer::init(const std::vector<float>& data, const uint32_t mode)
 {
 	if (m_initialized)
 	{
@@ -21,7 +21,7 @@ void Buffer::init(const std::vector<float>& data)
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), mode);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
@@ -32,7 +32,7 @@ void Buffer::init(const std::vector<float>& data)
 	m_initialized = true;
 }
 
-void Buffer::init(const std::vector<Vertex>& vertices)
+void Buffer::init(const std::vector<Vertex>& vertices, const uint32_t mode)
 {
 	if (m_initialized)
 	{
@@ -45,7 +45,7 @@ void Buffer::init(const std::vector<Vertex>& vertices)
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), mode);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
@@ -59,7 +59,7 @@ void Buffer::init(const std::vector<Vertex>& vertices)
 	m_initialized = true;
 }
 
-void Buffer::init(const std::vector<float>& data, const std::vector<uint32_t>& indicies)
+void Buffer::init(const std::vector<float>& data, const std::vector<uint32_t>& indicies, const uint32_t mode)
 {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -69,8 +69,8 @@ void Buffer::init(const std::vector<float>& data, const std::vector<uint32_t>& i
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IBO);
 
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size() * sizeof(float), indicies.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), mode);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size() * sizeof(float), indicies.data(), mode);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);

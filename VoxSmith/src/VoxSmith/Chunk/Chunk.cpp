@@ -53,7 +53,7 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 
 			n2 = std::pow(n2, 2.0f);
 
-			heightMap.push_back(100 +
+			heightMap.push_back(64 +
 				(n1 * 50.0f + 100.0f * n2));
 		}
 	}
@@ -170,6 +170,10 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 			}
 		}
 	}
+}
+
+void Chunk::bakeBinGreedy(const std::vector<Voxel>& voxels, const float size)
+{
 }
 
 void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
@@ -325,7 +329,7 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 	}
 }
 
-#define LOCK_BASED_ADD_QUAD true
+#define LOCK_BASED_ADD_QUAD false
 
 void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {

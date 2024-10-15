@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "../Core.hpp"
+#include "VoxSmith/Core.hpp"
 
 namespace VoxSmith
 {
@@ -16,9 +16,9 @@ namespace VoxSmith
 		Buffer() = default;
 		~Buffer() = default;
 
-		void init(const std::vector<float>& data);
-		void init(const std::vector<Vertex>& data);
-		void init(const std::vector<float>& data, const std::vector<uint32_t>& indicies);
+		void init(const std::vector<float>& data, const uint32_t mode = GL_STATIC_DRAW);
+		void init(const std::vector<Vertex>& data, const uint32_t mode = GL_STATIC_DRAW);
+		void init(const std::vector<float>& data, const std::vector<uint32_t>& indicies, const uint32_t mode = GL_STATIC_DRAW);
 
 		void use() const;
 

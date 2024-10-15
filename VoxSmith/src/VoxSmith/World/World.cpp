@@ -12,8 +12,8 @@ using namespace VoxSmith;
 
 constexpr float g_cSize = 32;
 
-constexpr float g_renderDistance = 8 * g_cSize;
-constexpr float g_loadDistance = 12 * g_cSize;
+constexpr float g_renderDistance = 12 * g_cSize;
+constexpr float g_loadDistance = 16 * g_cSize;
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 {
@@ -71,6 +71,11 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 #endif
 }
 
+World::World(const glm::vec3& playerPos)
+{
+	
+}
+
 void World::update(const glm::vec3& playerPos)
 {
 	for (auto& [pos, chunk] : m_chunks)
@@ -101,6 +106,14 @@ void World::update(const glm::vec3& playerPos)
 				return task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
 			}),
 		m_tasks.end());
+}
+
+void World::loadColumn(const glm::vec3& pos, const int32_t height)
+{
+	for (int32_t iChunk = 0; iChunk < height; iChunk++)
+	{
+		
+	}
 }
 
 void World::constructMesh(const glm::vec3 pos)

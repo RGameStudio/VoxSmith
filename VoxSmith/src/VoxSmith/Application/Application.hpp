@@ -41,6 +41,8 @@ namespace VoxSmith
 		bool m_isRunning = false;
 
 	protected:
+		float m_lastFrame = 0.0f;
+
 		std::unique_ptr<Camera> m_camera = nullptr;
 		std::shared_ptr<Renderer> m_renderer = nullptr;
 

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <array>
 #include <glm/glm.hpp>
 
 #include "../Chunk/Voxel.hpp"
@@ -17,7 +18,8 @@ namespace VoxSmith
 
 	struct VOX_SMITH_API Vertex final
 	{
-		Vertex(const glm::vec3& pos_, const glm::vec3& color_, const int32_t id_) 
+		Vertex() = default;
+		Vertex(const glm::vec3& pos_, const glm::vec3& color_, const int32_t id_)
 			: pos(pos_)
 			, color(color_)
 			, id(id_)
@@ -31,13 +33,29 @@ namespace VoxSmith
 		int32_t id;
 	};
 
+	struct VOX_SMITH_API Quad
+	{
+		Quad() = default;
+		Quad(const std::vector<Vertex>& vertices_)
+		{
+			for (int32_t iVertex = 0; iVertex < 6; iVertex++)
+			{
+				vertices[iVertex] = vertices_[iVertex];
+			}
+		}
+
+		Vertex vertices[6];
+	};
+
 	class VOX_SMITH_API Mesh final
 	{
 	public:
 		Mesh() = default;
 		~Mesh() = default;
 
-		void loadToBuffer(const std::vector<Vertex>& vertices);
+		template <typename T>
+		void loadToBuffer(const std::vector<T>& vertices);
+
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader) const;
 
 		inline void reserveMesh() { m_isFree = false; }
@@ -53,4 +71,12 @@ namespace VoxSmith
 
 		uint32_t m_vertexCount = 0;
 	};
-}	
+
+	template <typename T>
+	void Mesh::loadToBuffer(const std::vector<T>& data)
+	{
+		m_vertexCount = data.size();
+		m_buffer.init(data);
+		m_isConstructed = true;
+	}
+}

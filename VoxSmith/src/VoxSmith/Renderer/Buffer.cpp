@@ -77,3 +77,30 @@ void Buffer::init(const std::vector<float>& data, const std::vector<uint32_t>& i
 
 	glLineWidth(3);
 }
+
+void Buffer::init(const std::vector<Quad>& data, const uint32_t mode)
+{
+	if (m_initialized)
+	{
+		return;
+	}
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(Quad), data.data(), mode);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, id));
+
+	m_initialized = true;
+}

@@ -16,10 +16,3 @@ void Mesh::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader)
 
 	renderer->draw(m_buffer, shader, m_vertexCount);
 }
-
-void Mesh::loadToBuffer(const std::vector<Vertex>& vertices)
-{
-	m_vertexCount = vertices.size();
-	m_buffer.init(vertices);
-	m_isConstructed = true;
-}

@@ -3,6 +3,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <array>
 
 #include <FastNoiseLite.h>
 #include <glm/glm.hpp>
@@ -30,8 +31,7 @@ namespace VoxSmith
 
 	enum VOX_SMITH_API ChunkState : int8_t
 	{
-		EMPTY,
-		VOXELS_GENERATING,
+		EMPTY = 0,
 		VOXELS_GENERATED,
 		MESH_BAKING,
 		MESH_BAKED,
@@ -53,13 +53,15 @@ namespace VoxSmith
 		void generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator);
 
 		ChunkState getState() const;
+		
+		void setState(ChunkState state) { m_state = state; }
 
 		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
 		inline glm::vec3 getPos() const { return m_pos; }
 		
 		Chunk() = default;
 	private:
-		glm::vec3 m_pos;
+		glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
 
 		ChunkState m_state = ChunkState::EMPTY;
 
@@ -69,7 +71,6 @@ namespace VoxSmith
 
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
-
 		std::vector<std::shared_ptr<Chunk>> m_neighbours;
 
 		enum FaceType : int8_t
@@ -85,7 +86,8 @@ namespace VoxSmith
 		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 		
-		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
+		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, 
+			const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
 		
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;	

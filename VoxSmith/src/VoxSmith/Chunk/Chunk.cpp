@@ -33,7 +33,6 @@ Chunk::Chunk(const glm::vec3& pos)
 
 Chunk::~Chunk()
 {
-	
 }
 
 void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
@@ -41,7 +40,9 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 	//m_vertices.reserve(8 * 2048);
 	std::vector<int32_t> heightMap;
 
+	std::unique_lock<std::mutex> lock(m_mutex);
 	m_state = ChunkState::EMPTY;
+	lock.unlock();
 	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
 		for (uint32_t x = 0; x < g_sAxis; x++)
@@ -72,22 +73,20 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 				if (y + m_pos.y < height)
 				{
 					type = VoxelType::Dirt;
-					m_state = ChunkState::VOXELS_GENERATING;
+					//m_state = ChunkState::VOXELS_GENERATING;
 				}
 				else if (y + m_pos.y == height)
 				{
 					type = VoxelType::Grass;
-					m_state = ChunkState::VOXELS_GENERATING;
+					//m_state = ChunkState::VOXELS_GENERATING;
 				}
 				m_voxels.emplace_back(type);
 			}
 		}
 	}
 
-	if (m_state != ChunkState::EMPTY)
-	{
-		m_state = ChunkState::VOXELS_GENERATED;
-	}
+	lock.lock();
+	m_state = ChunkState::VOXELS_GENERATED;
 }
 
 ChunkState Chunk::getState() const
@@ -329,11 +328,12 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 	}
 }
 
-#define LOCK_BASED_ADD_QUAD false
+#define LOCK_BASED_ADD_QUAD 0
 
-void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
+void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, 
+	const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
-#ifdef LOCK_BASED_ADD_QUAD
+#if LOCK_BASED_ADD_QUAD
 	std::lock_guard<std::mutex> lock(m_mutex);
 #endif
 	pos[iAxis] += iSide;
@@ -347,15 +347,17 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, 
+	const glm::vec3& color, const int32_t id)
 {
-#ifdef LOCK_BASED_ADD_QUAD
+#if LOCK_BASED_ADD_QUAD
 	std::lock_guard<std::mutex> lock(m_mutex);
 #endif
+
 	m_vertices.emplace_back(pos, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + v, color, id);
-
+	
 	m_vertices.emplace_back(pos + v, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + u + v, color, id);
@@ -391,6 +393,14 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 void Chunk::constructMesh()
 {
+	LOG_CORE_INFO("Construct {0}", getState());
+	if (getState() == ChunkState::MESH_BAKING)
+	{
+		//LOG_CORE_INFO("Already baking {0}", getState());
+		//LOG_CORE_WARN("CHUNK::CONSTRUCT::This mesh is already in a state of construction at position {0} {1} {2}", m_pos.x, m_pos.y, m_pos.y);
+		//return;
+	}
+
 	std::unique_lock<std::mutex> lock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	lock.unlock();
@@ -404,19 +414,22 @@ void Chunk::constructMesh()
 // @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
 	m_state = LOADING;
+	lock.unlock();
 	if (m_mesh == nullptr)
 	{
 		LOG_CORE_ERROR("CHUNK::MESH::CONSTRUCTION::Can't construct mesh!");
 		return;
 	}
 
-	if (m_state == ChunkState::READY)
+	if (getState() == ChunkState::READY)
 	{
 		LOG_CORE_WARN("CHUNK::MESH::CONSTRUCTION::Mesh for this chunks is already generated!");
 		return;
 	}
 
-	m_mesh->loadToBuffer(m_vertices);
+
+	m_mesh->loadToBuffer<Vertex>(m_vertices);
 	m_state = ChunkState::READY;
 }

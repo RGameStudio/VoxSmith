@@ -53,7 +53,6 @@ void Application::run()
 		m_lastFrame = currentFrame;
 
 		Timestep tStep = dt;
-		LOG_CORE_INFO("{0}ms {1}ns", tStep.getMilliseconds(), tStep.getNanoseconds());
 
 		m_window->clearBuffers();
 		
@@ -99,8 +98,9 @@ void Application::handleEvents(WindowEvent& e)
 		break;
 	}
 
-	case WindowEventType::CLOSE:
+	case WindowEventType::CLOSE: {
 		m_isRunning = false;
 		break;
+	}
 	}
 }

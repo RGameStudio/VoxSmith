@@ -80,22 +80,24 @@ void World::update(const glm::vec3& playerPos)
 {
 	for (auto& [pos, chunk] : m_chunks)
 	{
-		switch (chunk->getState())
+		auto state = chunk->getState();
+		switch (state)
 		{
 
-		case ChunkState::VOXELS_GENERATED:
-		{
+		case ChunkState::VOXELS_GENERATED: {
 			if (m_tasks.size() <= m_maxThreads)
 			{
 				notifyChunkNeighbours(pos);
-				m_tasks.emplace_back(std::async(&World::constructMesh, this, pos));
+				chunk->setState(ChunkState::MESH_BAKING);
+				m_tasks.emplace_back(std::async(&Chunk::constructMesh, chunk));
 			}
-		}break;
+			break;
+		}
 
-		case ChunkState::MESH_BAKED:
-		{
+		case ChunkState::MESH_BAKED: {
 			chunk->loadVerticesToBuffer();
-		}break;
+			break;
+		}
 
 		}
 	}
@@ -116,12 +118,8 @@ void World::loadColumn(const glm::vec3& pos, const int32_t height)
 	}
 }
 
-void World::constructMesh(const glm::vec3 pos)
-{
-	m_chunks[pos]->constructMesh();
-}
-
-void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, const float renderDistance, bool isOutlineActive)
+void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, 
+	const float renderDistance, bool isOutlineActive)
 {
 	for (const auto& [pos, chunk] : m_chunks)
 	{

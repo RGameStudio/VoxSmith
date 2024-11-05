@@ -33,6 +33,7 @@ Chunk::Chunk(const glm::vec3& pos)
 
 Chunk::~Chunk()
 {
+	
 }
 
 void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
@@ -47,17 +48,29 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 		return a * (1 - t) + b * t;
 	};
 
+	auto smoothstep = [](const float t) {
+		return ((6 * t - 15) * t + 10) * t * t * t;
+	};
+
+
 	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
 		for (uint32_t x = 0; x < g_sAxis; x++)
 		{
 			float n1 = 0.8f * noiseGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
-			float n2 = 2.0f * mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
+			float n2 = 1.5f * mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
 			n1 *= n1;
 
 			const float coeff = 200;
 
-			const float noiseFactor = n2 > n1 ? lerp(n1, n2, 1.0f - (1 - n1) * (1 - n2)) : n1;
+			float t;
+			if (n2 > n1)
+			{
+				t = n2 - n1;
+				t *= t;
+				t = 1.0f - (1 - t) * (1 - t);
+			}
+			const float noiseFactor = n2 > n1 ? lerp(n1, n2, t) : n1;
 
 			// n2 = std::pow(n2, 2.0f);
 
@@ -398,14 +411,6 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 void Chunk::constructMesh()
 {
-	LOG_CORE_INFO("Construct {0}", getState());
-	if (getState() == ChunkState::MESH_BAKING)
-	{
-		//LOG_CORE_INFO("Already baking {0}", getState());
-		//LOG_CORE_WARN("CHUNK::CONSTRUCT::This mesh is already in a state of construction at position {0} {1} {2}", m_pos.x, m_pos.y, m_pos.y);
-		//return;
-	}
-
 	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	uLock.unlock();

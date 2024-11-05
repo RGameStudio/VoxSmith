@@ -22,14 +22,14 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 	m_baseNoiseGen.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
 	m_baseNoiseGen.SetFractalType(FastNoiseLite::FractalType_FBm);
 	m_baseNoiseGen.SetFractalOctaves(8);
-	m_baseNoiseGen.SetFrequency(0.0005f);
+	m_baseNoiseGen.SetFrequency(0.0007f);
 	m_baseNoiseGen.SetFractalLacunarity(2.0f);
 
 	m_mountainNoiseGen.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
 	m_mountainNoiseGen.SetFractalType(FastNoiseLite::FractalType_FBm);
-	m_mountainNoiseGen.SetFractalOctaves(8);
-	m_mountainNoiseGen.SetFrequency(0.0019f);
-	m_mountainNoiseGen.SetFractalLacunarity(2.0f);
+	m_mountainNoiseGen.SetFractalOctaves(6);
+	m_mountainNoiseGen.SetFrequency(0.00165f);
+	m_mountainNoiseGen.SetFractalLacunarity(1.83f);
 
 #define BOUNDARY_TERRAIN true
 #ifdef BOUNDARY_TERRAIN

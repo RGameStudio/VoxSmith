@@ -18,13 +18,13 @@ namespace VoxSmith
 	class VOX_SMITH_API World
 	{
 	public:
-		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 16, 32 * 16));
+		World(const glm::vec3 minBoundary = glm::vec3(0.0f),
+			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 12, 32 * 16));
 		World(const glm::vec3& playerPos);
 		~World() = default;
 
 		void update(const glm::vec3& playerPos);
-		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, 
+		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos,
 			const float renderDistance, bool isOutlineActive = false);
 
 		World(const World&) = delete;
@@ -54,11 +54,11 @@ namespace VoxSmith
 		std::unordered_map<glm::vec3, std::shared_ptr<Chunk>, KeyFuncs> m_chunks;
 		std::vector<std::shared_ptr<Mesh>> m_meshes;
 
-		uint32_t m_maxThreads = 7;
+		uint32_t m_maxThreads = 4;
 
 		FastNoiseLite m_baseNoiseGen;
 		FastNoiseLite m_mountainNoiseGen;
-		
+
 		std::vector<std::future<void>> m_tasks;
 	};
 }

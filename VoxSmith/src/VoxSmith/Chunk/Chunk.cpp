@@ -37,25 +37,32 @@ Chunk::~Chunk()
 
 void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
 {
-	//m_vertices.reserve(8 * 2048);
 	std::vector<int32_t> heightMap;
 
-	std::unique_lock<std::mutex> lock(m_mutex);
+	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = ChunkState::EMPTY;
-	lock.unlock();
+	uLock.unlock();
+
+	auto lerp = [](const float a, const float b, const float t) {
+		return a * (1 - t) + b * t;
+	};
+
 	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
 		for (uint32_t x = 0; x < g_sAxis; x++)
 		{
-			auto n1 = noiseGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
-			auto n2 = mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
+			float n1 = 0.8f * noiseGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
+			float n2 = 2.0f * mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
+			n1 *= n1;
 
-			int32_t coeff = n2 > 0.7f ? 100 : 50;
+			const float coeff = 200;
 
-			n2 = std::pow(n2, 2.0f);
+			const float noiseFactor = n2 > n1 ? lerp(n1, n2, 1.0f - (1 - n1) * (1 - n2)) : n1;
 
-			heightMap.push_back(64 +
-				(n1 * 50.0f + 100.0f * n2));
+			// n2 = std::pow(n2, 2.0f);
+
+			heightMap.push_back(128 +
+				coeff * (noiseFactor));
 		}
 	}
 
@@ -73,19 +80,17 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 				if (y + m_pos.y < height)
 				{
 					type = VoxelType::Dirt;
-					//m_state = ChunkState::VOXELS_GENERATING;
 				}
 				else if (y + m_pos.y == height)
 				{
 					type = VoxelType::Grass;
-					//m_state = ChunkState::VOXELS_GENERATING;
 				}
 				m_voxels.emplace_back(type);
 			}
 		}
 	}
 
-	lock.lock();
+	uLock.lock();
 	m_state = ChunkState::VOXELS_GENERATED;
 }
 
@@ -401,22 +406,23 @@ void Chunk::constructMesh()
 		//return;
 	}
 
-	std::unique_lock<std::mutex> lock(m_mutex);
+	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
-	lock.unlock();
+	uLock.unlock();
 
 	bakeCulled(m_voxels, g_sAxis);
 
-	lock.lock();
+	uLock.lock();
 	m_state = ChunkState::MESH_BAKED;
 }
 
 // @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
-	std::unique_lock<std::mutex> lock(m_mutex);
+	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = LOADING;
-	lock.unlock();
+	uLock.unlock();
+
 	if (m_mesh == nullptr)
 	{
 		LOG_CORE_ERROR("CHUNK::MESH::CONSTRUCTION::Can't construct mesh!");
@@ -431,5 +437,7 @@ void Chunk::loadVerticesToBuffer()
 
 
 	m_mesh->loadToBuffer<Vertex>(m_vertices);
+
+	uLock.lock();
 	m_state = ChunkState::READY;
 }

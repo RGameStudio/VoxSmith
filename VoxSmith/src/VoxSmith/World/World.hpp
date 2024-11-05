@@ -19,12 +19,13 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0.0f), 
-			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 6, 32 * 16));
+			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 16, 32 * 16));
 		World(const glm::vec3& playerPos);
 		~World() = default;
 
 		void update(const glm::vec3& playerPos);
-		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, const float renderDistance, bool isOutlineActive = false);
+		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, 
+			const float renderDistance, bool isOutlineActive = false);
 
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;

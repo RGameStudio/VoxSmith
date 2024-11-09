@@ -28,6 +28,7 @@ const glm::vec3 g_dirs[2][3] = {
 Chunk::Chunk(const glm::vec3& pos)
 	: m_pos(pos)
 	, m_neighbours(6, nullptr)
+	, m_mesh(std::make_shared<Mesh>())
 {
 }
 
@@ -52,16 +53,14 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 		return ((6 * t - 15) * t + 10) * t * t * t;
 	};
 
-
 	for (uint32_t z = 0; z < g_sAxis; z++)
 	{
 		for (uint32_t x = 0; x < g_sAxis; x++)
 		{
-			float n1 = 0.8f * noiseGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
-			float n2 = 1.5f * mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
-			n1 *= n1;
+			float n1 = 0.15f * noiseGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
+			float n2 = 1.6f * mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
 
-			const float coeff = 200;
+			const float coeff = 300;
 
 			float t;
 			if (n2 > n1)
@@ -72,14 +71,14 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 			}
 			const float noiseFactor = n2 > n1 ? lerp(n1, n2, t) : n1;
 
-			// n2 = std::pow(n2, 2.0f);
-
 			heightMap.push_back(128 +
 				coeff * (noiseFactor));
 		}
 	}
 
 	m_voxels.reserve(g_voxelsPerChunk);
+
+	bool hasOnlyEmpty = true;
 	for (uint32_t y = 0; y < g_sAxis; y++)
 	{
 		for (uint32_t z = 0; z < g_sAxis; z++)
@@ -93,10 +92,12 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 				if (y + m_pos.y < height)
 				{
 					type = VoxelType::Dirt;
+					hasOnlyEmpty = false;
 				}
 				else if (y + m_pos.y == height)
 				{
 					type = VoxelType::Grass;
+					hasOnlyEmpty = false;
 				}
 				m_voxels.emplace_back(type);
 			}
@@ -104,7 +105,10 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 	}
 
 	uLock.lock();
-	m_state = ChunkState::VOXELS_GENERATED;
+	if (!hasOnlyEmpty)
+	{
+		m_state = ChunkState::VOXELS_GENERATED;
+	}
 }
 
 ChunkState Chunk::getState() const
@@ -172,10 +176,6 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 								{
 									addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
 								}
-							}
-							else
-							{
-								addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
 							}
 						}
 						else if (voxels.at(neighbourID) == VoxelType::Empty)
@@ -396,6 +396,7 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 	}
 
 	shader.setUniform3fv("u_chunkPos", m_pos);
+	
 	m_mesh->draw(renderer, shader);
 	if (drawOutline)
 	{
@@ -418,7 +419,14 @@ void Chunk::constructMesh()
 	bakeCulled(m_voxels, g_sAxis);
 
 	uLock.lock();
-	m_state = ChunkState::MESH_BAKED;
+	if (m_vertices.empty())
+	{
+		m_state = ChunkState::VOXELS_GENERATED_READY;
+	}
+	else
+	{
+		m_state = ChunkState::MESH_BAKED;
+	}
 }
 
 // @NOTE: This method must work only on the main thread

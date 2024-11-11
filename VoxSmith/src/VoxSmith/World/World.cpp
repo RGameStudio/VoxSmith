@@ -5,6 +5,7 @@
 #include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/Chunk/Chunk.hpp"
 #include "VoxSmith/Shader/Shader.hpp"
+#include "VoxSmith/World/HeightMap/HeightMap.hpp"
 
 #include "World.hpp"
 
@@ -16,9 +17,9 @@ constexpr float g_renderDistance = 12 * g_cSize;
 constexpr float g_loadDistance = 16 * g_cSize;
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
+	: m_heightMap(std::make_shared<HeightMap>())
 {
 	m_chunks.reserve(32 * 32 * 8);
-	initNoiseFunctions();
 
 	for (int32_t y = minBoundary.y; y < maxBoundary.y; y += g_cSize)
 	{
@@ -26,15 +27,13 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 		{
 			for (int32_t x = minBoundary.x; x < maxBoundary.x; x += g_cSize)
 			{
-				glm::vec3 pos = glm::vec3(x, y, z);
+				const glm::vec3 pos = glm::vec3(x, y, z);
 
 				m_chunks[pos] = std::make_shared<Chunk>(pos);
+
 				m_tasks.emplace_back(
 					std::async(&Chunk::generateChunk,
-						m_chunks[pos],
-						std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
-				// m_meshes.push_back(std::make_shared<Mesh>());
-				// m_chunks[pos]->setMesh(m_meshes.back());
+						m_chunks[pos], std::ref(m_heightMap->getChunkMap({ x, z }))));
 
 				if (m_tasks.size() >= m_maxThreads)
 				{
@@ -53,9 +52,8 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 }
 
 World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
+	: m_heightMap(std::make_shared<HeightMap>())
 {
-	initNoiseFunctions();
-
 #if 0
 	const glm::vec3 playerChunkPos = {
 		static_cast<int32_t>(playerPos.x / g_cSize) * g_cSize,
@@ -148,21 +146,6 @@ World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
 #endif
 }
 
-void World::initNoiseFunctions()
-{
-	m_baseNoiseGen.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-	m_baseNoiseGen.SetFractalType(FastNoiseLite::FractalType_FBm);
-	m_baseNoiseGen.SetFractalOctaves(8);
-	m_baseNoiseGen.SetFrequency(0.00082f);
-	m_baseNoiseGen.SetFractalLacunarity(2.1f);
-
-	m_mountainNoiseGen.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
-	m_mountainNoiseGen.SetFractalType(FastNoiseLite::FractalType_FBm);
-	m_mountainNoiseGen.SetFractalOctaves(8);
-	m_mountainNoiseGen.SetFrequency(0.00165f);
-	m_mountainNoiseGen.SetFractalLacunarity(1.85f);
-}
-
 void World::update(const glm::vec3& playerPos)
 {
 	for (auto& [pos, chunk] : m_chunks)
@@ -207,7 +190,7 @@ void World::generateChunks(const glm::vec3& startPos, const glm::vec3& endPos)
 			{
 				const glm::vec3 pos = { x, y, z };
 				auto chunk = std::make_shared<Chunk>(pos);
-				chunk->generateChunk(m_baseNoiseGen, m_mountainNoiseGen);
+				chunk->generateChunk(m_heightMap->getChunkMap({x, z}));
 
 				{
 					std::lock_guard<std::mutex> lock(m_mutex);

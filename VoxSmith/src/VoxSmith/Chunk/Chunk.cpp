@@ -4,6 +4,7 @@
 #include "VoxSmith/Renderer/Mesh.hpp"
 #include "VoxSmith/ResourceManager/ResourceManager.hpp"
 #include "VoxSmith/ResourceManager/ResourcesLists.hpp"
+#include "VoxSmith/World/HeightMap/HeightMap.hpp"
 
 #include "Chunk.hpp"
 
@@ -37,44 +38,11 @@ Chunk::~Chunk()
 	
 }
 
-void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator)
+void Chunk::generateChunk(const ChunkMap& map)
 {
-	std::vector<int32_t> heightMap;
-
 	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = ChunkState::EMPTY;
 	uLock.unlock();
-
-	auto lerp = [](const float a, const float b, const float t) {
-		return a * (1 - t) + b * t;
-	};
-
-	auto smoothstep = [](const float t) {
-		return ((6 * t - 15) * t + 10) * t * t * t;
-	};
-
-	for (uint32_t z = 0; z < g_sAxis; z++)
-	{
-		for (uint32_t x = 0; x < g_sAxis; x++)
-		{
-			float n1 = 0.15f * noiseGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
-			float n2 = 1.6f * mountainGenerator.GetNoise(m_pos.x + (float)x, m_pos.z + (float)z);
-
-			const float coeff = 300;
-
-			float t;
-			if (n2 > n1)
-			{
-				t = n2 - n1;
-				t *= t;
-				t = 1.0f - (1 - t) * (1 - t);
-			}
-			const float noiseFactor = n2 > n1 ? lerp(n1, n2, t) : n1;
-
-			heightMap.push_back(128 +
-				coeff * (noiseFactor));
-		}
-	}
 
 	m_voxels.reserve(g_voxelsPerChunk);
 
@@ -87,7 +55,7 @@ void Chunk::generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountain
 			{
 				auto type = VoxelType::Empty;
 
-				int32_t height = heightMap[z * g_sAxis + x];
+				const int32_t height = map.data[z * g_sAxis + x];
 
 				if (y + m_pos.y < height)
 				{

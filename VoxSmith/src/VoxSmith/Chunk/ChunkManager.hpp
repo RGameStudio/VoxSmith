@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include <VoxSmith/Core.hpp>
 
@@ -13,7 +14,7 @@ namespace VoxSmith
 	public:
 
 	private:
-		std::vector<Chunk> m_renderList;
-		std::vector<Chunk> m_updateList;
+		std::vector<std::shared_ptr<Chunk>> m_renderList;
+		std::vector<std::shared_ptr<Chunk>> m_updateList;
 	};
 }

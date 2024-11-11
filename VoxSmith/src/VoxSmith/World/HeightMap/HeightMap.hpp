@@ -1,3 +1,4 @@
+#include <FastNoiseLite.h>
 #include <unordered_map>
 
 #include <glm/glm.hpp>
@@ -8,20 +9,24 @@ namespace VoxSmith
 {
 	struct VOX_SMITH_API ChunkMap
 	{
-		std::vector<int32_t> height;
+		ChunkMap() = default;
+		ChunkMap(const ChunkMap&) = default;
+		ChunkMap& operator=(const ChunkMap&) = default;
+		ChunkMap(ChunkMap&&) = default;
+
+		std::vector<int32_t> data;
 	};
 
 	class VOX_SMITH_API HeightMap
 	{
 	public:
-		HeightMap() = default;
+		HeightMap();
 		~HeightMap() = default;
 
-		void update();
-
-		ChunkMap getChunkHeight(const glm::ivec2& pos);
+		ChunkMap& getChunkMap(const glm::ivec2& pos);
 
 	private:
+		void generateMap(ChunkMap& map, const glm::ivec2& pos);
 
 		struct KeyFuncs
 		{
@@ -38,6 +43,9 @@ namespace VoxSmith
 				return a.x == b.x && a.y == b.y;
 			}
 		};
+
 		std::unordered_map<glm::ivec2, ChunkMap, KeyFuncs> m_map;
+		FastNoiseLite m_baseNoiseGen;
+		FastNoiseLite m_mountainNoiseGen;
 	};
 }

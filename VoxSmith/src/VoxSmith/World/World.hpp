@@ -5,7 +5,6 @@
 #include <vector>
 #include <queue>
 #include <unordered_map>
-#include <FastNoiseLite.h>
 
 #include <VoxSmith/Core.hpp>
 
@@ -14,6 +13,7 @@ namespace VoxSmith
 	class Renderer;
 	class Chunk;
 	class Shader;
+	struct HeightMap;
 
 	class VOX_SMITH_API World
 	{
@@ -33,7 +33,6 @@ namespace VoxSmith
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
 		void loadColumn(const glm::vec3& pos, const int32_t height);
-		void initNoiseFunctions();
 		void constructMeshes(const glm::vec3& startPos, const glm::vec3& endPos);
 		void generateChunks(const glm::vec3& startPos, const glm::vec3& endPos);
 
@@ -56,6 +55,8 @@ namespace VoxSmith
 
 		std::unordered_map<glm::vec3, std::shared_ptr<Chunk>, KeyFuncs> m_chunks;
 
+		std::shared_ptr<HeightMap> m_heightMap;
+		
 		std::vector<glm::vec3> m_chunkMeshesToConstruct;
 		std::vector<glm::vec3> m_chunksToConstruct;
 
@@ -63,8 +64,6 @@ namespace VoxSmith
 
 		mutable std::mutex m_mutex;
 
-		FastNoiseLite m_baseNoiseGen;
-		FastNoiseLite m_mountainNoiseGen;
 		std::vector<std::future<void>> m_tasks;
 	};
 }

@@ -18,6 +18,7 @@ namespace VoxSmith
 	class Renderer;
 	class Shader;
 	class Mesh;
+	struct ChunkMap;
 
 	enum VOX_SMITH_API Direction : int8_t
 	{
@@ -51,7 +52,7 @@ namespace VoxSmith
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline);
 		void constructMesh();
 		void loadVerticesToBuffer();
-		void generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator);
+		void generateChunk(const ChunkMap& map);
 
 		ChunkState getState() const;
 		
@@ -89,7 +90,8 @@ namespace VoxSmith
 		
 		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, 
 			const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
-		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
+		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, 
+			const glm::vec3& color, const int32_t id);
 		
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;	
 	};

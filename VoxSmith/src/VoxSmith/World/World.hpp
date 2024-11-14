@@ -33,8 +33,8 @@ namespace VoxSmith
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
 		void loadColumn(const glm::vec3& pos, const int32_t height);
-		void constructMeshes(const glm::vec3& startPos, const glm::vec3& endPos);
-		void generateChunks(const glm::vec3& startPos, const glm::vec3& endPos);
+		void constructMeshes(std::vector<glm::ivec3> chunksToBake);
+		void generateChunks();
 
 		struct KeyFuncs
 		{
@@ -57,10 +57,15 @@ namespace VoxSmith
 
 		std::shared_ptr<HeightMap> m_heightMap;
 		
-		std::vector<glm::vec3> m_chunkMeshesToConstruct;
-		std::vector<glm::vec3> m_chunksToConstruct;
+		std::vector<glm::ivec3> m_chunksToBake;
+		bool m_bakingInProcess = false;
+		std::future<void> m_bakingTask;
 
-		const uint32_t m_maxThreads = 5;
+		std::queue<glm::ivec3> m_chunksToConstruct;
+		bool m_constructionInProcess = false;
+		std::future<void> m_constructionTask;
+
+		const uint32_t m_maxThreads = 6;
 
 		mutable std::mutex m_mutex;
 

@@ -4,7 +4,7 @@
 
 using namespace VoxSmith;
 
-constexpr uint32_t g_cSize = 32;
+constexpr int32_t g_cSize = 32;
 
 HeightMap::HeightMap()
 {
@@ -23,21 +23,23 @@ HeightMap::HeightMap()
 
 ChunkMap& HeightMap::getChunkMap(const glm::ivec2& pos)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
 	if (m_map.find(pos) == m_map.end())
 	{
-		ChunkMap map;
-		generateMap(map, pos);
-		m_map[pos] = map;
+		m_map[pos] = generateMap(pos);
 	}
+	lock.unlock();
 
 	return m_map[pos];
 }
 
-void HeightMap::generateMap(ChunkMap& map, const glm::ivec2& pos)
+ChunkMap HeightMap::generateMap(const glm::ivec2& pos)
 {
 	auto lerp = [](const float a, const float b, const float t) {
 		return a * (1 - t) + b * t;
 	};
+
+	ChunkMap map;
 
 	for (int32_t z = pos.y; z < pos.y + g_cSize; z++)
 	{
@@ -64,4 +66,6 @@ void HeightMap::generateMap(ChunkMap& map, const glm::ivec2& pos)
 				coeff * (noiseFactor));
 		}
 	}
+
+	return std::move(map);
 }

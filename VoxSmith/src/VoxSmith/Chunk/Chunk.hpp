@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <vector>
 #include <array>
 
@@ -30,6 +31,8 @@ namespace VoxSmith
 		FRONT,	
 	};
 
+	Direction getInverseDirection(Direction dir);
+
 	enum VOX_SMITH_API ChunkState : int8_t
 	{
 		EMPTY = 0,
@@ -53,7 +56,8 @@ namespace VoxSmith
 		void constructMesh();
 		void loadVerticesToBuffer();
 		void generateChunk(const ChunkMap& map);
-
+		
+		bool canBake() const;
 		ChunkState getState() const;
 		
 		void setState(ChunkState state) { m_state = state; }
@@ -62,6 +66,8 @@ namespace VoxSmith
 		inline glm::vec3 getPos() const { return m_pos; }
 		
 		Chunk() = default;
+		Chunk(Chunk&&) = default;
+		Chunk& operator=(Chunk&&) = default;
 	private:
 		glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
 
@@ -69,7 +75,7 @@ namespace VoxSmith
 
 		std::shared_ptr<Mesh> m_mesh = nullptr;
 
-		mutable std::mutex m_mutex;
+		mutable std::shared_mutex m_mutex;
 
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
@@ -93,6 +99,6 @@ namespace VoxSmith
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, 
 			const glm::vec3& color, const int32_t id);
 		
-		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;	
+		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;
 	};
 }

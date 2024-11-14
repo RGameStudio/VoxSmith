@@ -35,12 +35,12 @@ Chunk::Chunk(const glm::vec3& pos)
 
 Chunk::~Chunk()
 {
-	
+
 }
 
 void Chunk::generateChunk(const ChunkMap& map)
 {
-	std::unique_lock<std::mutex> uLock(m_mutex);
+	std::unique_lock<std::shared_mutex> uLock(m_mutex);
 	m_state = ChunkState::EMPTY;
 	uLock.unlock();
 
@@ -72,22 +72,40 @@ void Chunk::generateChunk(const ChunkMap& map)
 		}
 	}
 
-	uLock.lock();
 	if (!hasOnlyEmpty)
 	{
+		uLock.lock();
 		m_state = ChunkState::VOXELS_GENERATED;
 	}
 }
 
 ChunkState Chunk::getState() const
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::shared_mutex> lock(m_mutex);
 	return m_state;
+}
+
+Direction VoxSmith::getInverseDirection(Direction dir)
+{
+	return static_cast<Direction>((static_cast<int32_t>(dir) + 3) % 6);
 }
 
 void Chunk::addNeighbour(Direction dir, const std::shared_ptr<Chunk>& chunk)
 {
 	m_neighbours.at(static_cast<int32_t>(dir)) = chunk;
+}
+
+bool Chunk::canBake() const
+{
+	for (auto& neighbour : m_neighbours)
+	{
+		if (neighbour == nullptr)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
@@ -320,7 +338,7 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 	const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
 #if LOCK_BASED_ADD_QUAD
-	std::lock_guard<std::mutex> lock(m_mutex);
+	//std::lock_guard<std::mutex> lock(m_mutex);
 #endif
 	pos[iAxis] += iSide;
 
@@ -337,7 +355,7 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	const glm::vec3& color, const int32_t id)
 {
 #if LOCK_BASED_ADD_QUAD
-	std::lock_guard<std::mutex> lock(m_mutex);
+	//std::lock_guard<std::mutex> lock(m_mutex);
 #endif
 
 	m_vertices.emplace_back(pos, color, id);
@@ -380,7 +398,7 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 void Chunk::constructMesh()
 {
-	std::unique_lock<std::mutex> uLock(m_mutex);
+	std::unique_lock<std::shared_mutex> uLock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	uLock.unlock();
 
@@ -400,7 +418,7 @@ void Chunk::constructMesh()
 // @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
-	std::unique_lock<std::mutex> uLock(m_mutex);
+	std::unique_lock<std::shared_mutex> uLock(m_mutex);
 	m_state = LOADING;
 	uLock.unlock();
 

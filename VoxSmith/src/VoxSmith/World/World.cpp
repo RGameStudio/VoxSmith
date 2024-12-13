@@ -154,7 +154,7 @@ void World::update(const glm::vec3& playerPos)
 			notifyChunkNeighbours(pos);
 			if (chunk->canBake() && m_tasks.size() < m_maxThreads)
 			{
-				std::lock_guard<std::mutex> lock(m_mutex);
+				//std::lock_guard<std::mutex> lock(m_mutex);
 				//m_tasks.emplace_back(std::async(&Chunk::constructMesh, chunk));
 				chunksToBake.push_back(pos);
 			}
@@ -205,14 +205,6 @@ void World::constructMeshes(std::vector<glm::ivec3> chunksToBake)
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_chunks[pos]->setState(ChunkState::MESH_BAKING);
 		m_chunks[pos]->constructMesh();
-	}
-}
-
-void World::loadColumn(const glm::vec3& pos, const int32_t height)
-{
-	for (int32_t iChunk = 0; iChunk < height; iChunk++)
-	{
-
 	}
 }
 

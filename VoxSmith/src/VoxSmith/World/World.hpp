@@ -13,6 +13,7 @@ namespace VoxSmith
 	class Renderer;
 	class Chunk;
 	class Shader;
+	class Task;
 	struct HeightMap;
 
 	class VOX_SMITH_API World
@@ -32,7 +33,6 @@ namespace VoxSmith
 
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
-		void loadColumn(const glm::vec3& pos, const int32_t height);
 		void constructMeshes(std::vector<glm::ivec3> chunksToBake);
 		void generateChunks();
 

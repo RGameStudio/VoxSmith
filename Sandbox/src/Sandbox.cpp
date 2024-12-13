@@ -18,7 +18,7 @@ class Sandbox final : public VoxSmith::Application
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
-		// , world(m_camera->getPos(), 8)
+		, world(m_camera->getPos(), 8)
 	{
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
 			.setUniform4m("u_projection", m_camera->getProjection());
@@ -68,7 +68,8 @@ public:
 	void draw(const float dt, const float cframe) override
 	{
 		world.draw(m_renderer, 
-			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), m_camera->getPos(), m_camera->getViewDistance(), chunkOutlineStatus());
+			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), 
+			m_camera->getPos(), m_camera->getViewDistance(), chunkOutlineStatus());
 	}
 
 	~Sandbox() noexcept

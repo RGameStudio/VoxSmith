@@ -18,8 +18,8 @@ namespace VoxSmith
 	class VOX_SMITH_API World
 	{
 	public:
-		World(const glm::vec3 minBoundary = glm::vec3(0.0f),
-			const glm::vec3 maxBoundary = glm::vec3(32 * 16, 32 * 12, 32 * 16));
+		World(const glm::vec3 minBoundary = glm::vec3(0),
+			const glm::vec3 maxBoundary = glm::vec3(16, 12, 16));
 		World(const glm::vec3& playerPos, const int32_t radiusChunks);
 		~World() = default;
 
@@ -62,7 +62,7 @@ namespace VoxSmith
 		std::future<void> m_bakingTask;
 
 		std::queue<glm::ivec3> m_chunksToConstruct;
-		bool m_constructionInProcess = false;
+		bool m_chunksConstructionInPorcess = false;
 		std::future<void> m_constructionTask;
 
 		const uint32_t m_maxThreads = 6;

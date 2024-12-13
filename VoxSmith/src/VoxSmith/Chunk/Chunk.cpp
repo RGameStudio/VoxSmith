@@ -99,7 +99,7 @@ bool Chunk::canBake() const
 {
 	for (auto& neighbour : m_neighbours)
 	{
-		if (neighbour == nullptr)
+		if (neighbour == nullptr || neighbour->m_voxels.empty())
 		{
 			return false;
 		}

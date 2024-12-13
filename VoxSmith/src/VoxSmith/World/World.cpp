@@ -16,7 +16,7 @@ constexpr int32_t g_cSize = 32;
 constexpr float g_renderDistance = 12 * g_cSize;
 constexpr float g_loadDistance = 16 * g_cSize;
 
-namespace ChunkUpdateConstants
+namespace UpdateConstants
 {
 	constexpr uint32_t g_maxChunksToGen = 8;
 	constexpr uint32_t g_maxMeshesToConstruct = 4;
@@ -131,79 +131,62 @@ void World::update(const glm::vec3& playerPos)
 		m_constructionTask = std::move(std::async(&World::generateChunks, this));
 		m_chunksConstructionInPorcess = true;
 	}
-	else if (m_chunksConstructionInPorcess && 
+	else if (m_chunksConstructionInPorcess &&
 		m_constructionTask.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		m_chunksConstructionInPorcess = false;
 		m_constructionTask.get();
 	}
 
-	if (!m_chunksToConstruct.empty())
-	{
-		//return;
-	}
-
 	std::vector<glm::ivec3> chunksToBake;
+	for (auto& [pos, chunk] : m_chunks)
 	{
-		//
-		int32_t counter = 0;
-		for (auto& [pos, chunk] : m_chunks)
+		if (chunk == nullptr)
 		{
-			if (chunk == nullptr)
-			{
-				continue;
-			}
-
-			auto state = chunk->getState();
-			switch (state)
-			{
-
-			case ChunkState::VOXELS_GENERATED: {
-				notifyChunkNeighbours(pos);
-				if (chunk->canBake() && m_tasks.size() < m_maxThreads)
-				{
-					std::lock_guard<std::mutex> lock(m_mutex);
-					chunk->setState(ChunkState::MESH_BAKING);
-					m_tasks.emplace_back(std::async(&Chunk::constructMesh, chunk));
-					//counter++;
-					//chunk->constructMesh();
-				}
-				break;
-			}
-
-			case ChunkState::MESH_BAKED: {
-				chunk->loadVerticesToBuffer();
-				break;
-			}
-
-			case ChunkState::READY: {
-				counter++;
-				break;
-			}
-
-			default: {
-				//LOG_CORE_INFO(state);
-				break;
-			}
-
-			}
+			continue;
 		}
-		LOG_CORE_INFO(counter);
+
+		auto state = chunk->getState();
+		switch (state)
+		{
+
+		case ChunkState::VOXELS_GENERATED: {
+			notifyChunkNeighbours(pos);
+			if (chunk->canBake() && m_tasks.size() < m_maxThreads)
+			{
+				std::lock_guard<std::mutex> lock(m_mutex);
+				//m_tasks.emplace_back(std::async(&Chunk::constructMesh, chunk));
+				chunksToBake.push_back(pos);
+			}
+			break;
+		}
+
+		case ChunkState::MESH_BAKED: {
+			chunk->loadVerticesToBuffer();
+			break;
+		}
+
+		}
 	}
 
-	m_tasks.erase(
-		std::remove_if(m_tasks.begin(), m_tasks.end(),
-			[](auto& task) {
-				return task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
-			}),
-		m_tasks.end());
+	if (!m_bakingInProcess && !chunksToBake.empty())
+	{
+		m_bakingTask = std::move(std::async(&World::constructMeshes, this, std::move(chunksToBake)));
+		m_bakingInProcess = true;
+	}
+	else if (m_bakingInProcess &&
+		m_bakingTask.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	{
+		m_bakingInProcess = false;
+		m_bakingTask.get();
+	}
 }
 
 void World::generateChunks()
 {
 	int32_t cCounter = 0;
 	while (!m_chunksToConstruct.empty() &&
-		cCounter < ChunkUpdateConstants::g_maxChunksToGen)
+		cCounter < UpdateConstants::g_maxChunksToGen)
 	{
 		const glm::ivec3& pos = m_chunksToConstruct.front();
 		{
@@ -217,17 +200,11 @@ void World::generateChunks()
 
 void World::constructMeshes(std::vector<glm::ivec3> chunksToBake)
 {
-	int32_t cCounter = 0;
-	while (!chunksToBake.empty() &&
-		cCounter < ChunkUpdateConstants::g_maxChunksToGen)
+	for (const auto& pos : chunksToBake)
 	{
-		const auto pos = chunksToBake.back();
-		{
-			//std::lock_guard<std::mutex> lock(m_mutex);
-			m_chunks[pos]->constructMesh();
-		}
-		chunksToBake.pop_back();
-		cCounter++;
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_chunks[pos]->setState(ChunkState::MESH_BAKING);
+		m_chunks[pos]->constructMesh();
 	}
 }
 

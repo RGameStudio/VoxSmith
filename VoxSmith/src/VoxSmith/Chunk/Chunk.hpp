@@ -58,9 +58,10 @@ namespace VoxSmith
 		void generateChunk(const ChunkMap& map);
 		
 		bool canBake() const;
+		bool inBounds(const glm::ivec3& min, const glm::ivec3& max) const;
 		ChunkState getState() const;
 		
-		void setState(ChunkState state) { m_state = state; }
+		void setState(ChunkState state);
 
 		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
 		inline glm::vec3 getPos() const { return m_pos; }
@@ -75,7 +76,7 @@ namespace VoxSmith
 
 		std::shared_ptr<Mesh> m_mesh = nullptr;
 
-		mutable std::shared_mutex m_mutex;
+		mutable std::mutex m_mutex;
 
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;

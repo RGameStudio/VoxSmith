@@ -14,7 +14,6 @@ using namespace VoxSmith;
 constexpr int32_t g_cSize = 32;
 
 constexpr float g_renderDistance = 12 * g_cSize;
-constexpr float g_loadDistance = 16 * g_cSize;
 
 namespace UpdateConstants
 {
@@ -47,16 +46,17 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 
 World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
 	: m_heightMap(std::make_shared<HeightMap>())
+	, m_radiusChunk(radiusChunk)
 {
-#if 1
+#if 0
 	const glm::vec3 playerChunkPos = {
 		static_cast<int32_t>(playerPos.x / g_cSize) * g_cSize,
 		static_cast<int32_t>(playerPos.y / g_cSize) * g_cSize,
 		static_cast<int32_t>(playerPos.z / g_cSize) * g_cSize,
 	};
 
-	const glm::ivec3 initPos = static_cast<glm::ivec3>(playerChunkPos) - radiusChunk * glm::ivec3(g_cSize);
-	const glm::ivec3 endPos = static_cast<glm::ivec3>(playerChunkPos) + radiusChunk * glm::ivec3(g_cSize);
+	const glm::ivec3 initPos = static_cast<glm::ivec3>(playerChunkPos) - m_radiusChunk * glm::ivec3(g_cSize);
+	const glm::ivec3 endPos = static_cast<glm::ivec3>(playerChunkPos) + m_radiusChunk * glm::ivec3(g_cSize);
 
 	for (int32_t y = initPos.y; y < endPos.y; y += g_cSize)
 	{
@@ -70,80 +70,72 @@ World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
 			}
 		}
 	}
-#else
-	glm::ivec3 startPos = playerPos - static_cast<float>(radiusChunk) * glm::vec3(g_cSize);
-	glm::ivec3 endPos = playerPos + static_cast<float>(radiusChunk) * glm::vec3(g_cSize);
-
-	startPos = {
-		static_cast<int32_t>(startPos.x / g_cSize) * g_cSize,
-		static_cast<int32_t>(startPos.y / g_cSize) * g_cSize,
-		static_cast<int32_t>(startPos.z / g_cSize) * g_cSize,
-	};
-	endPos = {
-		static_cast<int32_t>(endPos.x / g_cSize) * g_cSize,
-		static_cast<int32_t>(endPos.y / g_cSize) * g_cSize,
-		static_cast<int32_t>(endPos.z / g_cSize) * g_cSize,
-	};
-#endif
-
-#if 0
-	for (int32_t y = startPos.y; y < endPos.y; y += g_cSize)
-	{
-		for (int32_t z = startPos.z; z < endPos.z; z += g_cSize)
-		{
-			for (int32_t x = startPos.x; x < endPos.x; x += g_cSize)
-			{
-				glm::vec3 pos = { x, y, z };
-
-				m_chunks[pos] = std::make_shared<Chunk>(pos);
-				m_tasks.emplace_back(
-					std::async(&Chunk::generateChunk,
-						m_chunks[pos],
-						std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
-				m_meshes.push_back(std::make_shared<Mesh>());
-				m_chunks[pos]->setMesh(m_meshes.back());
-
-				if (m_tasks.size() >= m_maxThreads)
-				{
-					while (!m_tasks.empty())
-					{
-						m_tasks.begin()->get();
-						m_tasks.erase(m_tasks.begin());
-					}
-				}
-			}
-		}
-	}
-
-	while (!m_tasks.empty())
-	{
-		m_tasks.begin()->get();
-		m_tasks.erase(m_tasks.begin());
-	}
-#else
 #endif
 }
 
 void World::update(const glm::vec3& playerPos)
 {
-	if (!m_chunksConstructionInPorcess && !m_chunksToConstruct.empty())
+	const glm::vec3 playerChunkPos = {
+		static_cast<int32_t>(playerPos.x / g_cSize) * g_cSize,
+		static_cast<int32_t>(playerPos.y / g_cSize) * g_cSize,
+		static_cast<int32_t>(playerPos.z / g_cSize) * g_cSize,
+	};
+
+	const glm::ivec3 initPos = static_cast<glm::ivec3>(playerChunkPos) - m_radiusChunk * glm::ivec3(g_cSize);
+	const glm::ivec3 endPos = static_cast<glm::ivec3>(playerChunkPos) + m_radiusChunk * glm::ivec3(g_cSize);
+
+	std::vector<glm::ivec3> chunksToConstruct;
+	for (int32_t y = initPos.y; y < endPos.y; y += g_cSize)
 	{
-		m_constructionTask = std::move(std::async(&World::generateChunks, this));
+		for (int32_t z = initPos.z; z < endPos.z; z += g_cSize)
+		{
+			for (int32_t x = initPos.x; x < endPos.x; x += g_cSize)
+			{
+				const glm::ivec3 pos = { x, y, z };
+				if (m_chunks.find(pos) == m_chunks.end() &&
+					chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen)
+				{
+					chunksToConstruct.push_back(pos);
+				}
+			}
+		}
+	}
+
+	if (!m_chunksConstructionInPorcess && !chunksToConstruct.empty())
+	{
+		m_constructionTask = std::move(std::async(&World::generateChunks, this, std::move(chunksToConstruct)));
 		m_chunksConstructionInPorcess = true;
 	}
 	else if (m_chunksConstructionInPorcess &&
 		m_constructionTask.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		m_chunksConstructionInPorcess = false;
-		m_constructionTask.get();
+		auto chunks = m_constructionTask.get();
+		for (auto& chunk : chunks)
+		{
+			m_chunks[chunk->getPos()] = chunk;
+		}
 	}
 
 	std::vector<glm::ivec3> chunksToBake;
-	for (auto& [pos, chunk] : m_chunks)
+	for (auto it = m_chunks.begin(); it != m_chunks.end();)
 	{
+		auto& pos = it->first;
+		auto& chunk = it->second;
+
 		if (chunk == nullptr)
 		{
 			continue;
+		}
+
+		if (!chunk->inBounds(initPos, endPos))
+		{
+			it = m_chunks.erase(it);
+			continue;
+		}
+		else
+		{
+			it++;
 		}
 
 		auto state = chunk->getState();
@@ -152,10 +144,8 @@ void World::update(const glm::vec3& playerPos)
 
 		case ChunkState::VOXELS_GENERATED: {
 			notifyChunkNeighbours(pos);
-			if (chunk->canBake() && m_tasks.size() < m_maxThreads)
+			if (chunk->canBake())
 			{
-				//std::lock_guard<std::mutex> lock(m_mutex);
-				//m_tasks.emplace_back(std::async(&Chunk::constructMesh, chunk));
 				chunksToBake.push_back(pos);
 			}
 			break;
@@ -182,20 +172,18 @@ void World::update(const glm::vec3& playerPos)
 	}
 }
 
-void World::generateChunks()
+std::vector<std::shared_ptr<Chunk>> World::generateChunks(std::vector<glm::ivec3> chunksToConstruct)
 {
-	int32_t cCounter = 0;
-	while (!m_chunksToConstruct.empty() &&
-		cCounter < UpdateConstants::g_maxChunksToGen)
+	std::vector<std::shared_ptr<Chunk>> chunks;
+	for (int32_t iPos = 0; iPos < chunksToConstruct.size(); iPos++)
 	{
-		const glm::ivec3& pos = m_chunksToConstruct.front();
-		{
-			std::lock_guard<std::mutex> lock(m_mutex);
-			m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
-			m_chunksToConstruct.pop();
-		}
-		cCounter++;
+		const glm::ivec3& pos = chunksToConstruct[iPos];
+		auto chunk = std::make_shared<Chunk>(pos);
+		chunk->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
+		chunks.push_back(chunk);
 	}
+
+	return chunks;
 }
 
 void World::constructMeshes(std::vector<glm::ivec3> chunksToBake)
@@ -228,7 +216,6 @@ void World::notifyChunkNeighbours(const glm::vec3& pos)
 			m_chunks.find(pos) != m_chunks.end())
 		{
 			m_chunks[pos]->addNeighbour(dir, m_chunks[neighbourPos]);
-			// m_chunks[neighbourPos]->addNeighbour(getInverseDirection(dir), m_chunks[pos]);
 		}
 	};
 

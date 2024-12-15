@@ -40,7 +40,7 @@ Chunk::~Chunk()
 
 void Chunk::generateChunk(const ChunkMap& map)
 {
-	std::unique_lock<std::shared_mutex> uLock(m_mutex);
+	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = ChunkState::EMPTY;
 	uLock.unlock();
 
@@ -79,9 +79,15 @@ void Chunk::generateChunk(const ChunkMap& map)
 	}
 }
 
+void Chunk::setState(ChunkState state)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_state = state;
+}
+
 ChunkState Chunk::getState() const
 {
-	std::lock_guard<std::shared_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_state;
 }
 
@@ -106,6 +112,13 @@ bool Chunk::canBake() const
 	}
 
 	return true;
+}
+
+bool Chunk::inBounds(const glm::ivec3& min, const glm::ivec3& max) const
+{
+	return
+		min.x <= m_pos.x && min.y <= m_pos.y && min.z <= m_pos.z &&
+		m_pos.x <= max.x && m_pos.y <= max.z && m_pos.z <= max.z;
 }
 
 void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
@@ -398,7 +411,7 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 void Chunk::constructMesh()
 {
-	std::unique_lock<std::shared_mutex> uLock(m_mutex);
+	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	uLock.unlock();
 
@@ -418,7 +431,7 @@ void Chunk::constructMesh()
 // @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
-	std::unique_lock<std::shared_mutex> uLock(m_mutex);
+	std::unique_lock<std::mutex> uLock(m_mutex);
 	m_state = LOADING;
 	uLock.unlock();
 

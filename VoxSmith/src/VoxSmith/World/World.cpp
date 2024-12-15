@@ -94,7 +94,7 @@ void World::update(const glm::vec3& playerPos)
 			{
 				const glm::ivec3 pos = { x, y, z };
 				if (m_chunks.find(pos) == m_chunks.end() &&
-					chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen 
+					chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen
 					&& !m_chunksConstructionInPorcess)
 				{
 					{
@@ -122,29 +122,16 @@ void World::update(const glm::vec3& playerPos)
 		}
 		catch (std::exception& e)
 		{
-			LOG_CORE_ERROR("{0}, {1}", e.what(), m_constructionTask.valid());
+			LOG_CORE_ERROR("In construction thread: {0}, {1}", e.what(), m_constructionTask.valid());
 		}
 	}
 
 	std::vector<glm::ivec3> chunksToBake;
-	for (auto it = m_chunks.begin(); it != m_chunks.end(); it++)
+	for (auto& [pos, chunk] : m_chunks)
 	{
-		auto& pos = it->first;
-		auto& chunk = it->second;
-
 		if (chunk == nullptr)
 		{
 			continue;
-		}
-
-		//if (!chunk->inBounds(initPos, endPos))
-		{
-			// 	it = m_chunks.erase(it);
-			// 	continue;
-		}
-		//else
-		{
-			// 	it++;
 		}
 
 		auto state = chunk->getState();
@@ -168,6 +155,15 @@ void World::update(const glm::vec3& playerPos)
 		}
 	}
 
+#if 0
+	{
+		std::lock_guard<std::shared_mutex> lock(m_mutex);
+		for (auto& pos : chunksToRemove)
+		{
+			m_chunks.erase(pos);
+		}
+	}
+#endif
 	if (!m_bakingInProcess && !chunksToBake.empty())
 	{
 		m_bakingTask = std::move(std::async(&World::constructMeshes, this, std::move(chunksToBake)));
@@ -194,10 +190,7 @@ void World::generateChunks(std::vector<glm::ivec3> chunksToConstruct)
 	{
 		std::lock_guard<std::shared_mutex> lock(m_mutex);
 		const glm::ivec3& pos = chunksToConstruct[iPos];
-		if (m_chunks[pos]->getState() == ChunkState::EMPTY)
-		{
-			m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
-		}
+		m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
 	}
 }
 

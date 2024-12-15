@@ -31,6 +31,9 @@ Chunk::Chunk(const glm::vec3& pos)
 	, m_neighbours(6, nullptr)
 	, m_mesh(std::make_shared<Mesh>())
 {
+	std::unique_lock<std::shared_mutex> uLock(m_mutex);
+	m_state = ChunkState::EMPTY;
+	uLock.unlock();
 }
 
 Chunk::~Chunk()
@@ -40,10 +43,6 @@ Chunk::~Chunk()
 
 void Chunk::generateChunk(const ChunkMap& map)
 {
-	std::unique_lock<std::mutex> uLock(m_mutex);
-	m_state = ChunkState::EMPTY;
-	uLock.unlock();
-
 	m_voxels.reserve(g_voxelsPerChunk);
 
 	bool hasOnlyEmpty = true;
@@ -61,11 +60,17 @@ void Chunk::generateChunk(const ChunkMap& map)
 				{
 					type = VoxelType::Dirt;
 					hasOnlyEmpty = false;
+					//uLock.lock();
+					//m_state = ChunkState::GENERATING;
+					//uLock.unlock();
 				}
 				else if (y + m_pos.y == height)
 				{
 					type = VoxelType::Grass;
 					hasOnlyEmpty = false;
+					//uLock.lock();
+					//m_state = ChunkState::GENERATING;
+					//uLock.unlock();
 				}
 				m_voxels.emplace_back(type);
 			}
@@ -74,20 +79,20 @@ void Chunk::generateChunk(const ChunkMap& map)
 
 	if (!hasOnlyEmpty)
 	{
-		uLock.lock();
+		std::lock_guard<std::shared_mutex> lock(m_mutex);
 		m_state = ChunkState::VOXELS_GENERATED;
 	}
 }
 
 void Chunk::setState(ChunkState state)
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::shared_mutex> lock(m_mutex);
 	m_state = state;
 }
 
 ChunkState Chunk::getState() const
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::shared_mutex> lock(m_mutex);
 	return m_state;
 }
 
@@ -411,7 +416,7 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 
 void Chunk::constructMesh()
 {
-	std::unique_lock<std::mutex> uLock(m_mutex);
+	std::unique_lock<std::shared_mutex> uLock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	uLock.unlock();
 
@@ -431,7 +436,7 @@ void Chunk::constructMesh()
 // @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
-	std::unique_lock<std::mutex> uLock(m_mutex);
+	std::unique_lock<std::shared_mutex> uLock(m_mutex);
 	m_state = LOADING;
 	uLock.unlock();
 

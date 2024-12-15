@@ -34,7 +34,7 @@ namespace VoxSmith
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
 		void constructMeshes(std::vector<glm::ivec3> chunksToBake);
-		std::vector<std::shared_ptr<Chunk>> generateChunks(std::vector<glm::ivec3> chunksToConstruct);
+		void generateChunks(std::vector<glm::ivec3> chunksToConstruct);
 
 		struct KeyFuncs
 		{
@@ -63,11 +63,11 @@ namespace VoxSmith
 		bool m_bakingInProcess = false;
 		std::future<void> m_bakingTask;
 
-		std::queue<glm::ivec3> m_chunksToConstruct;
+		std::vector<glm::ivec3> m_chunksToConstruct;
 		bool m_chunksConstructionInPorcess = false;
-		std::future<std::vector<std::shared_ptr<Chunk>>> m_constructionTask;
+		std::future<void> m_constructionTask;
 
-		mutable std::mutex m_mutex;
+		mutable std::shared_mutex m_mutex;
 #else
 		Task m_constructionTask;
 		Task m_bakingTask;

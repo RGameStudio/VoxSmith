@@ -35,7 +35,7 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 				const glm::vec3 pos = { x * g_cSize, y * g_cSize, z * g_cSize };
 				m_chunks[pos] = std::make_shared<Chunk>(pos);
 #if 1
-				m_chunksToConstruct.push(pos);
+				m_chunksToConstruct.push_back(pos);
 #else
 				m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
 #endif
@@ -66,7 +66,7 @@ World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
 			{
 				const glm::ivec3 pos = { x, y, z };
 				m_chunks[pos] = std::make_shared<Chunk>(pos);
-				m_chunksToConstruct.push(pos);
+				m_chunksToConstruct.push_back(pos);
 			}
 		}
 	}
@@ -75,6 +75,7 @@ World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
 
 void World::update(const glm::vec3& playerPos)
 {
+#if 1
 	const glm::vec3 playerChunkPos = {
 		static_cast<int32_t>(playerPos.x / g_cSize) * g_cSize,
 		static_cast<int32_t>(playerPos.y / g_cSize) * g_cSize,
@@ -93,14 +94,19 @@ void World::update(const glm::vec3& playerPos)
 			{
 				const glm::ivec3 pos = { x, y, z };
 				if (m_chunks.find(pos) == m_chunks.end() &&
-					chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen)
+					chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen 
+					&& !m_chunksConstructionInPorcess)
 				{
+					{
+						std::lock_guard<std::shared_mutex> lock(m_mutex);
+						m_chunks[pos] = std::make_shared<Chunk>(pos);
+					}
 					chunksToConstruct.push_back(pos);
 				}
 			}
 		}
 	}
-
+#endif
 	if (!m_chunksConstructionInPorcess && !chunksToConstruct.empty())
 	{
 		m_constructionTask = std::move(std::async(&World::generateChunks, this, std::move(chunksToConstruct)));
@@ -110,15 +116,18 @@ void World::update(const glm::vec3& playerPos)
 		m_constructionTask.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		m_chunksConstructionInPorcess = false;
-		auto chunks = m_constructionTask.get();
-		for (auto& chunk : chunks)
+		try
 		{
-			m_chunks[chunk->getPos()] = chunk;
+			m_constructionTask.get();
+		}
+		catch (std::exception& e)
+		{
+			LOG_CORE_ERROR("{0}, {1}", e.what(), m_constructionTask.valid());
 		}
 	}
 
 	std::vector<glm::ivec3> chunksToBake;
-	for (auto it = m_chunks.begin(); it != m_chunks.end();)
+	for (auto it = m_chunks.begin(); it != m_chunks.end(); it++)
 	{
 		auto& pos = it->first;
 		auto& chunk = it->second;
@@ -128,14 +137,14 @@ void World::update(const glm::vec3& playerPos)
 			continue;
 		}
 
-		if (!chunk->inBounds(initPos, endPos))
+		//if (!chunk->inBounds(initPos, endPos))
 		{
-			it = m_chunks.erase(it);
-			continue;
+			// 	it = m_chunks.erase(it);
+			// 	continue;
 		}
-		else
+		//else
 		{
-			it++;
+			// 	it++;
 		}
 
 		auto state = chunk->getState();
@@ -167,30 +176,36 @@ void World::update(const glm::vec3& playerPos)
 	else if (m_bakingInProcess &&
 		m_bakingTask.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
+		try
+		{
+			m_bakingTask.get();
+		}
+		catch (std::exception& e)
+		{
+			LOG_CORE_ERROR(e.what());
+		}
 		m_bakingInProcess = false;
-		m_bakingTask.get();
 	}
 }
 
-std::vector<std::shared_ptr<Chunk>> World::generateChunks(std::vector<glm::ivec3> chunksToConstruct)
+void World::generateChunks(std::vector<glm::ivec3> chunksToConstruct)
 {
-	std::vector<std::shared_ptr<Chunk>> chunks;
 	for (int32_t iPos = 0; iPos < chunksToConstruct.size(); iPos++)
 	{
+		std::lock_guard<std::shared_mutex> lock(m_mutex);
 		const glm::ivec3& pos = chunksToConstruct[iPos];
-		auto chunk = std::make_shared<Chunk>(pos);
-		chunk->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
-		chunks.push_back(chunk);
+		if (m_chunks[pos]->getState() == ChunkState::EMPTY)
+		{
+			m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
+		}
 	}
-
-	return chunks;
 }
 
 void World::constructMeshes(std::vector<glm::ivec3> chunksToBake)
 {
 	for (const auto& pos : chunksToBake)
 	{
-		std::lock_guard<std::mutex> lock(m_mutex);
+		std::lock_guard<std::shared_mutex> lock(m_mutex);
 		m_chunks[pos]->setState(ChunkState::MESH_BAKING);
 		m_chunks[pos]->constructMesh();
 	}

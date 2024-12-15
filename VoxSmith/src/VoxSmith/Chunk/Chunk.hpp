@@ -36,6 +36,7 @@ namespace VoxSmith
 	enum VOX_SMITH_API ChunkState : int8_t
 	{
 		EMPTY = 0,
+		GENERATING,
 		VOXELS_GENERATED,
 		VOXELS_GENERATED_READY,
 		MESH_BAKING,
@@ -76,7 +77,7 @@ namespace VoxSmith
 
 		std::shared_ptr<Mesh> m_mesh = nullptr;
 
-		mutable std::mutex m_mutex;
+		mutable std::shared_mutex m_mutex;
 
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;

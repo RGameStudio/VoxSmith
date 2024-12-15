@@ -23,12 +23,12 @@ HeightMap::HeightMap()
 
 ChunkMap& HeightMap::getChunkMap(const glm::ivec2& pos)
 {
-	std::unique_lock<std::mutex> lock(m_mutex);
 	if (m_map.find(pos) == m_map.end())
 	{
+		std::unique_lock<std::mutex> lock(m_mutex);
 		m_map[pos] = generateMap(pos);
 	}
-	lock.unlock();
+	//lock.unlock();
 
 	return m_map[pos];
 }

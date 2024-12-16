@@ -159,10 +159,11 @@ void World::update(const glm::vec3& playerPos)
 	}
 
 #if 1
+	if (!m_chunksConstructionInPorcess && !m_bakingInProcess)
 	{
 		for (auto& pos : chunksToRemove)
 		{
-			std::lock_guard<std::shared_mutex> lock(m_mutex);
+			//std::lock_guard<std::shared_mutex> lock(m_mutex);
 			m_chunks.erase(pos);
 		}
 	}

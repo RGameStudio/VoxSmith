@@ -18,7 +18,7 @@ class Sandbox final : public VoxSmith::Application
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
-		, world(m_camera->getPos(), 12)
+		, world(m_camera->getPos(), 8)
 	{
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
 			.setUniform4m("u_projection", m_camera->getProjection());

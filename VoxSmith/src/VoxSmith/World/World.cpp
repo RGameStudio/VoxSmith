@@ -18,7 +18,7 @@ constexpr float g_renderDistance = 12 * g_cSize;
 namespace UpdateConstants
 {
 	constexpr uint32_t g_maxChunksToGen = 8;
-	constexpr uint32_t g_maxMeshesToConstruct = 4;
+	constexpr uint32_t g_maxMeshesToConstruct = 8;
 }
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
@@ -35,7 +35,7 @@ World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
 				const glm::vec3 pos = { x * g_cSize, y * g_cSize, z * g_cSize };
 				m_chunks[pos] = std::make_shared<Chunk>(pos);
 #if 1
-				m_chunksToConstruct.push_back(pos);
+				//m_chunksToConstruct.insert(pos);
 #else
 				m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
 #endif
@@ -76,16 +76,23 @@ World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
 void World::update(const glm::vec3& playerPos)
 {
 #if 1
-	const glm::vec3 playerChunkPos = {
+	const glm::ivec3 playerChunkPos = {
 		static_cast<int32_t>(playerPos.x / g_cSize) * g_cSize,
-		static_cast<int32_t>(playerPos.y / g_cSize) * g_cSize,
+		static_cast<int32_t>(playerPos.z / g_cSize) * g_cSize,
 		static_cast<int32_t>(playerPos.z / g_cSize) * g_cSize,
 	};
+	const glm::ivec3 initPos = {
+		playerChunkPos.x - m_radiusChunk * g_cSize,
+		0,
+		playerChunkPos.z - m_radiusChunk * g_cSize
+	};
+	const glm::ivec3 endPos = {
+		playerChunkPos.x + m_radiusChunk * g_cSize,
+		2 * m_radiusChunk * g_cSize,
+		playerChunkPos.z + m_radiusChunk * g_cSize
+	};
 
-	const glm::ivec3 initPos = static_cast<glm::ivec3>(playerChunkPos) - m_radiusChunk * glm::ivec3(g_cSize);
-	const glm::ivec3 endPos = static_cast<glm::ivec3>(playerChunkPos) + m_radiusChunk * glm::ivec3(g_cSize);
-
-	std::vector<glm::ivec3> chunksToConstruct;
+	std::multimap<float, glm::ivec3> chunksToConstruct;
 	for (int32_t y = initPos.y; y < endPos.y; y += g_cSize)
 	{
 		for (int32_t z = initPos.z; z < endPos.z; z += g_cSize)
@@ -93,17 +100,70 @@ void World::update(const glm::vec3& playerPos)
 			for (int32_t x = initPos.x; x < endPos.x; x += g_cSize)
 			{
 				const glm::ivec3 pos = { x, y, z };
-				if (m_chunks.find(pos) == m_chunks.end() &&
-					chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen
-					&& !m_chunksConstructionInPorcess)
+				const float distance = glm::distance(playerPos, static_cast<glm::vec3>(pos));
+				if (chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen)
 				{
+					if (m_chunks.find(pos) == m_chunks.end())
 					{
-						std::lock_guard<std::shared_mutex> lock(m_mutex);
 						m_chunks[pos] = std::make_shared<Chunk>(pos);
+						chunksToConstruct.insert({ distance, pos });
 					}
-					chunksToConstruct.push_back(pos);
+					else if (m_chunks[pos]->getState() == ChunkState::EMPTY)
+					{
+						chunksToConstruct.insert({ distance, pos });
+					}
 				}
 			}
+		}
+	}
+#endif
+	std::multimap<float, glm::ivec3> chunksToBake;
+	std::vector<glm::ivec3> chunksToRemove;
+	for (auto& [pos, chunk] : m_chunks)
+	{
+		if (chunk == nullptr)
+		{
+			continue;
+		}
+
+		if (!chunk->inBounds(initPos, endPos))
+		{
+			const float distance = glm::distance(playerPos, pos);
+			// chunksToConstruct.erase(chunksToConstruct.find({ distance }));
+			chunksToRemove.push_back(pos);
+			continue;
+		}
+
+		auto state = chunk->getState();
+		switch (state)
+		{
+
+		case ChunkState::VOXELS_GENERATED: {
+			notifyChunkNeighbours(pos);
+			if (chunk->canBake())
+			{
+				const float distance = glm::distance(pos, playerPos);
+				chunksToBake.insert({ distance, pos });
+			}
+			break;
+		}
+
+		case ChunkState::MESH_BAKED: {
+			chunk->loadVerticesToBuffer();
+			break;
+		}
+		case ChunkState::READY: {
+			break;
+		}
+		}
+	}
+
+#if 1
+	{
+		for (auto& pos : chunksToRemove)
+		{
+			std::lock_guard<std::shared_mutex> lock(m_mutex);
+			m_chunks.erase(pos);
 		}
 	}
 #endif
@@ -126,44 +186,6 @@ void World::update(const glm::vec3& playerPos)
 		}
 	}
 
-	std::vector<glm::ivec3> chunksToBake;
-	for (auto& [pos, chunk] : m_chunks)
-	{
-		if (chunk == nullptr)
-		{
-			continue;
-		}
-
-		auto state = chunk->getState();
-		switch (state)
-		{
-
-		case ChunkState::VOXELS_GENERATED: {
-			notifyChunkNeighbours(pos);
-			if (chunk->canBake())
-			{
-				chunksToBake.push_back(pos);
-			}
-			break;
-		}
-
-		case ChunkState::MESH_BAKED: {
-			chunk->loadVerticesToBuffer();
-			break;
-		}
-
-		}
-	}
-
-#if 0
-	{
-		std::lock_guard<std::shared_mutex> lock(m_mutex);
-		for (auto& pos : chunksToRemove)
-		{
-			m_chunks.erase(pos);
-		}
-	}
-#endif
 	if (!m_bakingInProcess && !chunksToBake.empty())
 	{
 		m_bakingTask = std::move(std::async(&World::constructMeshes, this, std::move(chunksToBake)));
@@ -184,19 +206,21 @@ void World::update(const glm::vec3& playerPos)
 	}
 }
 
-void World::generateChunks(std::vector<glm::ivec3> chunksToConstruct)
+void World::generateChunks(std::multimap<float, glm::ivec3> chunksToConstruct)
 {
-	for (int32_t iPos = 0; iPos < chunksToConstruct.size(); iPos++)
+	for (const auto& [distance, pos] : chunksToConstruct)
 	{
 		std::lock_guard<std::shared_mutex> lock(m_mutex);
-		const glm::ivec3& pos = chunksToConstruct[iPos];
-		m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
+		if (m_chunks.find(pos) != m_chunks.end())
+		{
+			m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
+		}
 	}
 }
 
-void World::constructMeshes(std::vector<glm::ivec3> chunksToBake)
+void World::constructMeshes(std::multimap<float, glm::ivec3> chunksToBake)
 {
-	for (const auto& pos : chunksToBake)
+	for (const auto& [distance, pos] : chunksToBake)
 	{
 		std::lock_guard<std::shared_mutex> lock(m_mutex);
 		m_chunks[pos]->setState(ChunkState::MESH_BAKING);
@@ -210,7 +234,7 @@ void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, cons
 	for (const auto& [pos, chunk] : m_chunks)
 	{
 		if (chunk->getState() == ChunkState::READY &&
-			glm::distance(playerPos, pos) < renderDistance)
+			glm::distance(pos, playerPos) < renderDistance)
 		{
 			chunk->draw(renderer, shader, isOutlineActive);
 		}

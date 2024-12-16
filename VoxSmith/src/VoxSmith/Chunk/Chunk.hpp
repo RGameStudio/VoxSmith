@@ -36,6 +36,7 @@ namespace VoxSmith
 	enum VOX_SMITH_API ChunkState : int8_t
 	{
 		EMPTY = 0,
+		FRESH,
 		GENERATING,
 		VOXELS_GENERATED,
 		VOXELS_GENERATED_READY,

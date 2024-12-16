@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <queue>
+#include <map>
 #include <unordered_map>
 
 #include <VoxSmith/Core.hpp>
@@ -33,8 +34,8 @@ namespace VoxSmith
 
 	private:
 		void notifyChunkNeighbours(const glm::vec3& pos);
-		void constructMeshes(std::vector<glm::ivec3> chunksToBake);
-		void generateChunks(std::vector<glm::ivec3> chunksToConstruct);
+		void constructMeshes(std::multimap<float, glm::ivec3> chunksToBake);
+		void generateChunks(std::multimap<float, glm::ivec3> chunksToConstruct);
 
 		struct KeyFuncs
 		{
@@ -52,18 +53,17 @@ namespace VoxSmith
 				return a.x == b.x && a.y == b.y && a.z == b.z;
 			}
 		};
-
+	
 		std::unordered_map<glm::vec3, std::shared_ptr<Chunk>, KeyFuncs> m_chunks;
 		int32_t m_radiusChunk;
 
 		std::shared_ptr<HeightMap> m_heightMap;
-		
 #if 1
 		std::vector<glm::ivec3> m_chunksToBake;
 		bool m_bakingInProcess = false;
 		std::future<void> m_bakingTask;
 
-		std::vector<glm::ivec3> m_chunksToConstruct;
+		//std::multimap<glm::ivec3> m_chunksToConstruct;
 		bool m_chunksConstructionInPorcess = false;
 		std::future<void> m_constructionTask;
 
@@ -72,6 +72,5 @@ namespace VoxSmith
 		Task m_constructionTask;
 		Task m_bakingTask;
 #endif
-		std::vector<std::future<void>> m_tasks;
 	};
 }

@@ -38,11 +38,15 @@ Chunk::Chunk(const glm::vec3& pos)
 
 Chunk::~Chunk()
 {
-
+	std::lock_guard<std::shared_mutex> lock(m_mutex);
 }
 
 void Chunk::generateChunk(const ChunkMap& map)
 {
+	std::unique_lock<std::shared_mutex> uLock(m_mutex);
+	m_state = ChunkState::FRESH;
+	uLock.unlock();
+
 	m_voxels.reserve(g_voxelsPerChunk);
 
 	bool hasOnlyEmpty = true;
@@ -60,17 +64,11 @@ void Chunk::generateChunk(const ChunkMap& map)
 				{
 					type = VoxelType::Dirt;
 					hasOnlyEmpty = false;
-					//uLock.lock();
-					//m_state = ChunkState::GENERATING;
-					//uLock.unlock();
 				}
 				else if (y + m_pos.y == height)
 				{
 					type = VoxelType::Grass;
 					hasOnlyEmpty = false;
-					//uLock.lock();
-					//m_state = ChunkState::GENERATING;
-					//uLock.unlock();
 				}
 				m_voxels.emplace_back(type);
 			}
@@ -79,7 +77,7 @@ void Chunk::generateChunk(const ChunkMap& map)
 
 	if (!hasOnlyEmpty)
 	{
-		std::lock_guard<std::shared_mutex> lock(m_mutex);
+		uLock.lock();
 		m_state = ChunkState::VOXELS_GENERATED;
 	}
 }

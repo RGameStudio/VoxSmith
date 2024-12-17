@@ -17,8 +17,8 @@ constexpr float g_renderDistance = 12 * g_cSize;
 
 namespace UpdateConstants
 {
-	constexpr uint32_t g_maxChunksToGen = 8;
-	constexpr uint32_t g_maxMeshesToConstruct = 8;
+	constexpr uint32_t g_maxChunksToGen = 16;
+	constexpr uint32_t g_maxMeshesToConstruct = 16;
 }
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
@@ -129,7 +129,6 @@ void World::update(const glm::vec3& playerPos)
 		if (!chunk->inBounds(initPos, endPos))
 		{
 			const float distance = glm::distance(playerPos, pos);
-			// chunksToConstruct.erase(chunksToConstruct.find({ distance }));
 			chunksToRemove.push_back(pos);
 			continue;
 		}
@@ -163,7 +162,7 @@ void World::update(const glm::vec3& playerPos)
 	{
 		for (auto& pos : chunksToRemove)
 		{
-			//std::lock_guard<std::shared_mutex> lock(m_mutex);
+			std::lock_guard<std::shared_mutex> lock(m_mutex);
 			m_chunks.erase(pos);
 		}
 	}
@@ -224,8 +223,11 @@ void World::constructMeshes(std::multimap<float, glm::ivec3> chunksToBake)
 	for (const auto& [distance, pos] : chunksToBake)
 	{
 		std::lock_guard<std::shared_mutex> lock(m_mutex);
-		m_chunks[pos]->setState(ChunkState::MESH_BAKING);
-		m_chunks[pos]->constructMesh();
+		if (m_chunks.find(pos) != m_chunks.end())
+		{
+			m_chunks[pos]->setState(ChunkState::MESH_BAKING);
+			m_chunks[pos]->constructMesh();
+		}
 	}
 }
 

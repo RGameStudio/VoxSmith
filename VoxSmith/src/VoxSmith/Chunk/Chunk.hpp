@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <vector>
 #include <array>
 
@@ -18,6 +19,7 @@ namespace VoxSmith
 	class Renderer;
 	class Shader;
 	class Mesh;
+	struct ChunkMap;
 
 	enum VOX_SMITH_API Direction : int8_t
 	{
@@ -29,10 +31,15 @@ namespace VoxSmith
 		FRONT,	
 	};
 
+	Direction getInverseDirection(Direction dir);
+
 	enum VOX_SMITH_API ChunkState : int8_t
 	{
 		EMPTY = 0,
+		FRESH,
+		GENERATING,
 		VOXELS_GENERATED,
+		VOXELS_GENERATED_READY,
 		MESH_BAKING,
 		MESH_BAKED,
 		LOADING,
@@ -50,16 +57,20 @@ namespace VoxSmith
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline);
 		void constructMesh();
 		void loadVerticesToBuffer();
-		void generateChunk(FastNoiseLite& noiseGenerator, FastNoiseLite& mountainGenerator);
-
+		void generateChunk(const ChunkMap& map);
+		
+		bool canBake() const;
+		bool inBounds(const glm::ivec3& min, const glm::ivec3& max) const;
 		ChunkState getState() const;
 		
-		void setState(ChunkState state) { m_state = state; }
+		void setState(ChunkState state);
 
 		inline bool isMeshConstructed() const { return m_mesh->isMeshConstructed(); }
 		inline glm::vec3 getPos() const { return m_pos; }
 		
 		Chunk() = default;
+		Chunk(Chunk&&) = default;
+		Chunk& operator=(Chunk&&) = default;
 	private:
 		glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
 
@@ -67,7 +78,7 @@ namespace VoxSmith
 
 		std::shared_ptr<Mesh> m_mesh = nullptr;
 
-		mutable std::mutex m_mutex;
+		mutable std::shared_mutex m_mutex;
 
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
@@ -88,8 +99,9 @@ namespace VoxSmith
 		
 		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, 
 			const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
-		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
+		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, 
+			const glm::vec3& color, const int32_t id);
 		
-		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;	
+		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;
 	};
 }

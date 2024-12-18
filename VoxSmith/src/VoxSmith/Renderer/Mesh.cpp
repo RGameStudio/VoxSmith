@@ -1,5 +1,6 @@
-#include "../Renderer/Renderer.hpp"
-#include "../Shader/Shader.hpp"
+#include "VoxSmith/Logger/Log.hpp"
+#include "VoxSmith/Renderer/Renderer.hpp"
+#include "VoxSmith/Shader/Shader.hpp"
 
 #include "VoxSmith/Chunk/Voxel.hpp"
 
@@ -11,6 +12,7 @@ void Mesh::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader)
 {
 	if (renderer == nullptr)
 	{
+		LOG_CORE_ERROR("ERROR::MESH::DRAW::Passed renderer is not initialized!");
 		return;
 	}
 

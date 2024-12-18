@@ -5,91 +5,123 @@
 #include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/Chunk/Chunk.hpp"
 #include "VoxSmith/Shader/Shader.hpp"
+#include "VoxSmith/World/HeightMap/HeightMap.hpp"
 
 #include "World.hpp"
 
 using namespace VoxSmith;
 
-constexpr float g_cSize = 32;
+constexpr int32_t g_cSize = 32;
 
 constexpr float g_renderDistance = 12 * g_cSize;
-constexpr float g_loadDistance = 16 * g_cSize;
+
+namespace UpdateConstants
+{
+	constexpr uint32_t g_maxChunksToGen = 32;
+	constexpr uint32_t g_maxMeshesToConstruct = 24;
+}
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
+	: m_heightMap(std::make_shared<HeightMap>())
 {
 	m_chunks.reserve(32 * 32 * 8);
 
-	m_baseNoiseGen.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-	m_baseNoiseGen.SetFractalType(FastNoiseLite::FractalType_FBm);
-	m_baseNoiseGen.SetFractalOctaves(8);
-	m_baseNoiseGen.SetFrequency(0.0005f);
-	m_baseNoiseGen.SetFractalLacunarity(2.0f);
-
-	m_mountainNoiseGen.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-	m_mountainNoiseGen.SetFractalType(FastNoiseLite::FractalType_FBm);
-	m_mountainNoiseGen.SetFractalOctaves(8);
-	m_mountainNoiseGen.SetFrequency(0.0019f);
-	m_mountainNoiseGen.SetFractalLacunarity(2.0f);
-
-#define BOUNDARY_TERRAIN true
-#ifdef BOUNDARY_TERRAIN
-	for (int32_t y = minBoundary.y; y < maxBoundary.y; y += g_cSize)
+	for (int32_t y = minBoundary.y; y < maxBoundary.y; y++)
 	{
-		for (int32_t z = minBoundary.z; z < maxBoundary.z; z += g_cSize)
+		for (int32_t z = minBoundary.z; z < maxBoundary.z; z++)
 		{
-			for (int32_t x = minBoundary.x; x < maxBoundary.x; x += g_cSize)
+			for (int32_t x = minBoundary.x; x < maxBoundary.x; x++)
 			{
-				auto pos = glm::vec3(x, y, z);
-
+				const glm::vec3 pos = { x * g_cSize, y * g_cSize, z * g_cSize };
 				m_chunks[pos] = std::make_shared<Chunk>(pos);
-				m_tasks.emplace_back(
-					std::async(&Chunk::generateChunk,
-						m_chunks[pos],
-						std::ref(m_baseNoiseGen), std::ref(m_mountainNoiseGen)));
-				m_meshes.push_back(std::make_shared<Mesh>());
-				m_chunks[pos]->setMesh(m_meshes.back());
-
-				if (m_tasks.size() >= m_maxThreads)
-				{
-					m_tasks.begin()->get();
-					m_tasks.erase(m_tasks.begin());
-				}
+#if 1
+				//m_chunksToConstruct.insert(pos);
+#else
+				m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
+#endif
 			}
 		}
 	}
-
-	while (!m_tasks.empty())
-	{
-		m_tasks.begin()->get();
-		m_tasks.erase(m_tasks.begin());
-	}
-#else
-	for (int32_t iMesh = 0; iMesh < 12 * 12 * 12; iMesh++)
-	{
-		m_meshes.emplace_back(std::make_shared<Mesh>());
-	}
-#endif
 }
 
-World::World(const glm::vec3& playerPos)
+World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
+	: m_heightMap(std::make_shared<HeightMap>())
+	, m_radiusChunk(radiusChunk)
 {
-	
+	m_generation.function = std::bind(&World::generateChunks, this);
+	m_baking.function = std::bind(&World::bakeMeshes, this);
 }
 
 void World::update(const glm::vec3& playerPos)
 {
+#if 1
+	const glm::ivec3 playerChunkPos = {
+		static_cast<int32_t>(playerPos.x / g_cSize) * g_cSize,
+		static_cast<int32_t>(playerPos.z / g_cSize) * g_cSize,
+		static_cast<int32_t>(playerPos.z / g_cSize) * g_cSize,
+	};
+	const glm::ivec3 initPos = {
+		playerChunkPos.x - m_radiusChunk * g_cSize,
+		0,
+		playerChunkPos.z - m_radiusChunk * g_cSize
+	};
+	const glm::ivec3 endPos = {
+		playerChunkPos.x + m_radiusChunk * g_cSize,
+		2 * m_radiusChunk * g_cSize,
+		playerChunkPos.z + m_radiusChunk * g_cSize
+	};
+
+	for (int32_t y = initPos.y; y < endPos.y; y += g_cSize)
+	{
+		for (int32_t z = initPos.z; z < endPos.z; z += g_cSize)
+		{
+			for (int32_t x = initPos.x; x < endPos.x; x += g_cSize)
+			{
+				const glm::ivec3 pos = { x, y, z };
+				const float distance = glm::distance(playerPos, static_cast<glm::vec3>(pos));
+
+				if (m_chunks.find(pos) == m_chunks.end())
+				{
+					m_chunks[pos] = std::make_shared<Chunk>(pos);
+				}
+				else
+				{
+					if (m_chunksToGenerate.size() < UpdateConstants::g_maxChunksToGen)
+					{
+						if (m_chunks[pos] != nullptr && m_chunks[pos]->getState() == ChunkState::EMPTY)
+						{
+							m_chunksToGenerate.push_back(std::move(m_chunks[pos]));
+						}
+					}
+				}
+			}
+		}
+	}
+#endif
+	std::vector<glm::ivec3> chunksToRemove;
 	for (auto& [pos, chunk] : m_chunks)
 	{
+		if (chunk == nullptr)
+		{
+			continue;
+		}
+
+		if (!chunk->inBounds(initPos, endPos))
+		{
+			chunksToRemove.push_back(pos);
+			continue;
+		}
+
 		auto state = chunk->getState();
 		switch (state)
 		{
 
 		case ChunkState::VOXELS_GENERATED: {
-			if (m_tasks.size() <= m_maxThreads)
+			notifyChunkNeighbours(pos);
+			if (chunk->canBake() && !m_baking.launched)
 			{
-				notifyChunkNeighbours(pos);
-				chunk->setState(ChunkState::MESH_BAKING);
-				m_tasks.emplace_back(std::async(&Chunk::constructMesh, chunk));
+				const float distance = glm::distance(pos, playerPos);
+				m_chunksToBake.push_back(std::move(chunk));
 			}
 			break;
 		}
@@ -98,32 +130,77 @@ void World::update(const glm::vec3& playerPos)
 			chunk->loadVerticesToBuffer();
 			break;
 		}
-
+		case ChunkState::READY: {
+			break;
+		}
 		}
 	}
 
-	m_tasks.erase(
-		std::remove_if(m_tasks.begin(), m_tasks.end(),
-			[](auto& task) {
-				return task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
-			}),
-		m_tasks.end());
+	for (auto& pos : chunksToRemove)
+	{
+		m_chunks.erase(pos);
+	}
+
+	updateChunkTask(m_generation, m_chunksToGenerate, initPos, endPos);
+	updateChunkTask(m_baking, m_chunksToBake, initPos, endPos);
 }
 
-void World::loadColumn(const glm::vec3& pos, const int32_t height)
+void World::updateChunkTask(TaskWrapper& tWrapper, std::vector<std::shared_ptr<Chunk>>& chunkList, const glm::ivec3& initPos, const glm::ivec3& endPos)
 {
-	for (int32_t iChunk = 0; iChunk < height; iChunk++)
+	if (!tWrapper.launched && !chunkList.empty())
 	{
-		
+		tWrapper.task = std::move(std::async(tWrapper.function));
+		tWrapper.launched = true;
+	}
+	else if (tWrapper.launched && tWrapper.completed())
+	{
+		try
+		{
+			tWrapper.get();
+			for (auto& chunk : chunkList)
+			{
+				m_chunks[chunk->getPos()] = std::move(chunk);
+			}
+			chunkList.clear();
+			tWrapper.launched = false;
+		}
+		catch (std::exception& e)
+		{
+			LOG_CORE_ERROR("In construction thread: {0}, {1}", e.what(), tWrapper.task.valid());
+		}
 	}
 }
 
-void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos, 
+void World::generateChunks()
+{
+	for (auto& chunk : m_chunksToGenerate)
+	{
+		const auto& pos = chunk->getPos();
+		chunk->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
+	}
+}
+
+void World::bakeMeshes()
+{
+	for (auto& chunk : m_chunksToBake)
+	{
+		chunk->setState(ChunkState::MESH_BAKING);
+		chunk->constructMesh();
+	}
+}
+
+void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos,
 	const float renderDistance, bool isOutlineActive)
 {
 	for (const auto& [pos, chunk] : m_chunks)
 	{
-		if (chunk->getState() == ChunkState::READY && glm::distance(playerPos, pos) < renderDistance)
+		if (chunk == nullptr)
+		{
+			continue;
+		}
+
+		if (chunk->getState() == ChunkState::READY &&
+			glm::distance(pos, playerPos) < renderDistance)
 		{
 			chunk->draw(renderer, shader, isOutlineActive);
 		}

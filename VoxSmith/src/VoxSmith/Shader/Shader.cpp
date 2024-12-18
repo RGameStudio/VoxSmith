@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../Logger/Log.hpp"
+#include "VoxSmith/Logger/Log.hpp"
 
 #include "Shader.hpp"
 

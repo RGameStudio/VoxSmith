@@ -7,14 +7,15 @@
 #include <map>
 #include <unordered_map>
 
-#include <VoxSmith/Core.hpp>
+#include "VoxSmith/Core.hpp"
+
+#include "VoxSmith/Task/Task.hpp"
 
 namespace VoxSmith
 {
 	class Renderer;
 	class Chunk;
 	class Shader;
-	class Task;
 	struct HeightMap;
 
 	class VOX_SMITH_API World
@@ -33,10 +34,6 @@ namespace VoxSmith
 		World& operator=(const World&) = delete;
 
 	private:
-		void notifyChunkNeighbours(const glm::vec3& pos);
-		void constructMeshes();
-		void generateChunks();
-
 		struct KeyFuncs
 		{
 			size_t operator()(const glm::ivec3& v) const
@@ -53,22 +50,45 @@ namespace VoxSmith
 				return a.x == b.x && a.y == b.y && a.z == b.z;
 			}
 		};
-	
+
+		struct TaskWrapper
+		{
+			std::future<void> task;
+			bool launched = false;
+			std::function<void()> function;
+
+			bool completed() const
+			{
+				return task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
+			}
+
+			void get()
+			{
+				task.get();
+			}
+		};
+
+		void notifyChunkNeighbours(const glm::vec3& pos);
+		void bakeMeshes();
+		void generateChunks();
+		void updateChunkTask(TaskWrapper& task, std::vector<std::shared_ptr<Chunk>>& chunkList,
+			const glm::ivec3& initPos, const glm::ivec3& endPos);
+
 		std::unordered_map<glm::vec3, std::shared_ptr<Chunk>, KeyFuncs> m_chunks;
 		std::vector<std::shared_ptr<Chunk>> m_chunksToBake;
-		std::vector<std::shared_ptr<Chunk>> m_chunksToConstruct;
+		std::vector<std::shared_ptr<Chunk>> m_chunksToGenerate;
 		int32_t m_radiusChunk;
 
 		std::shared_ptr<HeightMap> m_heightMap;
-#if 1
-		bool m_bakingInProcess = false;
+#if 0
+		bool m_bakeLaunched = false;
 		std::future<void> m_bakingTask;
 
-		bool m_chunksConstructionInPorcess = false;
+		bool m_constructionLaunched = false;
 		std::future<void> m_constructionTask;
 #else
-		Task m_constructionTask;
-		Task m_bakingTask;
+		TaskWrapper m_baking;
+		TaskWrapper m_generation;
 #endif
 		mutable std::shared_mutex m_mutex;
 	};

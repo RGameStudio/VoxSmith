@@ -48,29 +48,8 @@ World::World(const glm::vec3& playerPos, const int32_t radiusChunk)
 	: m_heightMap(std::make_shared<HeightMap>())
 	, m_radiusChunk(radiusChunk)
 {
-#if 0
-	const glm::vec3 playerChunkPos = {
-		static_cast<int32_t>(playerPos.x / g_cSize) * g_cSize,
-		static_cast<int32_t>(playerPos.y / g_cSize) * g_cSize,
-		static_cast<int32_t>(playerPos.z / g_cSize) * g_cSize,
-	};
-
-	const glm::ivec3 initPos = static_cast<glm::ivec3>(playerChunkPos) - m_radiusChunk * glm::ivec3(g_cSize);
-	const glm::ivec3 endPos = static_cast<glm::ivec3>(playerChunkPos) + m_radiusChunk * glm::ivec3(g_cSize);
-
-	for (int32_t y = initPos.y; y < endPos.y; y += g_cSize)
-	{
-		for (int32_t z = initPos.z; z < endPos.z; z += g_cSize)
-		{
-			for (int32_t x = initPos.x; x < endPos.x; x += g_cSize)
-			{
-				const glm::ivec3 pos = { x, y, z };
-				m_chunks[pos] = std::make_shared<Chunk>(pos);
-				m_chunksToConstruct.push_back(pos);
-			}
-		}
-	}
-#endif
+	m_generation.function = std::bind(&World::generateChunks, this);
+	m_baking.function = std::bind(&World::bakeMeshes, this);
 }
 
 void World::update(const glm::vec3& playerPos)
@@ -105,13 +84,13 @@ void World::update(const glm::vec3& playerPos)
 				{
 					m_chunks[pos] = std::make_shared<Chunk>(pos);
 				}
-				else 
+				else
 				{
-					if (m_chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen)
+					if (m_chunksToGenerate.size() < UpdateConstants::g_maxChunksToGen)
 					{
 						if (m_chunks[pos] != nullptr && m_chunks[pos]->getState() == ChunkState::EMPTY)
 						{
-							m_chunksToConstruct.push_back(std::move(m_chunks[pos]));
+							m_chunksToGenerate.push_back(std::move(m_chunks[pos]));
 						}
 					}
 				}
@@ -130,7 +109,6 @@ void World::update(const glm::vec3& playerPos)
 		if (!chunk->inBounds(initPos, endPos))
 		{
 			chunksToRemove.push_back(pos);
-			// LOG_CORE_INFO("REMOVED");
 			continue;
 		}
 
@@ -140,7 +118,7 @@ void World::update(const glm::vec3& playerPos)
 
 		case ChunkState::VOXELS_GENERATED: {
 			notifyChunkNeighbours(pos);
-			if (chunk->canBake() && !m_bakingInProcess)
+			if (chunk->canBake() && !m_baking.launched)
 			{
 				const float distance = glm::distance(pos, playerPos);
 				m_chunksToBake.push_back(std::move(chunk));
@@ -158,88 +136,56 @@ void World::update(const glm::vec3& playerPos)
 		}
 	}
 
-#if 1
-	//if (!m_chunksConstructionInPorcess && !m_bakingInProcess)
+	for (auto& pos : chunksToRemove)
 	{
-		for (auto& pos : chunksToRemove)
-		{
-			//std::lock_guard<std::shared_mutex> lock(m_mutex);
-			m_chunks.erase(pos);
-		}
-	}
-#endif
-	if (!m_chunksConstructionInPorcess && !m_chunksToConstruct.empty())
-	{
-		m_constructionTask = std::move(std::async(&World::generateChunks, this));
-		m_chunksConstructionInPorcess = true;
-	}
-	else if (m_chunksConstructionInPorcess &&
-		m_constructionTask.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-	{
-		m_chunksConstructionInPorcess = false;
-		try
-		{
-			m_constructionTask.get();
-			for (auto& chunk : m_chunksToConstruct)
-			{
-				if (chunk->inBounds(initPos, endPos))
-				{
-					m_chunks[chunk->getPos()] = std::move(chunk);
-				}
-			}
-			m_chunksToConstruct.clear();
-		}
-		catch (std::exception& e)
-		{
-			LOG_CORE_ERROR("In construction thread: {0}, {1}", e.what(), m_constructionTask.valid());
-		}
+		m_chunks.erase(pos);
 	}
 
-	if (!m_bakingInProcess && !m_chunksToBake.empty())
+	updateChunkTask(m_generation, m_chunksToGenerate, initPos, endPos);
+	updateChunkTask(m_baking, m_chunksToBake, initPos, endPos);
+}
+
+void World::updateChunkTask(TaskWrapper& tWrapper, std::vector<std::shared_ptr<Chunk>>& chunkList, const glm::ivec3& initPos, const glm::ivec3& endPos)
+{
+	if (!tWrapper.launched && !chunkList.empty())
 	{
-		m_bakingTask = std::move(std::async(&World::constructMeshes, this));
-		m_bakingInProcess = true;
+		tWrapper.task = std::move(std::async(tWrapper.function));
+		tWrapper.launched = true;
 	}
-	else if (m_bakingInProcess &&
-		m_bakingTask.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	else if (tWrapper.launched && tWrapper.completed())
 	{
 		try
 		{
-			m_bakingTask.get();
-			for (auto& chunk : m_chunksToBake)
+			tWrapper.get();
+			for (auto& chunk : chunkList)
 			{
-				if (chunk->inBounds(initPos, endPos))
-				{
-					m_chunks[chunk->getPos()] = std::move(chunk);
-				}
+				m_chunks[chunk->getPos()] = std::move(chunk);
 			}
-			m_chunksToBake.clear();
+			chunkList.clear();
+			tWrapper.launched = false;
 		}
 		catch (std::exception& e)
 		{
-			LOG_CORE_ERROR("In baking thread: {0}, {1}", e.what(), m_bakingTask.valid());
+			LOG_CORE_ERROR("In construction thread: {0}, {1}", e.what(), tWrapper.task.valid());
 		}
-		m_bakingInProcess = false;
 	}
 }
 
 void World::generateChunks()
 {
-	for (auto& chunk : m_chunksToConstruct)
+	for (auto& chunk : m_chunksToGenerate)
 	{
 		const auto& pos = chunk->getPos();
 		chunk->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
 	}
 }
 
-void World::constructMeshes()
+void World::bakeMeshes()
 {
-	int32_t counter = 0;
 	for (auto& chunk : m_chunksToBake)
 	{
 		chunk->setState(ChunkState::MESH_BAKING);
 		chunk->constructMesh();
-		counter++;
 	}
 }
 

@@ -17,8 +17,8 @@ constexpr float g_renderDistance = 12 * g_cSize;
 
 namespace UpdateConstants
 {
-	constexpr uint32_t g_maxChunksToGen = 16;
-	constexpr uint32_t g_maxMeshesToConstruct = 16;
+	constexpr uint32_t g_maxChunksToGen = 32;
+	constexpr uint32_t g_maxMeshesToConstruct = 24;
 }
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
@@ -92,7 +92,6 @@ void World::update(const glm::vec3& playerPos)
 		playerChunkPos.z + m_radiusChunk * g_cSize
 	};
 
-	std::multimap<float, glm::ivec3> chunksToConstruct;
 	for (int32_t y = initPos.y; y < endPos.y; y += g_cSize)
 	{
 		for (int32_t z = initPos.z; z < endPos.z; z += g_cSize)
@@ -101,23 +100,25 @@ void World::update(const glm::vec3& playerPos)
 			{
 				const glm::ivec3 pos = { x, y, z };
 				const float distance = glm::distance(playerPos, static_cast<glm::vec3>(pos));
-				if (chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen)
+
+				if (m_chunks.find(pos) == m_chunks.end())
 				{
-					if (m_chunks.find(pos) == m_chunks.end())
+					m_chunks[pos] = std::make_shared<Chunk>(pos);
+				}
+				else 
+				{
+					if (m_chunksToConstruct.size() < UpdateConstants::g_maxChunksToGen)
 					{
-						m_chunks[pos] = std::make_shared<Chunk>(pos);
-						chunksToConstruct.insert({ distance, pos });
-					}
-					else if (m_chunks[pos]->getState() == ChunkState::EMPTY)
-					{
-						chunksToConstruct.insert({ distance, pos });
+						if (m_chunks[pos] != nullptr && m_chunks[pos]->getState() == ChunkState::EMPTY)
+						{
+							m_chunksToConstruct.push_back(std::move(m_chunks[pos]));
+						}
 					}
 				}
 			}
 		}
 	}
 #endif
-	std::multimap<float, glm::ivec3> chunksToBake;
 	std::vector<glm::ivec3> chunksToRemove;
 	for (auto& [pos, chunk] : m_chunks)
 	{
@@ -128,8 +129,8 @@ void World::update(const glm::vec3& playerPos)
 
 		if (!chunk->inBounds(initPos, endPos))
 		{
-			const float distance = glm::distance(playerPos, pos);
 			chunksToRemove.push_back(pos);
+			// LOG_CORE_INFO("REMOVED");
 			continue;
 		}
 
@@ -139,10 +140,10 @@ void World::update(const glm::vec3& playerPos)
 
 		case ChunkState::VOXELS_GENERATED: {
 			notifyChunkNeighbours(pos);
-			if (chunk->canBake())
+			if (chunk->canBake() && !m_bakingInProcess)
 			{
 				const float distance = glm::distance(pos, playerPos);
-				chunksToBake.insert({ distance, pos });
+				m_chunksToBake.push_back(std::move(chunk));
 			}
 			break;
 		}
@@ -158,18 +159,18 @@ void World::update(const glm::vec3& playerPos)
 	}
 
 #if 1
-	if (!m_chunksConstructionInPorcess && !m_bakingInProcess)
+	//if (!m_chunksConstructionInPorcess && !m_bakingInProcess)
 	{
 		for (auto& pos : chunksToRemove)
 		{
-			std::lock_guard<std::shared_mutex> lock(m_mutex);
+			//std::lock_guard<std::shared_mutex> lock(m_mutex);
 			m_chunks.erase(pos);
 		}
 	}
 #endif
-	if (!m_chunksConstructionInPorcess && !chunksToConstruct.empty())
+	if (!m_chunksConstructionInPorcess && !m_chunksToConstruct.empty())
 	{
-		m_constructionTask = std::move(std::async(&World::generateChunks, this, std::move(chunksToConstruct)));
+		m_constructionTask = std::move(std::async(&World::generateChunks, this));
 		m_chunksConstructionInPorcess = true;
 	}
 	else if (m_chunksConstructionInPorcess &&
@@ -179,6 +180,14 @@ void World::update(const glm::vec3& playerPos)
 		try
 		{
 			m_constructionTask.get();
+			for (auto& chunk : m_chunksToConstruct)
+			{
+				if (chunk->inBounds(initPos, endPos))
+				{
+					m_chunks[chunk->getPos()] = std::move(chunk);
+				}
+			}
+			m_chunksToConstruct.clear();
 		}
 		catch (std::exception& e)
 		{
@@ -186,9 +195,9 @@ void World::update(const glm::vec3& playerPos)
 		}
 	}
 
-	if (!m_bakingInProcess && !chunksToBake.empty())
+	if (!m_bakingInProcess && !m_chunksToBake.empty())
 	{
-		m_bakingTask = std::move(std::async(&World::constructMeshes, this, std::move(chunksToBake)));
+		m_bakingTask = std::move(std::async(&World::constructMeshes, this));
 		m_bakingInProcess = true;
 	}
 	else if (m_bakingInProcess &&
@@ -197,37 +206,40 @@ void World::update(const glm::vec3& playerPos)
 		try
 		{
 			m_bakingTask.get();
+			for (auto& chunk : m_chunksToBake)
+			{
+				if (chunk->inBounds(initPos, endPos))
+				{
+					m_chunks[chunk->getPos()] = std::move(chunk);
+				}
+			}
+			m_chunksToBake.clear();
 		}
 		catch (std::exception& e)
 		{
-			LOG_CORE_ERROR(e.what());
+			LOG_CORE_ERROR("In baking thread: {0}, {1}", e.what(), m_bakingTask.valid());
 		}
 		m_bakingInProcess = false;
 	}
 }
 
-void World::generateChunks(std::multimap<float, glm::ivec3> chunksToConstruct)
+void World::generateChunks()
 {
-	for (const auto& [distance, pos] : chunksToConstruct)
+	for (auto& chunk : m_chunksToConstruct)
 	{
-		std::lock_guard<std::shared_mutex> lock(m_mutex);
-		if (m_chunks.find(pos) != m_chunks.end())
-		{
-			m_chunks[pos]->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
-		}
+		const auto& pos = chunk->getPos();
+		chunk->generateChunk(m_heightMap->getChunkMap({ pos.x, pos.z }));
 	}
 }
 
-void World::constructMeshes(std::multimap<float, glm::ivec3> chunksToBake)
+void World::constructMeshes()
 {
-	for (const auto& [distance, pos] : chunksToBake)
+	int32_t counter = 0;
+	for (auto& chunk : m_chunksToBake)
 	{
-		std::lock_guard<std::shared_mutex> lock(m_mutex);
-		if (m_chunks.find(pos) != m_chunks.end())
-		{
-			m_chunks[pos]->setState(ChunkState::MESH_BAKING);
-			m_chunks[pos]->constructMesh();
-		}
+		chunk->setState(ChunkState::MESH_BAKING);
+		chunk->constructMesh();
+		counter++;
 	}
 }
 
@@ -236,6 +248,11 @@ void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, cons
 {
 	for (const auto& [pos, chunk] : m_chunks)
 	{
+		if (chunk == nullptr)
+		{
+			continue;
+		}
+
 		if (chunk->getState() == ChunkState::READY &&
 			glm::distance(pos, playerPos) < renderDistance)
 		{

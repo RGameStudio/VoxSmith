@@ -121,7 +121,7 @@ bool Chunk::inBounds(const glm::ivec3& min, const glm::ivec3& max) const
 {
 	return
 		min.x <= m_pos.x && min.y <= m_pos.y && min.z <= m_pos.z &&
-		m_pos.x <= max.x && m_pos.y <= max.z && m_pos.z <= max.z;
+		m_pos.x <= max.x && m_pos.y <= max.y && m_pos.z <= max.z;
 }
 
 void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)

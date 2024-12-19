@@ -67,7 +67,7 @@ void World::update(const glm::vec3& playerPos)
 	};
 	const glm::ivec3 endPos = {
 		playerChunkPos.x + m_radiusChunk * g_cSize,
-		2 * m_radiusChunk * g_cSize,
+		m_radiusChunk * g_cSize,
 		playerChunkPos.z + m_radiusChunk * g_cSize
 	};
 

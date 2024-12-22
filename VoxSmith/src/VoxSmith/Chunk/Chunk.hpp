@@ -20,6 +20,8 @@ namespace VoxSmith
 	class Shader;
 	class Mesh;
 	struct ChunkMap;
+	struct Frustum;
+	struct Plane;
 
 	enum VOX_SMITH_API Direction : int8_t
 	{
@@ -61,6 +63,7 @@ namespace VoxSmith
 		
 		bool canBake() const;
 		bool inBounds(const glm::ivec3& min, const glm::ivec3& max) const;
+		bool inFrustum(const Frustum& frustum);
 		ChunkState getState() const;
 		
 		void setState(ChunkState state);
@@ -71,8 +74,10 @@ namespace VoxSmith
 		Chunk() = default;
 		Chunk(Chunk&&) = default;
 		Chunk& operator=(Chunk&&) = default;
+
 	private:
-		glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
+		glm::ivec3 m_pos = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 m_center;
 
 		ChunkState m_state = ChunkState::EMPTY;
 
@@ -93,6 +98,7 @@ namespace VoxSmith
 
 		inline int32_t getId(const glm::vec3& v, const float cSize) { return cSize * (v.y * cSize + v.z) + v.x; }
 
+		bool isOnwardPlane(const Plane& frustum) const;
 		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
 		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);

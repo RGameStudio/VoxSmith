@@ -17,6 +17,7 @@ namespace VoxSmith
 	class Chunk;
 	class Shader;
 	struct HeightMap;
+	struct Frustum;
 
 	class VOX_SMITH_API World
 	{
@@ -28,7 +29,7 @@ namespace VoxSmith
 
 		void update(const glm::vec3& playerPos);
 		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos,
-			const float renderDistance, bool isOutlineActive = false);
+			const Frustum& frustum, bool isOutlineActive = false);
 
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;
@@ -68,12 +69,6 @@ namespace VoxSmith
 			}
 		};
 
-		void notifyChunkNeighbours(const glm::vec3& pos);
-		void bakeMeshes();
-		void generateChunks();
-		void updateChunkTask(TaskWrapper& task, std::vector<std::shared_ptr<Chunk>>& chunkList,
-			const glm::ivec3& initPos, const glm::ivec3& endPos);
-
 		std::unordered_map<glm::vec3, std::shared_ptr<Chunk>, KeyFuncs> m_chunks;
 		std::vector<std::shared_ptr<Chunk>> m_chunksToBake;
 		std::vector<std::shared_ptr<Chunk>> m_chunksToGenerate;
@@ -91,5 +86,11 @@ namespace VoxSmith
 		TaskWrapper m_generation;
 #endif
 		mutable std::shared_mutex m_mutex;
+
+		void notifyChunkNeighbours(const glm::vec3& pos);
+		void bakeMeshes();
+		void generateChunks();
+		void updateChunkTask(TaskWrapper& task, std::vector<std::shared_ptr<Chunk>>& chunkList,
+			const glm::ivec3& initPos, const glm::ivec3& endPos);
 	};
 }

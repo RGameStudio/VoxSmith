@@ -20,6 +20,7 @@ namespace VoxSmith
 	class Shader;
 	class Mesh;
 	struct ChunkMap;
+	struct Frustum;
 
 	enum VOX_SMITH_API Direction : int8_t
 	{
@@ -61,6 +62,7 @@ namespace VoxSmith
 		
 		bool canBake() const;
 		bool inBounds(const glm::ivec3& min, const glm::ivec3& max) const;
+		bool inFrustum(const Frustum& frustum);
 		ChunkState getState() const;
 		
 		void setState(ChunkState state);
@@ -73,6 +75,7 @@ namespace VoxSmith
 		Chunk& operator=(Chunk&&) = default;
 	private:
 		glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 m_center;
 
 		ChunkState m_state = ChunkState::EMPTY;
 

@@ -17,6 +17,7 @@ namespace VoxSmith
 	class Chunk;
 	class Shader;
 	struct HeightMap;
+	struct Frustum;
 
 	class VOX_SMITH_API World
 	{
@@ -28,7 +29,7 @@ namespace VoxSmith
 
 		void update(const glm::vec3& playerPos);
 		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos,
-			const float renderDistance, bool isOutlineActive = false);
+			const Frustum& frustum, bool isOutlineActive = false);
 
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;

@@ -5,6 +5,7 @@
 #include "VoxSmith/ResourceManager/ResourceManager.hpp"
 #include "VoxSmith/ResourceManager/ResourcesLists.hpp"
 #include "VoxSmith/World/HeightMap/HeightMap.hpp"
+#include "VoxSmith/Camera/Camera.hpp"
 
 #include "Chunk.hpp"
 
@@ -28,6 +29,7 @@ const glm::vec3 g_dirs[2][3] = {
 
 Chunk::Chunk(const glm::vec3& pos)
 	: m_pos(pos)
+	, m_center(pos + glm::vec3(g_sAxis / 2))
 	, m_neighbours(6, nullptr)
 	, m_mesh(std::make_shared<Mesh>())
 {
@@ -115,6 +117,14 @@ bool Chunk::canBake() const
 	}
 
 	return true;
+}
+
+bool Chunk::inFrustum(const Frustum& frustum)
+{
+	return 
+		frustum.bottomFace.pointOnFacePlane(m_center) && frustum.topFace.pointOnFacePlane(m_center) &&
+		frustum.nearFace.pointOnFacePlane(m_center) && frustum.farFace.pointOnFacePlane(m_center) &&
+		frustum.leftFace.pointOnFacePlane(m_center) && frustum.rightFace.pointOnFacePlane(m_center);
 }
 
 bool Chunk::inBounds(const glm::ivec3& min, const glm::ivec3& max) const

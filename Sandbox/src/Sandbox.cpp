@@ -37,19 +37,19 @@ public:
 		glm::vec3 vel = glm::vec3(0.0f);
 		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_W))
 		{
-			vel += m_camera->getDir();
+			vel += m_camera->getFront();
 		}
 		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_S))
 		{
-			vel -= m_camera->getDir();
+			vel -= m_camera->getFront();
 		}
 		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_D))
 		{
-			vel += glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
+			vel += glm::normalize(glm::cross(m_camera->getFront(), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
 		if (VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_A))
 		{
-			vel -= glm::normalize(glm::cross(m_camera->getDir(), glm::vec3(0.0f, 1.0f, 0.0f)));
+			vel -= glm::normalize(glm::cross(m_camera->getFront(), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
 
 		m_camera->updateCameraPos(vel, dt);
@@ -69,7 +69,7 @@ public:
 	{
 		world.draw(m_renderer, 
 			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), 
-			m_camera->getPos(), m_camera->getViewDistance(), chunkOutlineStatus());
+			m_camera->getPos(), m_camera->getFrustum(), chunkOutlineStatus());
 	}
 
 	~Sandbox() noexcept

@@ -6,6 +6,7 @@
 #include "VoxSmith/Chunk/Chunk.hpp"
 #include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/World/HeightMap/HeightMap.hpp"
+#include "VoxSmith/Timer/Timestep.hpp"
 
 #include "World.hpp"
 
@@ -17,8 +18,8 @@ constexpr float g_renderDistance = 12 * g_cSize;
 
 namespace UpdateConstants
 {
-	constexpr uint32_t g_maxChunksToGen = 32;
-	constexpr uint32_t g_maxMeshesToConstruct = 24;
+	constexpr uint32_t g_maxChunksToGen = 128;
+	constexpr uint32_t g_maxMeshesToConstruct = 64;
 }
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)
@@ -118,7 +119,7 @@ void World::update(const glm::vec3& playerPos)
 
 		case ChunkState::VOXELS_GENERATED: {
 			notifyChunkNeighbours(pos);
-			if (chunk->canBake() && !m_baking.launched)
+			if (chunk->canBake() && !m_baking.launched && m_chunksToBake.size() < UpdateConstants::g_maxMeshesToConstruct)
 			{
 				const float distance = glm::distance(pos, playerPos);
 				m_chunksToBake.push_back(std::move(chunk));
@@ -190,7 +191,7 @@ void World::bakeMeshes()
 }
 
 void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos,
-	const float renderDistance, bool isOutlineActive)
+	const Frustum& frustum, bool isOutlineActive)
 {
 	for (const auto& [pos, chunk] : m_chunks)
 	{
@@ -199,8 +200,7 @@ void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, cons
 			continue;
 		}
 
-		if (chunk->getState() == ChunkState::READY &&
-			glm::distance(pos, playerPos) < renderDistance)
+		if (chunk->getState() == ChunkState::READY && chunk->inFrustum(frustum))
 		{
 			chunk->draw(renderer, shader, isOutlineActive);
 		}

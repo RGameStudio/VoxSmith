@@ -51,7 +51,7 @@ ChunkMap HeightMap::generateMap(const glm::ivec2& pos)
 			const float n1 = 0.15f * m_baseNoiseGen.GetNoise(xFloat, zFloat);
 			const float n2 = 1.6f * m_mountainNoiseGen.GetNoise(xFloat, zFloat);
 
-			const float coeff = 200;
+			const float coeff = 100;
 
 			float t;
 			if (n2 > n1)
@@ -62,7 +62,7 @@ ChunkMap HeightMap::generateMap(const glm::ivec2& pos)
 			}
 			const float noiseFactor = n2 > n1 ? lerp(n1, n2, t) : n1;
 
-			map.data.push_back(90 +
+			map.data.push_back(100 +
 				coeff * (noiseFactor));
 		}
 	}

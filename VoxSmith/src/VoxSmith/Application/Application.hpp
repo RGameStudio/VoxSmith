@@ -13,11 +13,6 @@ namespace VoxSmith
 {
 	struct WindowEvent;
 
-	namespace Constants
-	{
-		static constexpr float g_renderDistance = 300.0f;
-	}
-
 	class VOX_SMITH_API Application
 	{
 	public:

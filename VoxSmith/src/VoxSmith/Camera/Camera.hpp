@@ -10,8 +10,6 @@ namespace VoxSmith
 	{
 		glm::vec3 pos;
 		glm::vec3 normal = {0.0f, 0.1f, 0.0f};
-
-		bool pointOnFacePlane(const glm::vec3& pos) const;
 	};
 
 	struct VOX_SMITH_API Frustum

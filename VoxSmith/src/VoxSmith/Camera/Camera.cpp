@@ -9,6 +9,7 @@ constexpr float g_fov = 45.0f;
 constexpr glm::vec3 g_up = glm::vec3(0.0f, 1.0f, 0.0f);
 constexpr float g_near = 0.1f;
 constexpr float g_far = 400.0f;
+constexpr float g_frustumFov = 55.0f;
 
 Camera::Camera(const glm::vec3 pos, const size_t width, const size_t height)
 	: m_pos(pos)
@@ -76,7 +77,7 @@ void Camera::updateCameraAngle(const float xPos, const float yPos)
 Frustum Camera::getFrustum()
 {
 	Frustum frustum;
-	const float halfHeight = m_far * glm::tan(glm::radians(m_fov) * 0.5f);
+	const float halfHeight = m_far * glm::tan(glm::radians(g_frustumFov) * 0.5f);
 	const float halfWidth = halfHeight * m_aspect;
 	const glm::vec3 frontFar = m_far * m_front;
 
@@ -90,10 +91,4 @@ Frustum Camera::getFrustum()
 	frustum.bottomFace = { m_pos, glm::normalize(glm::cross(frontFar + m_up * halfHeight, m_right)) };
 
 	return frustum;
-}
-
-bool Plane::pointOnFacePlane(const glm::vec3& pos_) const
-{
-	const float r = 16 * glm::abs(normal.x) + 16 * glm::abs(normal.y) + 16 * glm::abs(normal.z);
-	return glm::dot(normal, pos_) - glm::dot(pos, normal) + r >= 0;
 }

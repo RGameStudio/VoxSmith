@@ -121,10 +121,18 @@ bool Chunk::canBake() const
 
 bool Chunk::inFrustum(const Frustum& frustum)
 {
-	return 
-		frustum.bottomFace.pointOnFacePlane(m_center) && frustum.topFace.pointOnFacePlane(m_center) &&
-		frustum.nearFace.pointOnFacePlane(m_center) && frustum.farFace.pointOnFacePlane(m_center) &&
-		frustum.leftFace.pointOnFacePlane(m_center) && frustum.rightFace.pointOnFacePlane(m_center);
+	return
+		isOnwardPlane(frustum.bottomFace) && isOnwardPlane(frustum.topFace) &&
+		isOnwardPlane(frustum.nearFace) && isOnwardPlane(frustum.farFace) &&
+		isOnwardPlane(frustum.leftFace) && isOnwardPlane(frustum.rightFace);
+}
+
+
+bool Chunk::isOnwardPlane(const Plane& plane) const
+{
+	const float extent = g_sAxis * 0.5f;
+	const float r = extent * glm::abs(plane.normal.x) + extent * glm::abs(plane.normal.y) + extent * glm::abs(plane.normal.z);
+	return glm::dot(plane.normal, m_center) - glm::dot(plane.pos, plane.normal) + r >= 0;
 }
 
 bool Chunk::inBounds(const glm::ivec3& min, const glm::ivec3& max) const
@@ -360,7 +368,7 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 
 #define LOCK_BASED_ADD_QUAD 0
 
-void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, 
+void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis,
 	const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
 #if LOCK_BASED_ADD_QUAD
@@ -377,7 +385,7 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, 
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
 	const glm::vec3& color, const int32_t id)
 {
 #if LOCK_BASED_ADD_QUAD
@@ -387,7 +395,7 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.emplace_back(pos, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + v, color, id);
-	
+
 	m_vertices.emplace_back(pos + v, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + u + v, color, id);
@@ -408,7 +416,7 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 	}
 
 	shader.setUniform3fv("u_chunkPos", m_pos);
-	
+
 	m_mesh->draw(renderer, shader);
 	if (drawOutline)
 	{

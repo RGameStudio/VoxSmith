@@ -371,9 +371,6 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis,
 	const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
 {
-#if LOCK_BASED_ADD_QUAD
-	//std::lock_guard<std::mutex> lock(m_mutex);
-#endif
 	pos[iAxis] += iSide;
 
 	m_vertices.emplace_back(pos, color, id);
@@ -388,10 +385,6 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
 	const glm::vec3& color, const int32_t id)
 {
-#if LOCK_BASED_ADD_QUAD
-	//std::lock_guard<std::mutex> lock(m_mutex);
-#endif
-
 	m_vertices.emplace_back(pos, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + v, color, id);
@@ -399,6 +392,12 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.emplace_back(pos + v, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + u + v, color, id);
+}
+
+void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis,
+	const glm::vec3& u, const glm::vec3& v, const int32_t texId, const int32_t uvId)
+{
+
 }
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline)
@@ -430,13 +429,22 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 	m_mesh->reserveMesh();
 }
 
-void Chunk::constructMesh()
+void Chunk::bake(MeshType type)
 {
 	std::unique_lock<std::shared_mutex> uLock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	uLock.unlock();
 
-	bakeCulled(m_voxels, g_sAxis);
+	switch (type)
+	{
+	case MeshType::CULLED:
+		bakeCulled(m_voxels, g_sAxis);
+		break;
+
+	case MeshType::GREEDY:
+		bakeGreedy(m_voxels, g_sAxis);
+		break;
+	}
 
 	uLock.lock();
 	if (m_vertices.empty())

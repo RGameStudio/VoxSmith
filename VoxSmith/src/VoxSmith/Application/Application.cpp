@@ -23,6 +23,7 @@ Application::Application(const uint32_t width, const uint32_t height)
 	m_camera = std::make_unique<Camera>(glm::vec3(0.0f, 300.0f, 5.0f), width, height);
 
 	ResourceManager::getInstance().initShaders();
+	ResourceManager::getInstance().initTextureList();
 }
 
 Application::~Application() noexcept

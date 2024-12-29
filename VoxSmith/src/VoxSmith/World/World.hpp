@@ -75,16 +75,9 @@ namespace VoxSmith
 		int32_t m_radiusChunk;
 
 		std::shared_ptr<HeightMap> m_heightMap;
-#if 0
-		bool m_bakeLaunched = false;
-		std::future<void> m_bakingTask;
 
-		bool m_constructionLaunched = false;
-		std::future<void> m_constructionTask;
-#else
 		TaskWrapper m_baking;
 		TaskWrapper m_generation;
-#endif
 		mutable std::shared_mutex m_mutex;
 
 		void notifyChunkNeighbours(const glm::vec3& pos);
@@ -92,5 +85,6 @@ namespace VoxSmith
 		void generateChunks();
 		void updateChunkTask(TaskWrapper& task, std::vector<std::shared_ptr<Chunk>>& chunkList,
 			const glm::ivec3& initPos, const glm::ivec3& endPos);
+		void traverseChunks(const glm::ivec3& initPos, const glm::ivec3& endPos);
 	};
 }

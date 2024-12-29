@@ -23,7 +23,7 @@ namespace VoxSmith
 	{
 	public:
 		World(const glm::vec3 minBoundary = glm::vec3(0),
-			const glm::vec3 maxBoundary = glm::vec3(16, 12, 16));
+			const glm::vec3 maxBoundary = glm::vec3(16, 8, 16));
 		World(const glm::vec3& playerPos, const int32_t radiusChunks);
 		~World() = default;
 

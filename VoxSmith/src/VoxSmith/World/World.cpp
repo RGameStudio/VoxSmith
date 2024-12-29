@@ -19,7 +19,8 @@ constexpr float g_renderDistance = 12 * g_cSize;
 namespace UpdateConstants
 {
 	constexpr uint32_t g_maxChunksToGen = 64;
-	constexpr uint32_t g_maxMeshesToConstruct = 64;
+	constexpr uint32_t g_maxMeshesToConstruct = 32;
+
 }
 
 World::World(const glm::vec3 minBoundary, const glm::vec3 maxBoundary)

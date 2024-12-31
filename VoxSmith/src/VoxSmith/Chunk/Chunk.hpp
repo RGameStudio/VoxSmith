@@ -87,14 +87,12 @@ namespace VoxSmith
 		glm::vec3 m_center;
 
 		ChunkState m_state = ChunkState::EMPTY;
-
 		std::shared_ptr<Mesh> m_mesh = nullptr;
-
-		mutable std::shared_mutex m_mutex;
-
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
 		std::vector<std::shared_ptr<Chunk>> m_neighbours;
+
+		mutable std::shared_mutex m_mutex;
 
 		enum FaceType : int8_t
 		{
@@ -110,12 +108,10 @@ namespace VoxSmith
 		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 		
-		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis, 
-			const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id);
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, 
 			const glm::vec3& color, const int32_t id);
-		void addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis,
-			const glm::vec3& u, const glm::vec3& v, const int32_t texId, const int32_t uvId);
+		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
+			const int32_t texId, const int32_t uvId);
 
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;
 	};

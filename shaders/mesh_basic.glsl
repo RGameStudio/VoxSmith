@@ -1,10 +1,9 @@
 #shader VERTEX
 
-#version 430 core
+#version 450 core
 
-layout (location = 0) in vec3 pos;
-layout (location = 1) in vec3 color;
-layout (location = 2) in int faceId;
+layout (location = 0) in int posData;
+layout (location = 1) in uint texColLightData;
 
 const float g_fadeFactors[6] = {
     0.1,
@@ -24,8 +23,20 @@ out vec3 fragment_color;
 
 void main()
 {
-    gl_Position = u_projection * u_view * vec4(u_chunkPos + pos, 1.0);
-    fragment_color = g_fadeFactors[faceId] * color;
+    const int x = posData & 0x1F;
+    const int y = (posData >> 5) & 0x1F;
+    const int z = (posData >> 10) & 0x1F;
+    
+    const vec3 color = vec3(
+        ((texColLightData) & 255) / 255.0,
+        ((texColLightData >> 8) & 255) / 255.0,
+        ((texColLightData >> 16) & 255) / 255.0 
+    );
+
+    const uint faceId = (texColLightData >> 24) & 255;
+
+    gl_Position = u_projection * u_view * vec4(u_chunkPos + vec3(x, y, z), 1.0);
+    fragment_color = vec3(0, 0.5, 0);
 }
 
 #shader GEOMETRY

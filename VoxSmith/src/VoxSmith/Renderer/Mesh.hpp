@@ -18,69 +18,43 @@ namespace VoxSmith
 
 	struct VOX_SMITH_API Vertex final
 	{
-		Vertex() = default;
-		Vertex(const glm::vec3& pos_, const glm::vec3& color_, const int32_t id_)
-			: pos(pos_)
-			, color(color_)
-			, id(id_)
+		Vertex(const glm::ivec3& pos, const glm::u8vec3& color, const uint8_t id)
 		{
+			posData |= (pos.x & 0x1F);
+			posData |= (pos.y & 0x1F) << 5;
+			posData |= (pos.z & 0x1F) << 10;
 
+			auto test = {
+				posData & 31,
+				(posData >> 5) & 31,
+				(posData >> 10) & 31,
+			};
+
+			texColLightData |= (color.r & 0b11111111);
+			texColLightData |= (color.g & 0b11111111) << 8;
+			texColLightData |= (color.b & 0b11111111) << 16;
+			
+			test = {
+				texColLightData & 255,
+				(texColLightData >> 8) & 255,
+				((texColLightData) >> 16) & 255
+			};
+
+			texColLightData |= (id & 0b11111111) << 24;
 		}
 
-		glm::vec3 pos;
-		glm::vec3 color;
-		int32_t id;
-	};
-
-	struct VOX_SMITH_API VertexTex final
-	{
-		VertexTex() = default;
-		VertexTex(const glm::vec3& pos_, const int32_t texId_, const int32_t uvId_)
-			: pos(pos_)
-			, texId(texId_)
-			, uvId(uvId_)
+		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId)
 		{
+			posData |= (pos.x & 0b11111);
+			posData |= (pos.y & 0b11111) << 5;
+			posData |= (pos.z & 0b11111) << 10;
 
+			// texColLightData |= (texId & 0b11111111);
+			// texColLightData |= (uvId & 0b11111111) << uvId;
 		}
 
-		glm::vec3 pos;
-		int32_t texId;
-		int32_t uvId;
-	};
-
-	struct VOX_SMITH_API VertexCompressed final
-	{
-		VertexCompressed(const glm::ivec3& pos_, const glm::vec3& color_, const int32_t id_)
-		{
-			data |= (pos_.x & 0x1F);		// x
-			data |= (pos_.y & 0x1F) << 5;	// y
-			data |= (pos_.z & 0x1F) << 10;	// z
-		}
-
-		VertexCompressed(const glm::ivec3& pos_, const int8_t texId_)
-		{
-			data |= (pos_.x & 0x1F);		// x
-			data |= (pos_.y & 0x1F) << 5;	// y
-			data |= (pos_.z & 0x1F) << 10;	// z
-
-			data |= (texId_ & 0x1FF);
-		}
-
-		int32_t data = 0;
-	};
-
-	struct VOX_SMITH_API Quad
-	{
-		Quad() = default;
-		Quad(const std::vector<Vertex>& vertices_)
-		{
-			for (int32_t iVertex = 0; iVertex < 6; iVertex++)
-			{
-				vertices[iVertex] = vertices_[iVertex];
-			}
-		}
-
-		Vertex vertices[6];
+		int32_t posData = 0;
+		int32_t texColLightData = 0;
 	};
 
 	class VOX_SMITH_API Mesh final

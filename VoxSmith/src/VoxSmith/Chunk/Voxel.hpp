@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-#include "../Core.hpp"
+#include "VoxSmith/Core.hpp"
 
 namespace VoxSmith
 {
@@ -11,13 +11,15 @@ namespace VoxSmith
 		Empty,
 		Dirt,
 		Grass,
+		Stone,
 	};
 
 	using Voxel = VoxelType;
 
-	static std::unordered_map<VoxelType, glm::vec3> s_voxelColors = {
-		{VoxelType::Dirt, {0.57f, 0.42f, 0.3f}},
-		{VoxelType::Grass, {0, 1.0f, 0.0f}},
+	static std::unordered_map<VoxelType, glm::u8vec3> s_voxelColors = {
+		{ VoxelType::Dirt,  { 155, 118, 83  } },
+		{ VoxelType::Grass, { 0,   255, 0   } },
+		{ VoxelType::Stone, { 183, 176, 156 } },
 	};
 
 }

@@ -18,7 +18,7 @@ constexpr float g_renderDistance = 12 * g_cSize;
 
 namespace UpdateConstants
 {
-	constexpr uint32_t g_maxChunksToGen = 64;
+	constexpr uint32_t g_maxChunksToGen = 32;
 	constexpr uint32_t g_maxMeshesToConstruct = 32;
 }
 
@@ -156,7 +156,7 @@ void World::updateChunkTask(TaskWrapper& tWrapper, std::vector<std::shared_ptr<C
 			tWrapper.get();
 			for (auto& chunk : chunkList)
 			{
-				if (chunk->inBounds(initPos, endPos))
+				//if (chunk->inBounds(initPos, endPos))
 				{
 					m_chunks[chunk->getPos()] = std::move(chunk);
 				}
@@ -185,7 +185,7 @@ void World::bakeMeshes()
 	for (auto& chunk : m_chunksToBake)
 	{
 		chunk->setState(ChunkState::MESH_BAKING);
-		chunk->bake();
+		chunk->bake(MeshType::GREEDY);
 	}
 }
 

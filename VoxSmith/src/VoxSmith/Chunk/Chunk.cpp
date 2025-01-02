@@ -82,6 +82,11 @@ void Chunk::generateChunk(const ChunkMap& map)
 		uLock.lock();
 		m_state = ChunkState::VOXELS_GENERATED;
 	}
+	else
+	{
+		uLock.lock();
+		m_state = ChunkState::VOXELS_GENERATED_READY;
+	}
 }
 
 void Chunk::setState(ChunkState state)
@@ -378,6 +383,12 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.emplace_back(pos + v, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + u + v, color, id);
+}
+
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
+	const int32_t texId, const int32_t uvId)
+{
+
 }
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline)

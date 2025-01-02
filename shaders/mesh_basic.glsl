@@ -2,7 +2,7 @@
 
 #version 450 core
 
-layout (location = 0) in int posData;
+layout (location = 0) in vec3 posData;
 layout (location = 1) in uint texColLightData;
 
 const float g_fadeFactors[6] = {
@@ -23,9 +23,7 @@ out vec3 fragment_color;
 
 void main()
 {
-    const int x = posData & 0x1F;
-    const int y = (posData >> 5) & 0x1F;
-    const int z = (posData >> 10) & 0x1F;
+    const vec3 pos = u_chunkPos + posData;
     
     const vec3 color = vec3(
         ((texColLightData) & 255) / 255.0,
@@ -35,8 +33,8 @@ void main()
 
     const uint faceId = (texColLightData >> 24) & 255;
 
-    gl_Position = u_projection * u_view * vec4(u_chunkPos + vec3(x, y, z), 1.0);
-    fragment_color = vec3(0, 0.5, 0);
+    gl_Position = u_projection * u_view * vec4(pos, 1.0);
+    fragment_color = g_fadeFactors[faceId] * color;
 }
 
 #shader GEOMETRY

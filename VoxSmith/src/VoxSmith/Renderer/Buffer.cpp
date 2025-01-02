@@ -48,10 +48,13 @@ void Buffer::init(const std::vector<Vertex>& vertices, const uint32_t mode)
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), mode);
 
 	glEnableVertexAttribArray(0); 
+#if 0
 	glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(0));
-
+#else
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+#endif
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, texColLightData)));
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, texColLightData)));
 
 	m_initialized = true;
 }

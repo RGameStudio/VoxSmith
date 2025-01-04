@@ -156,10 +156,7 @@ void World::updateChunkTask(TaskWrapper& tWrapper, std::vector<std::shared_ptr<C
 			tWrapper.get();
 			for (auto& chunk : chunkList)
 			{
-				//if (chunk->inBounds(initPos, endPos))
-				{
-					m_chunks[chunk->getPos()] = std::move(chunk);
-				}
+				m_chunks[chunk->getPos()] = std::move(chunk);
 			}
 			chunkList.clear();
 			tWrapper.launched = false;
@@ -204,7 +201,7 @@ void World::draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, cons
 			chunk->draw(renderer, shader, isOutlineActive);
 		}
 	}
-}
+} 
 
 void World::notifyChunkNeighbours(const glm::vec3& pos)
 {

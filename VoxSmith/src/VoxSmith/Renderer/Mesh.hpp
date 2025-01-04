@@ -20,39 +20,32 @@ namespace VoxSmith
 	{
 		Vertex(const glm::ivec3& pos, const glm::u8vec3& color, const uint8_t id)
 		{
-#if 0
-			posData |= (pos.x & 0x1F);
-			posData |= (pos.y & 0x1F) << 5;
-			posData |= (pos.z & 0x1F) << 10;
-#else
-			posData = pos;
-#endif
-			texColLightData |= (color.r & 0b11111111);
-			texColLightData |= (color.g & 0b11111111) << 8;
-			texColLightData |= (color.b & 0b11111111) << 16;
+			portion1 |= (pos.x & 0b00111111);
+			portion1 |= (pos.y & 0b00111111) << 6;
+			portion1 |= (pos.z & 0b00111111) << 12;
+			
+			portion1 |= (color.r & 0b11111111) << 18;
+			
+			portion1 |= (color.g & 0b00111111) << 26;
+			portion2 |= (color.g & 0b11000000) >> 6;
+			
+			portion2 |= (color.b & 0b11111111) << 2;
 
-			texColLightData |= (id & 0b11111111) << 24;
+			portion2 |= (id & 0b11111111) << 10;
 		}
 
 		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId)
 		{
-#if 0
-			posData |= (pos.x & 0b11111);
-			posData |= (pos.y & 0b11111) << 5;
-			posData |= (pos.z & 0b11111) << 10;
-#else
-			posData = pos;
-#endif
-			// texColLightData |= (texId & 0b11111111);
-			// texColLightData |= (uvId & 0b11111111) << uvId;
+			portion1 |= (pos.x & 0b111111);
+			portion1 |= (pos.y & 0b111111) << 6;
+			portion1 |= (pos.z & 0b111111) << 12;
+
+			portion2 |= (texId & 0b11111111);
+			portion2 |= (uvId & 0b11111111) << uvId;
 		}
 
-#if 0
-		int32_t posData = 0;
-#else
-		glm::vec3 posData;
-#endif
-		int32_t texColLightData = 0;
+		uint32_t portion1 = 0;
+		uint32_t portion2 = 0;
 	};
 
 	class VOX_SMITH_API Mesh final

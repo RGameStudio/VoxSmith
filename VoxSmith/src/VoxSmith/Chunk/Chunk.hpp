@@ -109,7 +109,7 @@ namespace VoxSmith
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 		
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, 
-			const glm::vec3& color, const int32_t id);
+			const glm::u8vec3& color, const int32_t id);
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
 			const int32_t texId, const int32_t uvId);
 

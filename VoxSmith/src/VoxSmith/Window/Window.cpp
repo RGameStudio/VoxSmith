@@ -96,6 +96,10 @@ Window::Window(const size_t width, const size_t height, const char* title)
 		});
 	
 	glEnable(GL_DEPTH_TEST);
+
+#if _DEBUG
+	glEnable(GL_DEBUG_OUTPUT);
+#endif
 }
 
 Window::~Window() noexcept

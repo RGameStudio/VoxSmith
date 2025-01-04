@@ -9,9 +9,6 @@
 namespace VoxSmith
 {
 	struct Vertex;
-	struct VertexTex;
-	struct VertexCompressed;
-	struct Quad;
 
 	class VOX_SMITH_API Buffer final
 	{
@@ -21,10 +18,7 @@ namespace VoxSmith
 
 		void init(const std::vector<float>& data, const uint32_t mode = GL_STATIC_DRAW);
 		void init(const std::vector<Vertex>& data, const uint32_t mode = GL_STATIC_DRAW);
-		void init(const std::vector<VertexTex>& data, const uint32_t mode = GL_STATIC_DRAW);
-		void init(const std::vector<VertexCompressed>& data, const uint32_t mode = GL_STATIC_DRAW);
 		void init(const std::vector<float>& data, const std::vector<uint32_t>& indicies, const uint32_t mode = GL_STATIC_DRAW);
-		void init(const std::vector<Quad>& data, const uint32_t mode = GL_STATIC_DRAW);
 
 		void use() const;
 

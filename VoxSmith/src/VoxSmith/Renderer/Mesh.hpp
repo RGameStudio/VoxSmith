@@ -18,69 +18,34 @@ namespace VoxSmith
 
 	struct VOX_SMITH_API Vertex final
 	{
-		Vertex() = default;
-		Vertex(const glm::vec3& pos_, const glm::vec3& color_, const int32_t id_)
-			: pos(pos_)
-			, color(color_)
-			, id(id_)
+		Vertex(const glm::ivec3& pos, const glm::u8vec3& color, const uint8_t id)
 		{
+			portion1 |= (pos.x & 0b00111111);
+			portion1 |= (pos.y & 0b00111111) << 6;
+			portion1 |= (pos.z & 0b00111111) << 12;
+			
+			portion1 |= (color.r & 0b11111111) << 18;
+			
+			portion1 |= (color.g & 0b00111111) << 26;
+			portion2 |= (color.g & 0b11000000) >> 6;
+			
+			portion2 |= (color.b & 0b11111111) << 2;
 
+			portion2 |= (id & 0b11111111) << 10;
 		}
 
-		glm::vec3 pos;
-		glm::vec3 color;
-		int32_t id;
-	};
-
-	struct VOX_SMITH_API VertexTex final
-	{
-		VertexTex() = default;
-		VertexTex(const glm::vec3& pos_, const int32_t texId_, const int32_t uvId_)
-			: pos(pos_)
-			, texId(texId_)
-			, uvId(uvId_)
+		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId)
 		{
+			portion1 |= (pos.x & 0b111111);
+			portion1 |= (pos.y & 0b111111) << 6;
+			portion1 |= (pos.z & 0b111111) << 12;
 
+			portion2 |= (texId & 0b11111111);
+			portion2 |= (uvId & 0b11111111) << uvId;
 		}
 
-		glm::vec3 pos;
-		int32_t texId;
-		int32_t uvId;
-	};
-
-	struct VOX_SMITH_API VertexCompressed final
-	{
-		VertexCompressed(const glm::ivec3& pos_, const glm::vec3& color_, const int32_t id_)
-		{
-			data |= (pos_.x & 0x1F);		// x
-			data |= (pos_.y & 0x1F) << 5;	// y
-			data |= (pos_.z & 0x1F) << 10;	// z
-		}
-
-		VertexCompressed(const glm::ivec3& pos_, const int8_t texId_)
-		{
-			data |= (pos_.x & 0x1F);		// x
-			data |= (pos_.y & 0x1F) << 5;	// y
-			data |= (pos_.z & 0x1F) << 10;	// z
-
-			data |= (texId_ & 0x1FF);
-		}
-
-		int32_t data = 0;
-	};
-
-	struct VOX_SMITH_API Quad
-	{
-		Quad() = default;
-		Quad(const std::vector<Vertex>& vertices_)
-		{
-			for (int32_t iVertex = 0; iVertex < 6; iVertex++)
-			{
-				vertices[iVertex] = vertices_[iVertex];
-			}
-		}
-
-		Vertex vertices[6];
+		uint32_t portion1 = 0;
+		uint32_t portion2 = 0;
 	};
 
 	class VOX_SMITH_API Mesh final

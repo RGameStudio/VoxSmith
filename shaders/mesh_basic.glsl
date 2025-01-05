@@ -35,7 +35,7 @@ void main()
         ((portion2 >> 2) & 255) / 255.0 
     );
 
-    const uint faceId = (portion2 >> 10) & 255;
+    const uint faceId = (portion2 >> 10) & 7;
 
     gl_Position = u_projection * u_view * vec4(pos, 1.0);
     fragment_color = g_fadeFactors[faceId] * color;

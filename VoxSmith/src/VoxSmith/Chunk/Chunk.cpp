@@ -200,14 +200,16 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 								if (neighbourVoxels.at(getId(neighbourVoxelPos, cSize)) == VoxelType::Empty)
 								{
 									voxelPos[iAxis] += iSide;
-									addQuadFace(voxelPos, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+									// addQuadFace(voxelPos, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+									addQuadFace(voxelPos, u, v, static_cast<int32_t>(m_voxels.at(id)));
 								}
 							}
 						}
 						else if (voxels.at(neighbourID) == VoxelType::Empty)
 						{
 							voxelPos[iAxis] += iSide;
-							addQuadFace(voxelPos, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+							// addQuadFace(voxelPos, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+							addQuadFace(voxelPos, u, v, static_cast<int32_t>(m_voxels.at(id)));
 						}
 					}
 				}
@@ -385,10 +387,15 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
-	const int32_t texId, const int32_t uvId)
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const int32_t texId)
 {
+	m_vertices.emplace_back(pos, texId, 0);
+	m_vertices.emplace_back(pos + u, texId, 1);
+	m_vertices.emplace_back(pos + v, texId, 2);
 
+	m_vertices.emplace_back(pos + v, texId, 2);
+	m_vertices.emplace_back(pos + u, texId, 1);
+	m_vertices.emplace_back(pos + u + v, texId, 3);
 }
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline)
@@ -428,7 +435,7 @@ void Chunk::bake(MeshType type)
 
 	switch (type)
 	{
-	case MeshType::CULLED:
+	case MeshType::CULLED: 
 		bakeCulled(m_voxels, g_sAxis);
 		break;
 

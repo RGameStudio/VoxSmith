@@ -8,10 +8,10 @@ namespace VoxSmith
 {
 	enum class VOX_SMITH_API VoxelType : int8_t
 	{
-		Empty,
-		Dirt,
-		Grass,
-		Stone,
+		Empty	= -1,
+		Dirt	= 0,
+		Grass	= 1,
+		Stone	= 2,
 	};
 
 	using Voxel = VoxelType;
@@ -21,5 +21,4 @@ namespace VoxSmith
 		{ VoxelType::Grass, { 0,   255, 0   } },
 		{ VoxelType::Stone, { 183, 176, 156 } },
 	};
-
 }

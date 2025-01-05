@@ -182,7 +182,7 @@ void World::bakeMeshes()
 	for (auto& chunk : m_chunksToBake)
 	{
 		chunk->setState(ChunkState::MESH_BAKING);
-		chunk->bake(MeshType::GREEDY);
+		chunk->bake();
 	}
 }
 

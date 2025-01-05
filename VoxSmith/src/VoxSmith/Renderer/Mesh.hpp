@@ -31,17 +31,17 @@ namespace VoxSmith
 			
 			portion2 |= (color.b & 0b11111111) << 2;
 
-			portion2 |= (id & 0b11111111) << 10;
+			portion2 |= (id & 0b0000111) << 10;
 		}
 
 		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId)
 		{
-			portion1 |= (pos.x & 0b111111);
-			portion1 |= (pos.y & 0b111111) << 6;
-			portion1 |= (pos.z & 0b111111) << 12;
+			portion1 |= (pos.x & 0b00111111);
+			portion1 |= (pos.y & 0b00111111) << 6;
+			portion1 |= (pos.z & 0b00111111) << 12;
 
-			portion2 |= (texId & 0b11111111);
-			portion2 |= (uvId & 0b11111111) << uvId;
+			portion1 |= (uvId & 0b00000011) << 18;
+			portion1 |= (texId & 0b11111111) << 20;
 		}
 
 		uint32_t portion1 = 0;

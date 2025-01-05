@@ -31,7 +31,6 @@ target_link_directories(VoxSmith PUBLIC
 	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLFW/src/Debug
 	${CMAKE_BINARY_DIR}/VoxSmith/vendor/imgui-top-level/Debug)
 
-file(COPY Shaders DESTINATION ${CMAKE_BINARY_DIR}/Sandbox/)
 file(COPY Resources DESTINATION ${CMAKE_BINARY_DIR}/Sandbox/)
 
 add_subdirectory(VoxSmith/vendor/GLFW)

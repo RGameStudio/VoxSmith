@@ -67,5 +67,5 @@ ChunkMap HeightMap::generateMap(const glm::ivec2& pos)
 		}
 	}
 
-	return std::move(map);
+	return map;
 }

@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <string>
 
-#include "../Core.hpp"
+#include "VoxSmith/Core.hpp"
 
 namespace VoxSmith
 {
@@ -17,6 +17,7 @@ namespace VoxSmith
 		static ResourceManager& getInstance();
 	
 		void initShaders();
+		void initTextureList();
 
 		void setShader(const std::string& sName, Shader& shader);
 		void setCShader(const std::string& cName, ComputeShader& shader);

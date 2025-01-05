@@ -18,33 +18,34 @@ namespace VoxSmith
 
 	struct VOX_SMITH_API Vertex final
 	{
-		Vertex() = default;
-		Vertex(const glm::vec3& pos_, const glm::vec3& color_, const int32_t id_)
-			: pos(pos_)
-			, color(color_)
-			, id(id_)
+		Vertex(const glm::ivec3& pos, const glm::u8vec3& color, const uint8_t id)
 		{
+			portion1 |= (pos.x & 0b00111111);
+			portion1 |= (pos.y & 0b00111111) << 6;
+			portion1 |= (pos.z & 0b00111111) << 12;
+			
+			portion1 |= (color.r & 0b11111111) << 18;
+			
+			portion1 |= (color.g & 0b00111111) << 26;
+			portion2 |= (color.g & 0b11000000) >> 6;
+			
+			portion2 |= (color.b & 0b11111111) << 2;
 
+			portion2 |= (id & 0b0000111) << 10;
 		}
 
-		// int16_t data;
-		glm::vec3 pos;
-		glm::vec3 color;
-		int32_t id;
-	};
-
-	struct VOX_SMITH_API Quad
-	{
-		Quad() = default;
-		Quad(const std::vector<Vertex>& vertices_)
+		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId)
 		{
-			for (int32_t iVertex = 0; iVertex < 6; iVertex++)
-			{
-				vertices[iVertex] = vertices_[iVertex];
-			}
+			portion1 |= (pos.x & 0b00111111);
+			portion1 |= (pos.y & 0b00111111) << 6;
+			portion1 |= (pos.z & 0b00111111) << 12;
+
+			portion1 |= (uvId & 0b00000011) << 18;
+			portion1 |= (texId & 0b11111111) << 20;
 		}
 
-		Vertex vertices[6];
+		uint32_t portion1 = 0;
+		uint32_t portion2 = 0;
 	};
 
 	class VOX_SMITH_API Mesh final

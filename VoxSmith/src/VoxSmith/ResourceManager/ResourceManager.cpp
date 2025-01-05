@@ -21,10 +21,15 @@ ResourceManager::~ResourceManager()
 
 void ResourceManager::initShaders()
 {
-	for (auto [key, value] : s_shaderPaths)
+	for (const auto& [key, value] : s_shaderPaths)
 	{
 		setShader(key, Shader(value));
 	}
+}
+
+void ResourceManager::initTextureList()
+{
+	setTexture(s_voxelTextureList, Texture(s_texturePaths));
 }
 
 ResourceManager& ResourceManager::getInstance()

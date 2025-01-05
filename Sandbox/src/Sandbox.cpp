@@ -20,10 +20,13 @@ public:
 		: Application(g_tempWidth, g_tempHeight)
 		, world(m_camera->getPos(), 8)
 	{
-		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture)
 			.setUniform4m("u_projection", m_camera->getProjection());
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
 			.setUniform4m("u_projection", m_camera->getProjection());
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture)
+			.setUniform1i("u_textureArray", 0);
+		VoxSmith::ResourceManager::getInstance().getTexture(VoxSmith::s_voxelTextureList).use();
 	}
 
 	void update(const float dt) override
@@ -59,7 +62,8 @@ public:
 			auto mousePos = VoxSmith::Mouse::getInstance().getMousePos();
 			m_camera->updateCameraAngle(mousePos.x, mousePos.y);
 		}
-		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh)
+
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture)
 			.setUniform4m("u_view", m_camera->getView());
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
 			.setUniform4m("u_view", m_camera->getView());
@@ -68,7 +72,7 @@ public:
 	void draw(const float dt, const float cframe) override
 	{
 		world.draw(m_renderer, 
-			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_mesh), 
+			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture), 
 			m_camera->getPos(), m_camera->getFrustum(), chunkOutlineStatus());
 	}
 

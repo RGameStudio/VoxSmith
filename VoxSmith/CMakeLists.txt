@@ -10,7 +10,7 @@ include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/glm/)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/imgui-top-level/imgui)
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/vendor/fastNoise/Cpp)
 
-include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/shaders)
+include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/Shaders)
 
 include_directories(${CMAKE_SOURCE_DIR}/VoxSmith/src/)
 

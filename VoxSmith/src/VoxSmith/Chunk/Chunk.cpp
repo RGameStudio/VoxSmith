@@ -82,6 +82,11 @@ void Chunk::generateChunk(const ChunkMap& map)
 		uLock.lock();
 		m_state = ChunkState::VOXELS_GENERATED;
 	}
+	else
+	{
+		uLock.lock();
+		m_state = ChunkState::VOXELS_GENERATED_READY;
+	}
 }
 
 void Chunk::setState(ChunkState state)
@@ -194,13 +199,17 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 								const auto& neighbourVoxels = m_neighbours[iSide * 3 + iAxis]->m_voxels;
 								if (neighbourVoxels.at(getId(neighbourVoxelPos, cSize)) == VoxelType::Empty)
 								{
-									addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+									voxelPos[iAxis] += iSide;
+									// addQuadFace(voxelPos, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+									addQuadFace(voxelPos, u, v, static_cast<int32_t>(m_voxels.at(id)));
 								}
 							}
 						}
 						else if (voxels.at(neighbourID) == VoxelType::Empty)
 						{
-							addQuadFace(voxelPos, iSide, iAxis, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+							voxelPos[iAxis] += iSide;
+							// addQuadFace(voxelPos, u, v, s_voxelColors[m_voxels.at(id)], iAxis);
+							addQuadFace(voxelPos, u, v, static_cast<int32_t>(m_voxels.at(id)));
 						}
 					}
 				}
@@ -366,16 +375,9 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bo
 	}
 }
 
-#define LOCK_BASED_ADD_QUAD 0
-
-void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis,
-	const glm::vec3& u, const glm::vec3& v, const glm::vec3& color, const int32_t id)
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
+	const glm::u8vec3& color, const int32_t id)
 {
-#if LOCK_BASED_ADD_QUAD
-	//std::lock_guard<std::mutex> lock(m_mutex);
-#endif
-	pos[iAxis] += iSide;
-
 	m_vertices.emplace_back(pos, color, id);
 	m_vertices.emplace_back(pos + u, color, id);
 	m_vertices.emplace_back(pos + v, color, id);
@@ -385,20 +387,15 @@ void Chunk::addQuadFace(glm::vec3& pos, const int32_t iSide, const int32_t iAxis
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
-	const glm::vec3& color, const int32_t id)
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const int32_t texId)
 {
-#if LOCK_BASED_ADD_QUAD
-	//std::lock_guard<std::mutex> lock(m_mutex);
-#endif
+	m_vertices.emplace_back(pos, texId, 0);
+	m_vertices.emplace_back(pos + u, texId, 1);
+	m_vertices.emplace_back(pos + v, texId, 2);
 
-	m_vertices.emplace_back(pos, color, id);
-	m_vertices.emplace_back(pos + u, color, id);
-	m_vertices.emplace_back(pos + v, color, id);
-
-	m_vertices.emplace_back(pos + v, color, id);
-	m_vertices.emplace_back(pos + u, color, id);
-	m_vertices.emplace_back(pos + u + v, color, id);
+	m_vertices.emplace_back(pos + v, texId, 2);
+	m_vertices.emplace_back(pos + u, texId, 1);
+	m_vertices.emplace_back(pos + u + v, texId, 3);
 }
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline)
@@ -430,13 +427,22 @@ void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
 	m_mesh->reserveMesh();
 }
 
-void Chunk::constructMesh()
+void Chunk::bake(MeshType type)
 {
 	std::unique_lock<std::shared_mutex> uLock(m_mutex);
 	m_state = ChunkState::MESH_BAKING;
 	uLock.unlock();
 
-	bakeCulled(m_voxels, g_sAxis);
+	switch (type)
+	{
+	case MeshType::CULLED: 
+		bakeCulled(m_voxels, g_sAxis);
+		break;
+
+	case MeshType::GREEDY:
+		bakeGreedy(m_voxels, g_sAxis);
+		break;
+	}
 
 	uLock.lock();
 	if (m_vertices.empty())

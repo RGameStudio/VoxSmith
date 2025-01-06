@@ -23,16 +23,6 @@ namespace VoxSmith
 	struct Frustum;
 	struct Plane;
 
-	enum VOX_SMITH_API Direction : int8_t
-	{
-		LEFT = 0,
-		BOTTOM,
-		BACK,
-		RIGHT,
-		TOP,
-		FRONT,	
-	};
-
 	Direction getInverseDirection(Direction dir);
 
 	enum VOX_SMITH_API ChunkState : int8_t
@@ -114,8 +104,8 @@ namespace VoxSmith
 			const int32_t id);
 		void addQuadFace(const glm::vec3& pos, 
 			const glm::vec3& u, const glm::vec3& v,
-			const int32_t texId);
+			const int32_t texId, bool isBackFace);
 
-		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const bool backFace, const int32_t iAxis) const;
+		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iAxis) const;
 	};
 }

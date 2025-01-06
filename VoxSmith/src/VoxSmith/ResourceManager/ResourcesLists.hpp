@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VoxSmith/Core.hpp"
+
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -15,6 +17,17 @@ namespace VoxSmith
 		{s_mesh, "Resources/Shaders/mesh_basic.glsl"},
 		{s_chunkOutline, "Resources/Shaders/chunk_outline.glsl"},
 		{s_meshTexture, "Resources/Shaders/mesh_basic_texture.glsl"}
+	};
+
+	enum VOX_SMITH_API TextureFace : int8_t
+	{
+		DIRT = 0,
+		GRASS,
+		DIRT_GRASS,
+		SAND,
+		SNOW,
+		SNOW_2,
+		WATER
 	};
 	
 	static const std::vector<std::string> s_texturePaths = {

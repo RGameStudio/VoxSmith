@@ -307,7 +307,7 @@ void Chunk::handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t i
 		}
 	}
 }
-#endif 
+#endif
 void Chunk::bakeBinGreedy(const std::vector<Voxel>& voxels, const float size)
 {
 }

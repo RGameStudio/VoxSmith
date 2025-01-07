@@ -277,6 +277,37 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 	}
 }
 
+#if 0
+void Chunk::handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis, 
+	const glm::vec3& u, const glm::vec3& v,
+	const int32_t neighbourId,
+	Direction dir, bool condition, bool isBackFace)
+{
+	glm::vec3 facePos = pos;
+	if (dir >= RIGHT)
+	{
+		facePos[iAxis] += 1;
+	}
+
+	if (condition)
+	{
+		glm::vec3 neighbourPos = pos;
+		neighbourPos[iAxis] = g_sAxis - 1;
+		if (m_neighbours[dir] != nullptr &&
+			m_neighbours[dir]->m_voxels.at(getId(neighbourPos, g_sAxis)) == VoxelType::Empty)
+		{
+			addQuadFace(facePos, u, v, tFace, isBackFace);
+		}
+	}
+	else
+	{
+		if (m_voxels.at(neighbourId) == VoxelType::Empty)
+		{
+			addQuadFace(facePos, u, v, tFace, isBackFace);
+		}
+	}
+}
+#endif 
 void Chunk::bakeBinGreedy(const std::vector<Voxel>& voxels, const float size)
 {
 }

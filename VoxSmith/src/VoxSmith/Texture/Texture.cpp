@@ -11,6 +11,8 @@ using namespace VoxSmith;
 constexpr uint32_t g_width = 64;
 constexpr uint32_t g_height = 64;
 
+constexpr uint32_t g_mipMapLevels = 7;
+
 Texture::Texture(const char* path)
 	: m_type(TextureType::BASE)
 	, ID(0)
@@ -24,7 +26,7 @@ Texture::Texture(std::vector<std::string> paths)
 	glGenTextures(1, &ID);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
 
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 7, GL_RGBA8, g_width, g_height, paths.size());
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, g_mipMapLevels, GL_RGBA8, g_width, g_height, paths.size());
 	for (uint8_t iPath = 0; iPath < paths.size(); iPath++)
 	{
 		int32_t width, height, nrChannels;

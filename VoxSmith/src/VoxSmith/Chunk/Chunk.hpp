@@ -107,5 +107,11 @@ namespace VoxSmith
 			const int32_t texId, bool isBackFace);
 
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iAxis) const;
+#if 0
+		void handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis,
+			const glm::vec3& u, const glm::vec3& v,
+			const int32_t neighbourId,
+			Direction dir, bool condition, bool isBackFace);
+#endif
 	};
 }

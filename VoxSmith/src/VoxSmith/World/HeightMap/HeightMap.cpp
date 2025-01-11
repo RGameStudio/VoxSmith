@@ -110,4 +110,3 @@ ChunkMap HeightMap::generateMap(const glm::ivec2& pos)
 
     return map;
 }
-

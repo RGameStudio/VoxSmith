@@ -5,10 +5,26 @@
 
 #include <glm/glm.hpp>
 
+#include "VoxSmith/Chunk/Voxel.hpp"
+
 #include "VoxSmith/Core.hpp"
 
 namespace VoxSmith
 {
+	enum class VOX_SMITH_API BiomeType : int8_t
+	{
+		MEADOW,
+		MOUNTAIN,
+	};
+
+	struct VOX_SMITH_API Biome
+	{
+		Voxel topVoxel;
+		Voxel mainVoxel;
+
+		BiomeType type;
+	};
+
 	struct VOX_SMITH_API ChunkMap
 	{
 		ChunkMap() = default;
@@ -18,7 +34,7 @@ namespace VoxSmith
 		ChunkMap& operator=(ChunkMap&&) = default;
 
 		std::vector<int32_t> data;
-		// mutable std::mutex mutex;
+		std::vector<Biome> biomData;
 	};
 
 	class VOX_SMITH_API HeightMap
@@ -49,8 +65,10 @@ namespace VoxSmith
 		};
 
 		std::unordered_map<glm::ivec2, ChunkMap, KeyFuncs> m_map;
+
 		FastNoiseLite m_baseNoiseGen;
-		FastNoiseLite m_mountainNoiseGen;
+		FastNoiseLite m_featureNoiseGen;
+		FastNoiseLite m_biomNoiseGen;
 		mutable std::mutex m_mutex;
 	};
 }

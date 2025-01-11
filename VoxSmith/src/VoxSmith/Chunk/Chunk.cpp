@@ -13,6 +13,7 @@ using namespace VoxSmith;
 
 constexpr int32_t g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
+constexpr uint32_t g_biomThreshold = 5;
 
 const glm::vec3 g_dirs[2][3] = {
 	{
@@ -61,15 +62,21 @@ void Chunk::generateChunk(const ChunkMap& map)
 				auto type = VoxelType::Empty;
 
 				const int32_t height = map.data[z * g_sAxis + x];
+				const auto biome = map.biomData[z * g_sAxis + x];
 
-				if (y + m_pos.y < height)
+				if (y + m_pos.y < height - g_biomThreshold)
 				{
-					type = VoxelType::Dirt;
+					type = VoxelType::Stone;
+					hasOnlyEmpty = false;
+				}
+				else if (y + m_pos.y < height)
+				{
+					type = biome.mainVoxel;
 					hasOnlyEmpty = false;
 				}
 				else if (y + m_pos.y == height)
 				{
-					type = VoxelType::Grass;
+					type = biome.topVoxel;
 					hasOnlyEmpty = false;
 				}
 				m_voxels.emplace_back(type);
@@ -184,7 +191,7 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 				{
 					if (m_voxels.at(left) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y, z }, { 0, 0, 1 }, { 0, 1, 0 },  s_textureFaces[m_voxels.at(id)][LEFT], false);
+						addQuadFace({ x, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][LEFT], false);
 					}
 				}
 
@@ -278,7 +285,7 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 }
 
 #if 0
-void Chunk::handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis, 
+void Chunk::handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis,
 	const glm::vec3& u, const glm::vec3& v,
 	const int32_t neighbourId,
 	Direction dir, bool condition, bool isBackFace)
@@ -383,8 +390,8 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						faceMask.at(n++) = backFace
 							? bCurrent == VoxelType::Empty && bCompare != VoxelType::Empty ? bCompare : VoxelType::Empty
 							: bCurrent != VoxelType::Empty && bCompare == VoxelType::Empty ? bCurrent : VoxelType::Empty;
-							}
-						}
+					}
+				}
 
 				x[iAxis]++;
 				n = 0;
@@ -446,10 +453,10 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
 						}
 					}
 				}
-					}
-				}
 			}
 		}
+	}
+}
 
 void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iAxis) const
 {

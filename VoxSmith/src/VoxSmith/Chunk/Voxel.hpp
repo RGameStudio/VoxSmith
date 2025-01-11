@@ -14,7 +14,9 @@ namespace VoxSmith
 		Empty = -1,
 		Dirt,
 		Grass,
+		GrassMount,
 		Stone,
+		Sand
 	};
 
 	enum VOX_SMITH_API Direction : int8_t
@@ -51,11 +53,44 @@ namespace VoxSmith
 			{ 
 				TextureFace::DIRT_GRASS, 
 				TextureFace::DIRT, 
-				TextureFace::DIRT_GRASS, 
-				TextureFace::DIRT_GRASS, 
+				TextureFace::DIRT_GRASS,
+				TextureFace::DIRT_GRASS,
 				TextureFace::GRASS, 
 				TextureFace::DIRT_GRASS 
 			} 
 		},
+		{
+			VoxelType::GrassMount,
+			{
+				TextureFace::DIRT_GRASS_MOUNT,
+				TextureFace::DIRT_MOUNT,
+				TextureFace::DIRT_GRASS_MOUNT,
+				TextureFace::DIRT_GRASS_MOUNT,
+				TextureFace::GRASS_MOUNT,
+				TextureFace::DIRT_GRASS_MOUNT
+			}
+		},
+		{
+			VoxelType::Stone,
+			{
+				TextureFace::STONE,
+				TextureFace::STONE,
+				TextureFace::STONE,
+				TextureFace::STONE,
+				TextureFace::STONE,
+				TextureFace::STONE
+			}
+		},
+		{
+			VoxelType::Sand,
+			{
+				TextureFace::SAND,
+				TextureFace::SAND,
+				TextureFace::SAND,
+				TextureFace::SAND,
+				TextureFace::SAND,
+				TextureFace::SAND
+			}
+		}
 	};
 }

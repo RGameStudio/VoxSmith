@@ -27,16 +27,24 @@ namespace VoxSmith
 		SAND,
 		SNOW,
 		SNOW_2,
-		WATER
+		WATER,
+		STONE,
+		GRASS_MOUNT,
+		DIRT_GRASS_MOUNT,
+		DIRT_MOUNT,
 	};
 	
 	static const std::vector<std::string> s_texturePaths = {
-		"Resources/textures/dirt.png",			// 0
-		"Resources/textures/grass.png",			// 1
-		"Resources/textures/dirt_grass.png",	// 2
-		"Resources/textures/sand.png",			// 3
-		"Resources/textures/snow.png",			// 4
-		"Resources/textures/snow_2.png",		// 5
-		"Resources/textures/water.png",			// 6
+		"Resources/textures/dirt.png",					// 0
+		"Resources/textures/grass.png",					// 1
+		"Resources/textures/dirt_grass.png",			// 2
+		"Resources/textures/sand.png",					// 3
+		"Resources/textures/snow.png",					// 4
+		"Resources/textures/snow_2.png",				// 5
+		"Resources/textures/water.png",					// 6
+		"Resources/textures/stone.png",					// 7
+		"Resources/textures/grass_mountain.png",		// 8
+		"Resources/textures/dirt_grass_mountain.png",	// 9
+		"Resources/textures/dirt_mountain.png"
 	};
 }

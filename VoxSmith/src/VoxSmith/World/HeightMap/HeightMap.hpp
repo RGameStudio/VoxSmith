@@ -25,6 +25,8 @@ namespace VoxSmith
 		BiomeType type;
 	};
 
+	using Spline = std::vector<glm::vec2>;
+
 	struct VOX_SMITH_API ChunkMap
 	{
 		ChunkMap() = default;
@@ -65,6 +67,8 @@ namespace VoxSmith
 		};
 
 		std::unordered_map<glm::ivec2, ChunkMap, KeyFuncs> m_map;
+
+		float getSplineValue(const Spline& spline, float t);
 
 		FastNoiseLite m_baseNoiseGen;
 		FastNoiseLite m_featureNoiseGen;

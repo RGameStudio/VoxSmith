@@ -17,7 +17,7 @@ namespace VoxSmith
 		MOUNTAIN,
 	};
 
-	struct VOX_SMITH_API Biome
+	struct VOX_SMITH_API Biome final
 	{
 		Voxel topVoxel;
 		Voxel mainVoxel;
@@ -25,7 +25,9 @@ namespace VoxSmith
 		BiomeType type;
 	};
 
-	struct VOX_SMITH_API ChunkMap
+	using Spline = std::vector<glm::vec2>;
+
+	struct VOX_SMITH_API ChunkMap final
 	{
 		ChunkMap() = default;
 		ChunkMap(const ChunkMap&) = default;
@@ -37,7 +39,7 @@ namespace VoxSmith
 		std::vector<Biome> biomData;
 	};
 
-	class VOX_SMITH_API HeightMap
+	class VOX_SMITH_API HeightMap final
 	{
 	public:
 		HeightMap();
@@ -66,9 +68,12 @@ namespace VoxSmith
 
 		std::unordered_map<glm::ivec2, ChunkMap, KeyFuncs> m_map;
 
-		FastNoiseLite m_baseNoiseGen;
-		FastNoiseLite m_featureNoiseGen;
-		FastNoiseLite m_biomNoiseGen;
+		float getSplineValue(const Spline& spline, float t) const;
+		VoxelType getVoxelType(const float t);
+
+		FastNoiseLite m_base;
+		FastNoiseLite m_mountains;
+		//FastNoiseLite m_biomNoiseGen;
 		mutable std::mutex m_mutex;
 	};
 }

@@ -23,11 +23,11 @@ namespace VoxSmith
 		void handleEvents(WindowEvent& e);
 		void handleClientInput();
 
-		Application() = delete;
-		Application(const Application&) = delete;
-		Application(Application&&) = delete;
-		Application& operator=(const Application&) = delete;
-		Application& operator=(Application&&) = delete;
+		Application()								= delete;
+		Application(const Application&)				= delete;
+		Application(Application&&)					= delete;
+		Application& operator=(const Application&)	= delete;
+		Application& operator=(Application&&)		= delete;
 
 	private:
 		std::shared_ptr<Window> m_window = nullptr;

@@ -71,6 +71,7 @@ namespace VoxSmith
 		float getSplineValue(const Spline& spline, float t) const;
 		VoxelType getVoxelType(const float t);
 
+		FastNoiseLite m_area;
 		FastNoiseLite m_base;
 		FastNoiseLite m_mountains;
 		//FastNoiseLite m_biomNoiseGen;

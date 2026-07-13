@@ -83,7 +83,7 @@ ChunkMap HeightMap::generateMap(const glm::ivec2& pos)
 			float areaNoise = m_area.GetNoise(x_, z_) * 0.5f + 0.5f;
 			areaNoise = getSplineValue(g_areaSpline, areaNoise);
 			
-			float height = 100.0f * mountainNoise; //* (baseNoise * areaNoise + (1.0f - areaNoise) * mountainNoise);
+			float height = 100.0f * (baseNoise * areaNoise + (1.0f - areaNoise) * mountainNoise);
 			
 
 			Biome biome;

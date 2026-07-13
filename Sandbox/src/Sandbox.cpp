@@ -10,11 +10,9 @@ constexpr float g_focalLength = 1.0f;
 
 class Sandbox final : public VoxSmith::Application
 {
-	VoxSmith::Buffer buff;
+	// VoxSmith::Buffer buff;
 	VoxSmith::World world;
 
-	std::shared_ptr<VoxSmith::Mesh> mesh1;
-	std::shared_ptr<VoxSmith::Mesh> mesh2;
 public:
 	Sandbox()
 		: Application(g_tempWidth, g_tempHeight)
@@ -88,6 +86,7 @@ public:
 };
 
 VoxSmith::Application* VoxSmith::createApplication()
+
 {
 	return new Sandbox();
 }

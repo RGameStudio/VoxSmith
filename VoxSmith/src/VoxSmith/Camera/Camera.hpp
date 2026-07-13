@@ -38,6 +38,7 @@ namespace VoxSmith
 		inline glm::mat4 getView() const { return m_view; }
 		inline glm::vec3 getPos() const { return m_pos; }
 		inline glm::vec3 getFront() const { return m_front; }
+		inline glm::vec3 getRight() const { return glm::cross(getFront(), glm::vec3(0.0f, 1.0f, 0.0f)); }
 		inline float getViewDistance() const { return m_viewDistance; }
 
 	private:

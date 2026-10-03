@@ -3,6 +3,9 @@
 bin/
 bin-int/
 out/
-
+build/
+.cache/
+launch.json
+compile_commands.json
 # Unwanted files
 *.user

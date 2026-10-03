@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 4.1)
 
 project(VoxSmith)
 
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
+add_subdirectory(VoxSmith/vendor/GLFW)
+add_subdirectory(VoxSmith/vendor/GLAD)
+add_subdirectory(VoxSmith/vendor/imgui-top-level)
+add_subdirectory(VoxSmith/vendor/glm)
+
 add_subdirectory(VoxSmith)
 set_target_properties(VoxSmith PROPERTIES 
 	CXX_STANDARD 17
@@ -17,7 +26,7 @@ set_target_properties(Sandbox PROPERTIES
 
 target_link_directories(Sandbox PUBLIC
 	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLAD/Debug
-	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLFW/src/Debug
+	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLFW/src
 )
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -27,16 +36,11 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 target_link_directories(VoxSmith PUBLIC 
-	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLAD/Debug
-	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLFW/src/Debug
+	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLAD
+	${CMAKE_BINARY_DIR}/VoxSmith/vendor/GLFW/src
 	${CMAKE_BINARY_DIR}/VoxSmith/vendor/imgui-top-level/Debug)
 
 file(COPY Resources DESTINATION ${CMAKE_BINARY_DIR}/Sandbox/)
-
-add_subdirectory(VoxSmith/vendor/GLFW)
-add_subdirectory(VoxSmith/vendor/GLAD)
-add_subdirectory(VoxSmith/vendor/imgui-top-level)
-add_subdirectory(VoxSmith/vendor/glm)
 
 add_dependencies(VoxSmith glad glfw imgui)
 

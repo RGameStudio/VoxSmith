@@ -8,7 +8,8 @@ namespace VoxSmith
 {
 	struct VOX_SMITH_API Plane
 	{
-		glm::vec3 pos;
+		// glm::vec3 pos;
+		float distance;
 		glm::vec3 normal = {0.0f, 0.1f, 0.0f};
 	};
 

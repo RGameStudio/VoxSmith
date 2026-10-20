@@ -144,7 +144,7 @@ bool Chunk::isOnwardPlane(const Plane& plane) const
 {
 	const float extent = g_sAxis * 0.5f;
 	const float r = extent * glm::abs(plane.normal.x) + extent * glm::abs(plane.normal.y) + extent * glm::abs(plane.normal.z);
-	return glm::dot(plane.normal, m_center) - glm::dot(plane.pos, plane.normal) + r >= 0;
+	return glm::dot(plane.normal, m_center) - plane.distance + r >= 0;
 }
 
 bool Chunk::inBounds(const glm::ivec3& min, const glm::ivec3& max) const

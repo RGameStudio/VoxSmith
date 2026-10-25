@@ -109,7 +109,7 @@ Frustum Camera::getFrustum()
 	frustum.leftFace = { dLeft, nLeft };
 
 	frustum.topFace = { dTop, nTop };
-	frustum.bottomFace = { dBottom, nTop };
+	frustum.bottomFace = { dBottom, nBottom };
 
 	return frustum;
 }

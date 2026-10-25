@@ -83,8 +83,7 @@ namespace VoxSmith
 		void notifyChunkNeighbours(const glm::vec3& pos);
 		void bakeMeshes();
 		void generateChunks();
-		void updateChunkTask(TaskWrapper& task, std::vector<std::shared_ptr<Chunk>>& chunkList,
-			const glm::ivec3& initPos, const glm::ivec3& endPos);
+		void updateChunkTask(TaskWrapper& task, std::vector<std::shared_ptr<Chunk>>& chunkList);
 		void traverseChunks(const glm::ivec3& initPos, const glm::ivec3& endPos);
 	};
 }

@@ -138,11 +138,12 @@ void World::update(const glm::vec3& playerPos)
 		m_chunks.erase(pos);
 	}
 
-	updateChunkTask(m_generation, m_chunksToGenerate, initPos, endPos);
-	updateChunkTask(m_baking, m_chunksToBake, initPos, endPos);
+	updateChunkTask(m_generation, m_chunksToGenerate);
+	updateChunkTask(m_baking, m_chunksToBake);
 }
 
-void World::updateChunkTask(TaskWrapper& tWrapper, std::vector<std::shared_ptr<Chunk>>& chunkList, const glm::ivec3& initPos, const glm::ivec3& endPos)
+void World::updateChunkTask(TaskWrapper& tWrapper, 
+	std::vector<std::shared_ptr<Chunk>>& chunkList)
 {
 	if (!tWrapper.launched && !chunkList.empty())
 	{

@@ -1,6 +1,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Camera.hpp"
+#include "glm/geometric.hpp"
 
 using namespace VoxSmith;
 
@@ -81,14 +82,34 @@ Frustum Camera::getFrustum()
 	const float halfWidth = halfHeight * m_aspect;
 	const glm::vec3 frontFar = m_far * m_front;
 
-	frustum.nearFace = { m_pos + m_near * m_front, glm::normalize(m_front) };
-	frustum.farFace = { m_pos + m_far * m_front, -frustum.nearFace.normal };
+	const float sidePlaneDistances = glm::length(m_pos);
 
-	frustum.rightFace = { m_pos, glm::normalize(glm::cross(frontFar - m_right * halfWidth, m_up)) };
-	frustum.leftFace = { m_pos, glm::normalize(glm::cross(m_up, frontFar + m_right * halfWidth)) };
+	const glm::vec3 nNear = glm::normalize(m_front);
+	const glm::vec3 nFar = -nNear;
 
-	frustum.topFace = { m_pos, glm::normalize(glm::cross(m_right, frontFar - m_up * halfHeight)) };
-	frustum.bottomFace = { m_pos, glm::normalize(glm::cross(frontFar + m_up * halfHeight, m_right)) };
+	const glm::vec3 nRight = glm::normalize(glm::cross(frontFar - m_right * halfWidth, m_up));
+	const glm::vec3 nLeft = glm::normalize(glm::cross(m_up, frontFar + m_right * halfWidth));
+
+	const glm::vec3 nTop = glm::normalize(glm::cross(m_right, frontFar - m_up * halfHeight));
+	const glm::vec3 nBottom = glm::normalize(glm::cross(frontFar + m_up * halfHeight, m_right));
+
+	const float dFar = glm::dot(m_pos + frontFar, nFar);
+	const float dNear = glm::dot(m_pos + m_near * m_front, nNear);
+
+	const float dRight = glm::dot(m_pos, nRight);
+	const float dLeft = glm::dot(m_pos, nLeft);
+
+	const float dTop = glm::dot(m_pos, nTop);
+	const float dBottom = glm::dot(m_pos, nBottom);
+
+	frustum.nearFace = { dNear, nNear };
+	frustum.farFace = { dFar, nFar };
+
+	frustum.rightFace = { dRight, nRight };
+	frustum.leftFace = { dLeft, nLeft };
+
+	frustum.topFace = { dTop, nTop };
+	frustum.bottomFace = { dBottom, nTop };
 
 	return frustum;
 }

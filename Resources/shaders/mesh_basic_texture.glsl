@@ -12,12 +12,20 @@ const vec2 g_texCoords[4] = {
     vec2(1, 1)
 };
 
+const float g_occlusionValues[4] = {
+    0.1,
+    0.2,
+    0.9,
+    1.0
+};
+
 uniform mat4 u_projection;
 uniform mat4 u_view;
 
 uniform vec3 u_chunkPos;
 
 out vec3 frag_data;
+out float frag_occlusionFactor;
 
 void main()
 {
@@ -28,10 +36,14 @@ void main()
     );
 
     const uint uvId = (portion1 >> 18) & 3;
-    const uint texId = (portion1 >> 20) & 63; 
+    const uint texId = (portion1 >> 20) & 63;
+
+    const uint occlusionCase = (portion1 >> 28) & 7;
     
     gl_Position = u_projection * u_view * vec4(pos, 1.0);
+
     frag_data = vec3(g_texCoords[uvId], texId);
+    frag_occlusionFactor = g_occlusionValues[occlusionCase];
 }
 
 #shader GEOMETRY
@@ -40,11 +52,13 @@ void main()
 #version 430
 
 in vec3 frag_data;
+in float frag_occlusionFactor;
+
 out vec4 o_color;
 
 uniform sampler2DArray u_textureArray;
 
 void main()
 {
-    o_color = texture(u_textureArray, frag_data);
+    o_color = frag_occlusionFactor * texture(u_textureArray, frag_data);
 }

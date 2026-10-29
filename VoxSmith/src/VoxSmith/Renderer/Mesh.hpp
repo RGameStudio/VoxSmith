@@ -18,7 +18,7 @@ namespace VoxSmith
 
 	struct VOX_SMITH_API Vertex final
 	{
-		Vertex(const glm::ivec3& pos, const glm::u8vec3& color, const uint8_t id)
+		Vertex(const glm::ivec3& pos, const glm::u8vec3& color, const uint8_t texId)
 		{
 			portion1 |= (pos.x & 0b00111111);
 			portion1 |= (pos.y & 0b00111111) << 6;
@@ -31,7 +31,7 @@ namespace VoxSmith
 			
 			portion2 |= (color.b & 0b11111111) << 2;
 
-			portion2 |= (id & 0b0000111) << 10;
+			portion2 |= (texId & 0b0000111) << 10;
 		}
 
 		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId)
@@ -42,6 +42,13 @@ namespace VoxSmith
 
 			portion1 |= (uvId & 0b00000011) << 18;
 			portion1 |= (texId & 0b11111111) << 20;
+		}
+
+		
+		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId, const uint8_t occlusionCase)
+			: Vertex(pos, texId, uvId)
+		{
+			portion1 |= (occlusionCase & 0b0000111) << 28;
 		}
 
 		uint32_t portion1 = 0;

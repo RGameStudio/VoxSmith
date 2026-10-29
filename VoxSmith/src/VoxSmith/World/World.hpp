@@ -6,7 +6,11 @@
 #include <queue>
 #include <map>
 #include <unordered_map>
+#include <shared_mutex>
 
+#include <glm/glm.hpp>
+
+#include "VoxSmith/Chunk/Voxel.hpp"
 #include "VoxSmith/Core.hpp"
 
 #include "VoxSmith/Task/Task.hpp"
@@ -18,6 +22,8 @@ namespace VoxSmith
 	class Shader;
 	struct HeightMap;
 	struct Frustum;
+
+	VoxelType getVoxel();
 
 	class VOX_SMITH_API World
 	{

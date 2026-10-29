@@ -6,6 +6,9 @@
 #include "VoxSmith/ResourceManager/ResourcesLists.hpp"
 #include "VoxSmith/World/HeightMap/HeightMap.hpp"
 #include "VoxSmith/Camera/Camera.hpp"
+#include "VoxSmith/World/World.hpp"
+#include "Voxel.hpp"
+#include <cstdint>
 
 #include "Chunk.hpp"
 
@@ -25,6 +28,72 @@ const glm::vec3 g_dirs[2][3] = {
 		{1, 0, 0},
 		{0, 1, 0},
 		{0, 0, 1},
+	},
+};
+
+constexpr uint32_t g_nFaces = 6;
+constexpr uint32_t g_nNeighboursPerFace = 8;
+
+const glm::vec3 g_aoStates[g_nFaces][g_nNeighboursPerFace] = {
+	{   // Left face
+		{-1, -1, -1}, // 0
+		{-1, -1,  0}, // 1
+		{-1, -1,  1}, // 2
+		{-1,  0,  1}, // 3
+		{-1,  1,  1}, // 4
+		{-1,  1,  0}, // 5
+		{-1,  1, -1}, // 6
+		{-1,  0, -1}, // 7
+	},
+	{ 	// Bottom face
+		{-1, -1, -1},
+		{ 0, -1, -1},
+		{ 1, -1, -1},
+		{ 1, -1,  0},
+		{ 1, -1,  1},		
+		{ 0, -1,  1},
+		{-1, -1,  1},
+		{-1, -1,  0},
+	},
+	{ 	// Back face
+		{-1, -1, -1},
+		{-1,  0, -1},
+		{-1,  1, -1},
+		{ 0,  1, -1},
+		{ 1,  1, -1},
+		{ 1,  0, -1},
+		{ 1, -1, -1},
+		{ 0, -1, -1},
+	},
+	{ 	// Right face
+		{1, -1, -1},
+		{1,  0, -1},
+		{1,  1, -1},
+		{1,  1,  0},
+		{1,  1,  1},
+		{1,  0,  1},
+		{1, -1,  1},
+		{1, -1,  0},
+	},
+	{ 	// Top face
+		{-1, 1, -1}, // 0
+		{-1, 1,  0}, // 1
+		{-1, 1,  1}, // 2
+		{ 0, 1,  1}, // 3
+		{ 1, 1,  1}, // 4
+		{ 1, 1,  0}, // 5
+		{ 1, 1, -1}, // 6
+		{ 0, 1, -1}, // 7
+	},
+	{ 	// Front face 
+		{-1, -1, 1},
+		{ 0, -1, 1},
+		{ 1, -1, 1},
+		{ 1,  0, 1},
+		{ 1,  1, 1},
+		{ 0,  1, 1},
+		{-1,  1, 1},
+		{-1,  0, 1},
 	},
 };
 
@@ -184,14 +253,14 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 					if (m_neighbours[LEFT] != nullptr &&
 						m_neighbours[LEFT]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][LEFT], false);
+						addQuadFace({ x, y, z }, { x, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][LEFT], LEFT, false);
 					}
 				}
 				else
 				{
 					if (m_voxels.at(left) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][LEFT], false);
+						addQuadFace({ x, y, z }, { x, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][LEFT], LEFT, false);
 					}
 				}
 
@@ -201,14 +270,14 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 					if (m_neighbours[RIGHT] != nullptr &&
 						m_neighbours[RIGHT]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
 					{
-						addQuadFace({ x + 1, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][RIGHT], true);
+						addQuadFace({ x, y, z }, { x + 1, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][RIGHT], RIGHT, true);
 					}
 				}
 				else
 				{
 					if (m_voxels.at(right) == VoxelType::Empty)
 					{
-						addQuadFace({ x + 1, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][RIGHT], true);
+						addQuadFace({ x, y, z }, { x + 1, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][RIGHT], RIGHT, true);
 					}
 				}
 
@@ -218,14 +287,14 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 					if (m_neighbours[BOTTOM] != nullptr &&
 						m_neighbours[BOTTOM]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], true);
+						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][BOTTOM], BOTTOM, true);
 					}
 				}
 				else
 				{
 					if (m_voxels.at(bottom) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], true);
+						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][BOTTOM], BOTTOM, true);
 					}
 				}
 
@@ -235,14 +304,14 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 					if (m_neighbours[TOP] != nullptr &&
 						m_neighbours[TOP]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], false);
+						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], TOP, false);
 					}
 				}
 				else
 				{
 					if (m_voxels.at(top) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], false);
+						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], TOP, false);
 					}
 				}
 
@@ -252,14 +321,14 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 					if (m_neighbours[BACK] != nullptr &&
 						m_neighbours[BACK]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y, z }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][BACK], true);
+						addQuadFace({ x, y, z }, { x, y, z }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][BACK], BACK, true);
 					}
 				}
 				else
 				{
 					if (m_voxels.at(back) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y, z }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][BACK], true);
+						addQuadFace({ x, y, z }, { x, y, z }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][BACK], BACK, true);
 					}
 				}
 
@@ -269,14 +338,14 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 					if (m_neighbours[FRONT] != nullptr &&
 						m_neighbours[FRONT]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y, z + 1 }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][FRONT], false);
+						addQuadFace({ x, y, z }, { x, y, z + 1 }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][FRONT], FRONT, false);
 					}
 				}
 				else
 				{
 					if (m_voxels.at(front) == VoxelType::Empty)
 					{
-						addQuadFace({ x, y, z + 1 }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][FRONT], false);
+						addQuadFace({ x, y, z }, { x, y, z + 1 }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][FRONT], FRONT, false);
 					}
 				}
 			}
@@ -478,7 +547,9 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v, const int32_t texId, bool isBackFace)
+void Chunk::addQuadFace(const glm::vec3& pos, 
+	const glm::vec3& u, const glm::vec3& v, 
+	const int32_t texId, bool isBackFace)
 {
 	if (isBackFace)
 	{
@@ -501,6 +572,77 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec
 		m_vertices.emplace_back(pos + u + v, texId, 3);
 	}
 }
+
+uint32_t Chunk::vertexAO(int32_t side1, int32_t side2, int32_t corner) const
+{
+	if (side1 + side2 == 2)
+	{
+		return 0;
+	}
+
+	return 3 - (side1 + side2 + corner);
+}
+
+uint32_t Chunk::checkVertexAO(const glm::vec3& pos, 
+	const glm::vec3& vCorner, const glm::vec3& vSide1, const glm::vec3& vSide2) const 
+{
+	// const glm::vec3 pCorner = static_cast<glm::vec3>(m_pos) + pos + vCorner;
+	// const glm::vec3 pSide1 = static_cast<glm::vec3>(m_pos) + pos + vSide1;
+	// const glm::vec3 pSide2 = static_cast<glm::vec3>(m_pos) + pos + vSide2;
+	
+	const glm::vec3 pCorner = pos + vCorner;
+	const glm::vec3 pSide1 = pos + vSide1;
+	const glm::vec3 pSide2 = pos + vSide2;
+
+	int32_t cornerId = getId(pCorner, g_sAxis);
+	int32_t side1Id = getId(pSide1, g_sAxis);
+	int32_t side2Id = getId(pSide2, g_sAxis);
+
+	if (cornerId >= g_voxelsPerChunk || cornerId < 0 ||
+		side1Id >= g_voxelsPerChunk || side1Id < 0 ||
+		side2Id >= g_voxelsPerChunk || side2Id < 0)
+	{
+		return 3;
+	}	
+	
+	return vertexAO(
+		m_voxels.at(cornerId) != VoxelType::Empty ? 1 : 0, 
+		m_voxels.at(side1Id) != VoxelType::Empty ? 1 : 0, 
+		m_voxels.at(side2Id) != VoxelType::Empty ? 1 : 0);
+}
+
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos, 
+	const glm::vec3& u, const glm::vec3& v, 
+	const int32_t texId, const int32_t faceId, bool isBackFace)
+{
+	if (faceId >= g_nFaces)  {
+		LOG_CORE_ERROR("Error: faceId - {0} is wrong ", faceId);	
+		return;
+	}
+
+	const auto& faceAODirs = g_aoStates[faceId];
+
+	if (isBackFace)
+	{
+		m_vertices.emplace_back(facePos, texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u + v, texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+	}
+	else
+	{
+		m_vertices.emplace_back(facePos, texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u + v, texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+	}
+}	
 
 void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline)
 {

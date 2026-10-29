@@ -1,6 +1,7 @@
 #include <chrono>
 #include <glm/glm.hpp>
 
+#include "VoxSmith/Chunk/Voxel.hpp"
 #include "VoxSmith/Logger/Log.hpp"
 #include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/Chunk/Chunk.hpp"
@@ -14,7 +15,7 @@ using namespace VoxSmith;
 
 constexpr int32_t g_cSize = 32;
 
-constexpr float g_renderDistance = 12 * g_cSize;
+constexpr float g_renderDistance = 3 * g_cSize;
 
 namespace UpdateConstants
 {

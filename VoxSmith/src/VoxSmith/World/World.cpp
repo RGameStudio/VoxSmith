@@ -244,6 +244,11 @@ void World::notifyChunkNeighbours(const glm::vec3& pos)
 	checkAndAddNeighbour(pos, {pos.x, pos.y + g_sAxis, pos.z - g_sAxis}, TOP_BACK);
 	checkAndAddNeighbour(pos, {pos.x, pos.y - g_sAxis, pos.z + g_sAxis}, BOTTOM_FRONT);
 	checkAndAddNeighbour(pos, {pos.x, pos.y - g_sAxis, pos.z - g_sAxis}, BOTTOM_BACK);
+
+	checkAndAddNeighbour(pos, {pos.x + g_sAxis, pos.y + g_sAxis, pos.z}, TOP_RIGHT);
+	checkAndAddNeighbour(pos, {pos.x - g_sAxis, pos.y + g_sAxis, pos.z}, TOP_LEFT);
+	checkAndAddNeighbour(pos, {pos.x + g_sAxis, pos.y - g_sAxis, pos.z}, BOTTOM_RIGHT);
+	checkAndAddNeighbour(pos, {pos.x - g_sAxis, pos.y - g_sAxis, pos.z}, BOTTOM_LEFT);
 }
 
 VoxelType World::getVoxel(const glm::vec3& pos) const
@@ -274,7 +279,7 @@ VoxelType World::getVoxel(const glm::vec3& pos) const
 	pVoxel.y = pVoxel.y < 0 ? 32 + pVoxel.y : pVoxel.y;
 	pVoxel.z = pVoxel.z < 0 ? 32 + pVoxel.z : pVoxel.z;
 	
-	if (m_chunks.find(pChunk) == m_chunks.end() || m_chunks.at(pChunk) == nullptr)
+	if (m_chunks.find(pChunk) == m_chunks.end())
 	{
 		return VoxelType::Empty;
 	}

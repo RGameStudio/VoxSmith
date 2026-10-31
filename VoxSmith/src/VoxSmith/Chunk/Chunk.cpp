@@ -104,7 +104,7 @@ Chunk::Chunk(const glm::vec3& pos)
 	: m_pos(pos)
 	, m_state(ChunkState::EMPTY)
 	, m_center(pos + glm::vec3(g_sAxis / 2))
-	, m_neighbours(22, nullptr)
+	, m_neighbours(26, nullptr)
 	, m_mesh(std::make_shared<Mesh>())
 {
 	std::unique_lock<std::shared_mutex> uLock(m_mutex);

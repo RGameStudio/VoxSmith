@@ -27,11 +27,14 @@ namespace VoxSmith
 		void draw(const Buffer& buffer, const Shader& shader, const Texture& texture) const;
 		void drawOutline(const Shader& shader, const glm::vec3& pos) const;
 
+		inline bool ambientOcclusion() const { return m_ambientOcclusion; }
+
 	private:
 		friend class Application;
 
 		bool m_showEdges = false;
 		bool m_cullingStatus = true;
+		bool m_ambientOcclusion = false;
 
 		Buffer m_outlineBuff;
 	};

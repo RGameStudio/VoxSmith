@@ -20,6 +20,7 @@ namespace VoxSmith
 
 		inline bool getEdgesRenderStatus() const { return m_showEdges; }
 		inline bool getChunkOutlineStatus() const { return m_showOutline; }
+		inline bool getAOStatus() const { return m_useAO; }
 
 		void setCameraInfo(const std::unique_ptr<Camera>& camera);
 		void setChunkInfo(bool& cullingStatus);
@@ -32,5 +33,6 @@ namespace VoxSmith
 
 		bool m_showEdges = false;
 		bool m_showOutline = false;
+		bool m_useAO = false;
 	};
 }

@@ -712,6 +712,7 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 	}
 
 	shader.setUniform3fv("u_chunkPos", m_pos);
+	shader.setUniform1b("u_bUseAO", renderer->ambientOcclusion());
 
 	m_mesh->draw(renderer, shader);
 	if (drawOutline)

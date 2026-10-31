@@ -68,6 +68,7 @@ void Application::run()
 		{
 			m_renderer->switchCulling();
 			m_renderer->m_showEdges = m_UICanvas->getEdgesRenderStatus();
+			m_renderer->m_ambientOcclusion = m_UICanvas->getAOStatus();
 
 			draw(dt, currentFrame);
 			m_UICanvas->render();

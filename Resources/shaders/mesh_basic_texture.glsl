@@ -54,7 +54,7 @@ void main()
 in vec3 frag_data;
 in float frag_occlusionFactor;
 
-// uniform u_bUseAO;
+uniform bool u_bUseAO;
 
 out vec4 o_color;
 
@@ -62,11 +62,11 @@ uniform sampler2DArray u_textureArray;
 
 void main()
 {
-    float factorAO = frag_occlusionFactor;
-    /*if (u_bUseAO)
+    float factorAO = 1.0;
+    if (u_bUseAO)
     {
         factorAO = frag_occlusionFactor;
     }
-    */
+    
     o_color = factorAO * texture(u_textureArray, frag_data);
 }

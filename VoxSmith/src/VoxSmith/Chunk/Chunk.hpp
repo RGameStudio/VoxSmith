@@ -59,6 +59,8 @@ namespace VoxSmith
 		void bake(MeshType type = MeshType::CULLED);
 		void loadVerticesToBuffer();
 		void generateChunk(const ChunkMap& map);
+
+		Voxel getVoxel(const glm::vec3 pLocal) const;
 		
 		bool canBake() const;
 		bool inBounds(const glm::ivec3& min, const glm::ivec3& max) const;

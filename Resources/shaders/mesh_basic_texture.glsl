@@ -15,7 +15,7 @@ const vec2 g_texCoords[4] = {
 const float g_occlusionValues[4] = {
     0.1,
     0.2,
-    0.9,
+    0.6,
     1.0
 };
 
@@ -54,11 +54,19 @@ void main()
 in vec3 frag_data;
 in float frag_occlusionFactor;
 
+// uniform u_bUseAO;
+
 out vec4 o_color;
 
 uniform sampler2DArray u_textureArray;
 
 void main()
 {
-    o_color = frag_occlusionFactor * texture(u_textureArray, frag_data);
+    float factorAO = frag_occlusionFactor;
+    /*if (u_bUseAO)
+    {
+        factorAO = frag_occlusionFactor;
+    }
+    */
+    o_color = factorAO * texture(u_textureArray, frag_data);
 }

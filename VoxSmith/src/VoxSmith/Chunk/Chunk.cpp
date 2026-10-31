@@ -7,8 +7,11 @@
 #include "VoxSmith/World/HeightMap/HeightMap.hpp"
 #include "VoxSmith/Camera/Camera.hpp"
 #include "VoxSmith/World/World.hpp"
+#include "VoxSmith/World/WorldManager.hpp"
 #include "Voxel.hpp"
+#include "glm/ext/vector_float3.hpp"
 #include <cstdint>
+#include <winuser.h>
 
 #include "Chunk.hpp"
 
@@ -36,21 +39,21 @@ constexpr uint32_t g_nNeighboursPerFace = 8;
 
 const glm::vec3 g_aoStates[g_nFaces][g_nNeighboursPerFace] = {
 	{   // Left face
-		{-1, -1, -1}, // 0
-		{-1, -1,  0}, // 1
-		{-1, -1,  1}, // 2
-		{-1,  0,  1}, // 3
-		{-1,  1,  1}, // 4
-		{-1,  1,  0}, // 5
-		{-1,  1, -1}, // 6
-		{-1,  0, -1}, // 7
+		{-1, -1, -1},
+		{-1, -1,  0},
+		{-1, -1,  1},
+		{-1,  0,  1},
+		{-1,  1,  1},
+		{-1,  1,  0},
+		{-1,  1, -1},
+		{-1,  0, -1},
 	},
 	{ 	// Bottom face
 		{-1, -1, -1},
 		{ 0, -1, -1},
 		{ 1, -1, -1},
 		{ 1, -1,  0},
-		{ 1, -1,  1},		
+		{ 1, -1,  1},	
 		{ 0, -1,  1},
 		{-1, -1,  1},
 		{-1, -1,  0},
@@ -76,14 +79,14 @@ const glm::vec3 g_aoStates[g_nFaces][g_nNeighboursPerFace] = {
 		{1, -1,  0},
 	},
 	{ 	// Top face
-		{-1, 1, -1}, // 0
-		{-1, 1,  0}, // 1
-		{-1, 1,  1}, // 2
-		{ 0, 1,  1}, // 3
-		{ 1, 1,  1}, // 4
-		{ 1, 1,  0}, // 5
-		{ 1, 1, -1}, // 6
-		{ 0, 1, -1}, // 7
+		{-1, 1, -1},
+		{-1, 1,  0},
+		{-1, 1,  1},
+		{ 0, 1,  1},
+		{ 1, 1,  1},
+		{ 1, 1,  0},
+		{ 1, 1, -1},
+		{ 0, 1, -1},
 	},
 	{ 	// Front face 
 		{-1, -1, 1},
@@ -99,8 +102,9 @@ const glm::vec3 g_aoStates[g_nFaces][g_nNeighboursPerFace] = {
 
 Chunk::Chunk(const glm::vec3& pos)
 	: m_pos(pos)
+	, m_state(ChunkState::EMPTY)
 	, m_center(pos + glm::vec3(g_sAxis / 2))
-	, m_neighbours(6, nullptr)
+	, m_neighbours(22, nullptr)
 	, m_mesh(std::make_shared<Mesh>())
 {
 	std::unique_lock<std::shared_mutex> uLock(m_mutex);
@@ -165,6 +169,24 @@ void Chunk::generateChunk(const ChunkMap& map)
 	}
 }
 
+Voxel Chunk::getVoxel(const glm::vec3 pLocal) const
+{
+	const int32_t id = getId(pLocal, g_sAxis);
+
+	if (m_state == ChunkState::EMPTY)
+	{
+		return Voxel::Empty;
+	}
+
+	if (id < 0 || id >= g_voxelsPerChunk)
+	{
+		LOG_CORE_ERROR("CHUNK::GET_VOXEL::Could not get voxel.");
+		return Voxel::Empty;
+	}
+
+	return m_voxels.at(id);
+}
+
 void Chunk::setState(ChunkState state)
 {
 	std::lock_guard<std::shared_mutex> lock(m_mutex);
@@ -191,7 +213,8 @@ bool Chunk::canBake() const
 {
 	for (auto& neighbour : m_neighbours)
 	{
-		if (neighbour == nullptr || neighbour->m_voxels.empty())
+		if (neighbour == nullptr || 
+			neighbour->getState() == ChunkState::FRESH || neighbour->getState() == ChunkState::EMPTY)
 		{
 			return false;
 		}
@@ -585,30 +608,60 @@ uint32_t Chunk::vertexAO(int32_t side1, int32_t side2, int32_t corner) const
 
 uint32_t Chunk::checkVertexAO(const glm::vec3& pos, 
 	const glm::vec3& vCorner, const glm::vec3& vSide1, const glm::vec3& vSide2) const 
-{
-	// const glm::vec3 pCorner = static_cast<glm::vec3>(m_pos) + pos + vCorner;
-	// const glm::vec3 pSide1 = static_cast<glm::vec3>(m_pos) + pos + vSide1;
-	// const glm::vec3 pSide2 = static_cast<glm::vec3>(m_pos) + pos + vSide2;
-	
+{	
 	const glm::vec3 pCorner = pos + vCorner;
 	const glm::vec3 pSide1 = pos + vSide1;
 	const glm::vec3 pSide2 = pos + vSide2;
 
-	int32_t cornerId = getId(pCorner, g_sAxis);
-	int32_t side1Id = getId(pSide1, g_sAxis);
-	int32_t side2Id = getId(pSide2, g_sAxis);
+	const int32_t cornerId = getId(pCorner, g_sAxis);
+	const int32_t side1Id = getId(pSide1, g_sAxis);
+	const int32_t side2Id = getId(pSide2, g_sAxis);
 
-	if (cornerId >= g_voxelsPerChunk || cornerId < 0 ||
-		side1Id >= g_voxelsPerChunk || side1Id < 0 ||
-		side2Id >= g_voxelsPerChunk || side2Id < 0)
+	Voxel corner;
+	Voxel side1;
+	Voxel side2;
+
+	if (pCorner.x < 0 || pCorner.x >= g_sAxis ||
+		pCorner.y < 0 || pCorner.y >= g_sAxis ||
+		pCorner.z < 0 || pCorner.z >= g_sAxis)
 	{
-		return 3;
-	}	
+		corner = WorldManager::getInstance()
+			.getVoxel(static_cast<glm::vec3>(m_pos) + pCorner);
+	}
+	else
+	{
+		corner = m_voxels.at(cornerId);
+	}
+	
+	if (pSide1.x < 0 || pSide1.x >= g_sAxis ||
+		pSide1.y < 0 || pSide1.y >= g_sAxis ||
+		pSide1.z < 0 || pSide1.z >= g_sAxis)
+	{
+		side1 = WorldManager::getInstance()
+			.getVoxel(static_cast<glm::vec3>(m_pos) + pSide1);
+	}
+	else
+	{
+		side1 = m_voxels.at(side1Id);
+	}
+
+	if (pSide2.x < 0 || pSide2.x >= g_sAxis ||
+		pSide2.y < 0 || pSide2.y >= g_sAxis ||
+		pSide2.z < 0 || pSide2.z >= g_sAxis)
+	{
+		side2 = WorldManager::getInstance()
+			.getVoxel(static_cast<glm::vec3>(m_pos) + pSide2);
+	}
+	else
+	{
+		side2 = m_voxels.at(side2Id);
+	}
 	
 	return vertexAO(
-		m_voxels.at(cornerId) != VoxelType::Empty ? 1 : 0, 
-		m_voxels.at(side1Id) != VoxelType::Empty ? 1 : 0, 
-		m_voxels.at(side2Id) != VoxelType::Empty ? 1 : 0);
+		side1  != VoxelType::Empty ? 1 : 0, 
+		side2  != VoxelType::Empty ? 1 : 0,
+		corner != VoxelType::Empty ? 1 : 0
+	);
 }
 
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos, 

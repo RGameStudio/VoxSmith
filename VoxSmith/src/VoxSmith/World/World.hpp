@@ -14,6 +14,7 @@
 #include "VoxSmith/Core.hpp"
 
 #include "VoxSmith/Task/Task.hpp"
+#include "WorldManager.hpp"
 
 namespace VoxSmith
 {
@@ -23,7 +24,7 @@ namespace VoxSmith
 	struct HeightMap;
 	struct Frustum;
 
-	VoxelType getVoxel();
+	class WorldManager;
 
 	class VOX_SMITH_API World
 	{
@@ -36,6 +37,8 @@ namespace VoxSmith
 		void update(const glm::vec3& playerPos);
 		void draw(std::shared_ptr<Renderer>& renderer, const Shader& shader, const glm::vec3& playerPos,
 			const Frustum& frustum, bool isOutlineActive = false);
+
+		VoxelType getVoxel(const glm::vec3& pos) const;
 
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;
@@ -91,5 +94,7 @@ namespace VoxSmith
 		void generateChunks();
 		void updateChunkTask(TaskWrapper& task, std::vector<std::shared_ptr<Chunk>>& chunkList);
 		void traverseChunks(const glm::ivec3& initPos, const glm::ivec3& endPos);
+	
+		friend class WorldManager;
 	};
 }

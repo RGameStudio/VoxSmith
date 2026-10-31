@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -19,6 +20,7 @@ namespace VoxSmith
 	class Renderer;
 	class Shader;
 	class Mesh;
+	class World;
 	struct ChunkMap;
 	struct Frustum;
 	struct Plane;
@@ -57,6 +59,8 @@ namespace VoxSmith
 		void bake(MeshType type = MeshType::CULLED);
 		void loadVerticesToBuffer();
 		void generateChunk(const ChunkMap& map);
+
+		Voxel getVoxel(const glm::vec3 pLocal) const;
 		
 		bool canBake() const;
 		bool inBounds(const glm::ivec3& min, const glm::ivec3& max) const;
@@ -91,7 +95,7 @@ namespace VoxSmith
 			FrontFace = 1,
 		};
 
-		inline int32_t getId(const glm::vec3& v, const float cSize) { return cSize * (v.y * cSize + v.z) + v.x; }
+		inline int32_t getId(const glm::vec3& vLocal, const float cSize) const { return cSize * (vLocal.y * cSize + vLocal.z) + vLocal.x; }
 
 		bool isOnwardPlane(const Plane& frustum) const;
 		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
@@ -105,7 +109,15 @@ namespace VoxSmith
 		void addQuadFace(const glm::vec3& pos, 
 			const glm::vec3& u, const glm::vec3& v,
 			const int32_t texId, bool isBackFace);
+		void addQuadFace(const glm::vec3& pos, const glm::vec3& facePos,
+			const glm::vec3& u, const glm::vec3& v,
+			const int32_t texId, const int32_t faceId, bool isBackFace);
 
+		uint32_t vertexAO(int32_t side1, int32_t side2, int32_t corner) const;
+		uint32_t checkVertexAO(const glm::vec3& pos, 
+			const glm::vec3& corner,
+			const glm::vec3& pSide1, 
+			const glm::vec3& pSide2) const;
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iAxis) const;
 #if 0
 		void handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis,

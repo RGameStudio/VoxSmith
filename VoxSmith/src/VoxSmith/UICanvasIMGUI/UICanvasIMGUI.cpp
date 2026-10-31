@@ -50,6 +50,7 @@ void UICanvasIMGUI::setChunkInfo(bool& cullingStatus)
 	ImGui::Checkbox("Show edges", &m_showEdges);
 	ImGui::Checkbox("Chunk outline", &m_showOutline);
 	ImGui::Checkbox("Enable culling", &cullingStatus);
+	ImGui::Checkbox("Ambient Occlusion", &m_useAO);
 	ImGui::End();
 }
 

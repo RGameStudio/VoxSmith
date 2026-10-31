@@ -6,6 +6,7 @@
 
 #include <unordered_map>
 #include <array>
+#include <glm/glm.hpp>
 
 namespace VoxSmith
 {
@@ -21,12 +22,45 @@ namespace VoxSmith
 
 	enum VOX_SMITH_API Direction : int8_t
 	{
+		// ---------------------
+		// Faces ---------------
+		//----------------------
 		LEFT = 0,
 		BOTTOM,
 		BACK,
 		RIGHT,
 		TOP,
 		FRONT,
+		//----------------------
+		// Corners -------------
+		//----------------------
+		TOP_LEFT_BACK,
+		TOP_LEFT_FRONT,
+		TOP_RIGHT_BACK,
+		TOP_RIGHT_FRONT,
+
+		BOTTOM_LEFT_BACK,
+		BOTTOM_LEFT_FRONT,
+		BOTTOM_RIGHT_BACK,
+		BOTTOM_RIGHT_FRONT,
+		//----------------------
+		// Edges ---------------
+		//----------------------
+		FRONT_RIGHT,
+		FRONT_LEFT,
+		BACK_RIGHT,
+		BACK_LEFT,
+
+		TOP_FRONT,
+		TOP_BACK,
+		BOTTOM_FRONT,
+		BOTTOM_BACK,
+
+		TOP_RIGHT,
+		TOP_LEFT,
+		BOTTOM_RIGHT,
+		BOTTOM_LEFT,
+		//----------------------
 	};
 
 	using Voxel = VoxelType;

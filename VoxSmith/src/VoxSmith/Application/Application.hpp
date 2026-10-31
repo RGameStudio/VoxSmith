@@ -46,7 +46,8 @@ namespace VoxSmith
 		virtual void draw(const float dt, const float cframe);
 		virtual void updateCamera(const float dt);
 
-		bool chunkOutlineStatus() { return m_UICanvas->getChunkOutlineStatus(); }
+		bool chunkOutlineStatus() const { return m_UICanvas->getChunkOutlineStatus(); }
+		bool ambientOcclusionStatus() const { return m_UICanvas->getAOStatus(); }
 	};
 
 	Application* createApplication();

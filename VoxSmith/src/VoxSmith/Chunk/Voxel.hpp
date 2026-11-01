@@ -17,7 +17,8 @@ namespace VoxSmith
 		Grass,
 		GrassMount,
 		Stone,
-		Sand
+		Sand,
+		Snow,
 	};
 
 	enum VOX_SMITH_API Direction : int8_t
@@ -124,6 +125,17 @@ namespace VoxSmith
 				TextureFace::SAND,
 				TextureFace::SAND,
 				TextureFace::SAND
+			}
+		},
+		{
+			VoxelType::Snow,
+			{
+				TextureFace::SNOW,
+				TextureFace::SNOW,
+				TextureFace::SNOW,
+				TextureFace::SNOW,
+				TextureFace::SNOW,
+				TextureFace::SNOW
 			}
 		}
 	};

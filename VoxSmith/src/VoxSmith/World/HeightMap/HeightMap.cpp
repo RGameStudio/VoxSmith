@@ -1,5 +1,6 @@
 #include <glm/common.hpp>
 
+#include "VoxSmith/Chunk/Voxel.hpp"
 #include "VoxSmith/Logger/Log.hpp"
 
 #include "HeightMap.hpp"
@@ -82,13 +83,37 @@ ChunkMap HeightMap::generateMap(const glm::ivec2& pos)
 
 			float areaNoise = m_area.GetNoise(x_, z_) * 0.5f + 0.5f;
 			areaNoise = getSplineValue(g_areaSpline, areaNoise);
-			
-			float height = 100.0f * (baseNoise * areaNoise + (1.0f - areaNoise) * mountainNoise);
-			
 
+			const float baseFactor = baseNoise * areaNoise;
+			const float mountainFactor = mountainNoise * (1.0f - areaNoise);
+			
+			float height = 100.0f * (baseFactor + mountainFactor);
+			
 			Biome biome;
-			biome.mainVoxel = VoxelType::Dirt;
-			biome.topVoxel = VoxelType::Grass;
+
+			if (mountainNoise < baseNoise)
+			{
+				biome.mainVoxel = VoxelType::Dirt;
+				biome.topVoxel = VoxelType::Grass;
+			}
+			else 
+			{
+				if (mountainNoise > 0.6)
+				{
+					biome.mainVoxel = VoxelType::Stone;
+					biome.topVoxel = VoxelType::Snow;
+				}
+				else if (mountainNoise > 0.4 && mountainNoise <= 0.6)
+				{
+					biome.mainVoxel = VoxelType::Stone;
+					biome.topVoxel = VoxelType::Stone;
+				}
+				else
+				{
+					biome.mainVoxel = VoxelType::Stone;
+					biome.topVoxel = VoxelType::GrassMount;
+				}
+			}
 
 			map.data.push_back(100.0f + height);
 			map.biomData.push_back(biome);

@@ -1,3 +1,5 @@
+#include "VoxSmith/Input/Input.hpp"
+#include "glm/ext/vector_float3.hpp"
 #include <VoxSmith.hpp>
 
 #define CALC_HEIGHT(width, ratio) (width) / (ratio)
@@ -59,6 +61,10 @@ public:
 		{
 			auto mousePos = VoxSmith::Mouse::getInstance().getMousePos();
 			m_camera->updateCameraAngle(mousePos.x, mousePos.y);
+		}
+		else if (!VoxSmith::Keyboard::getInstance().isKeyActive(VOX_KEY_LEFT_SHIFT))
+		{
+			m_camera->clearFirstMove();
 		}
 
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture)

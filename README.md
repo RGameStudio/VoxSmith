@@ -16,8 +16,11 @@ For the moment my most ambitious project, which will be a high performant voxel 
 
 + Fog (A simple fog that extends about 10% of the distance from the far clip plane toward the near clip plane)
 
-+ Ambient Occlusion in 2 variations (Static shading baked into the mesh; SSAO)
++ Ambient Occlusion in 2 variations (SSAO)
 
 + Anti-aliasing (FXAA / MSAA / SMAA). (TAA is not suitable due to its visual component in the form of ghosting.)
 
 + Bloom in 2 variations (The entire scene; only emissive materials)
+
+# Done
++ Ambient Occlusion (Static shading baked into the mesh)

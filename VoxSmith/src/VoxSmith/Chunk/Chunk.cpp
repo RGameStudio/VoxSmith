@@ -411,144 +411,6 @@ void Chunk::bakeBinGreedy(const std::vector<Voxel>& voxels, const float size)
 {
 }
 
-void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float cSize)
-{
-	std::vector<VoxelType> faceMask(cSize * cSize, VoxelType::Empty);
-
-	for (bool backFace = true, frontFace = false; frontFace != backFace; backFace = frontFace && backFace, frontFace = !frontFace)
-	{
-		for (int32_t iAxis = 0; iAxis < 3; iAxis++)
-		{
-			int32_t u = (iAxis + 1) % 3;
-			int32_t v = (iAxis + 2) % 3;
-
-			glm::vec3 x = glm::vec3(0.0f);
-			glm::vec3 q = glm::vec3(0.0f);
-
-			q[iAxis] = 1;
-
-			for (x[iAxis] = -1; x[iAxis] < cSize;)
-			{
-				int32_t n = 0;
-				for (x[v] = 0; x[v] < cSize; x[v]++)
-				{
-					for (x[u] = 0; x[u] < cSize; x[u]++)
-					{
-#define CHECK_NEIGHBOURS true
-#ifdef CHECK_NEIGHBOURS
-						VoxelType bCurrent = VoxelType::Empty;
-						VoxelType bCompare = VoxelType::Empty;
-
-						if (0 <= x[iAxis])
-						{
-							bCurrent = voxels.at(getId(x, cSize));
-						}
-						else
-						{
-							if (m_neighbours[iAxis])
-							{
-								glm::vec3 pos = x;
-								pos[iAxis] = cSize - 1;
-								bCurrent = m_neighbours[iAxis]->m_voxels.at(getId(pos, cSize));
-							}
-							else
-							{
-								bCurrent = VoxelType::Empty;
-							}
-						}
-
-						if (x[iAxis] < cSize - 1)
-						{
-							bCompare = voxels.at(getId(x + q, cSize));
-						}
-						else
-						{
-							if (m_neighbours[3 + iAxis])
-							{
-								glm::vec3 pos = x;
-								pos[iAxis] = 0;
-								bCompare = m_neighbours[3 + iAxis]->m_voxels.at(getId(pos, cSize));
-							}
-							else
-							{
-								bCompare = VoxelType::Empty;
-							}
-						}
-#else
-						auto bCurrent = 0 <= x[iAxis] ? voxels.at(getId(x, cSize)) : VoxelType::Empty;
-						auto bCompare = x[iAxis] < cSize - 1 ? voxels.at(getId(x + q, cSize)) : VoxelType::Empty;
-#endif
-
-						faceMask.at(n++) = backFace
-							? bCurrent == VoxelType::Empty && bCompare != VoxelType::Empty ? bCompare : VoxelType::Empty
-							: bCurrent != VoxelType::Empty && bCompare == VoxelType::Empty ? bCurrent : VoxelType::Empty;
-					}
-				}
-
-				x[iAxis]++;
-				n = 0;
-
-				for (int32_t j = 0; j < cSize; j++)
-				{
-					for (int32_t i = 0; i < cSize; i)
-					{
-						if (faceMask[n] != VoxelType::Empty)
-						{
-							int32_t width;
-							for (width = 1; i + width < cSize && faceMask[n + width] == faceMask[n]; width++)
-							{
-							}
-
-							bool done = false;
-							int32_t height;
-							for (height = 1; j + height < cSize; height++)
-							{
-								for (int32_t w = 0; w < width; w++)
-								{
-									if (faceMask[n + w + height * cSize] != faceMask[n])
-									{
-										done = true;
-										break;
-									}
-								}
-								if (done)
-								{
-									break;
-								}
-							}
-
-							glm::vec3 du = glm::vec3(0.0f);
-							glm::vec3 dv = glm::vec3(0.0f);
-
-							x[u] = i;
-							x[v] = j;
-
-							defineUV(du, dv, { width, height }, iAxis);
-
-							addQuadFace(x, du, dv, s_voxelColors[faceMask.at(n)], iAxis);
-
-							for (int32_t h = 0; h < height; h++)
-							{
-								for (int32_t w = 0; w < width; w++)
-								{
-									faceMask.at(n + w + h * cSize) = VoxelType::Empty;
-								}
-							}
-
-							n += width;
-							i += width;
-						}
-						else
-						{
-							n++;
-							i++;
-						}
-					}
-				}
-			}
-		}
-	}
-}
 
 void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iAxis) const
 {
@@ -712,7 +574,10 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 	}
 
 	shader.setUniform3fv("u_chunkPos", m_pos);
-	shader.setUniform1b("u_bUseAO", renderer->ambientOcclusion());
+	if (m_meshType == MeshType::CULLED)
+	{
+		shader.setUniform1b("u_bUseAO", renderer->ambientOcclusion());
+	}
 
 	m_mesh->draw(renderer, shader);
 	if (drawOutline)
@@ -733,14 +598,16 @@ void Chunk::bake(MeshType type)
 	m_state = ChunkState::MESH_BAKING;
 	uLock.unlock();
 
+	m_meshType = type;
+
 	switch (type)
 	{
 	case MeshType::CULLED:
 		bakeCulled(m_voxels, g_sAxis);
 		break;
 
-	case MeshType::GREEDY:
-		bakeGreedy(m_voxels, g_sAxis);
+	case MeshType::BINARY_GREEDY:
+		bakeBinGreedy(m_voxels, g_sAxis);
 		break;
 	}
 

@@ -81,6 +81,8 @@ namespace VoxSmith
 		glm::vec3 m_center;
 
 		ChunkState m_state = ChunkState::EMPTY;
+		MeshType m_meshType;
+
 		std::shared_ptr<Mesh> m_mesh = nullptr;
 		std::vector<Voxel> m_voxels;
 		std::vector<Vertex> m_vertices;
@@ -99,7 +101,6 @@ namespace VoxSmith
 
 		bool isOnwardPlane(const Plane& frustum) const;
 		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
-		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 		
 		void addQuadFace(const glm::vec3& pos, 

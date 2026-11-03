@@ -42,6 +42,8 @@ namespace VoxSmith
 		inline glm::vec3 getRight() const { return glm::cross(getFront(), glm::vec3(0.0f, 1.0f, 0.0f)); }
 		inline float getViewDistance() const { return m_viewDistance; }
 
+		inline void clearFirstMove() { m_firstMove = true; }
+
 	private:
 		glm::mat4 m_projection;
 		glm::mat4 m_view;

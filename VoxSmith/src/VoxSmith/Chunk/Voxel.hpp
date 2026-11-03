@@ -67,9 +67,11 @@ namespace VoxSmith
 	using Voxel = VoxelType;
 
 	static std::unordered_map<VoxelType, glm::u8vec3> s_voxelColors = {
-		{ VoxelType::Dirt,  { 155, 118, 83  } },
-		{ VoxelType::Grass, { 0,   255, 0   } },
-		{ VoxelType::Stone, { 183, 176, 156 } },
+		{ VoxelType::Dirt,  		{ 155, 118, 83  	} },
+		{ VoxelType::Grass, 		{ 0,   255, 0   	} },
+		{ VoxelType::Stone, 		{ 183, 176, 156 	} },
+		{ VoxelType::GrassMount, 	{ 0,   255, 0 		} },
+		{ VoxelType::Snow, 			{ 255,   255, 255 	} },
 	};
 
 	static std::unordered_map<VoxelType, std::array<TextureFace, 6>> s_textureFaces = {

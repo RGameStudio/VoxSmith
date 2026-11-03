@@ -1,4 +1,6 @@
+#include "VoxSmith/Chunk/Voxel.hpp"
 #include "VoxSmith/Input/Input.hpp"
+#include "VoxSmith/ResourceManager/ResourcesLists.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include <VoxSmith.hpp>
 

@@ -101,6 +101,7 @@ namespace VoxSmith
 
 		bool isOnwardPlane(const Plane& frustum) const;
 		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
+		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 		
 		void addQuadFace(const glm::vec3& pos, 

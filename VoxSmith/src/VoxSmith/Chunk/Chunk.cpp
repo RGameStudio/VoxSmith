@@ -11,6 +11,7 @@
 #include "Voxel.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include <cstdint>
+#include <utility>
 #include <winuser.h>
 
 #include "Chunk.hpp"
@@ -376,7 +377,7 @@ void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
 	}
 }
 
-void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float size)
+void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size)
 {
 	for (int32_t iFace = 0; iFace < 2; iFace++) // 0 - backface, 1 - frontface
 	{
@@ -388,6 +389,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float size)
 			for (int32_t iPlane = 0; iPlane < size; iPlane++)
 			{
 				std::vector<Voxel> faceMask(size * size, Voxel::Empty);
+				std::vector<bool> visitedMask(size * size, false);
 
 				glm::vec3 pVoxelInPlane = glm::vec3(0.0f);
 				glm::vec3 pVoxelToCompare = glm::vec3(0.0f);
@@ -396,9 +398,6 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float size)
 				pVoxelToCompare[iAxis] = iFace == 0 ? iPlane - 1 : iPlane + 1; 	// If we are creating backfaces make sure,
 																				// to check the corresponding voxel with the back plane -> iPlane - 1, 
 																				// and front plane accordingly -> iPlane + 1
-
- 				const Voxel currVoxel = m_voxels.at(getId(pVoxelInPlane, size));
-				Voxel compareVoxel;
 
 				int32_t iMask = 0;
 				for (int32_t v = 0; v < size; v++)
@@ -411,18 +410,21 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float size)
 						pVoxelToCompare[iuAxis] = u;
 						pVoxelToCompare[ivAxis] = v;
 
+						const Voxel currVoxel = m_voxels.at(getId(pVoxelInPlane, size));
+						Voxel compareVoxel = VoxelType::Empty;
+
 						if (pVoxelToCompare[iAxis] < 0) // In case the neighbour chunk for the backface is needed
 						{
 							const auto& chunk = m_neighbours[iAxis];
-							glm::vec3 localPos = glm::vec3(pVoxelInPlane);
-							localPos[iPlane] = size - 1;
+							glm::vec3 localPos = pVoxelToCompare;
+							localPos[iAxis] = size - 1;
 							compareVoxel = chunk->m_voxels.at(getId(localPos, size));
 						}
 						else if (pVoxelToCompare[iAxis] >= size)
 						{
 							const auto& chunk = m_neighbours[iAxis + 3];
-							glm::vec3 localPos = glm::vec3(pVoxelInPlane);
-							localPos[iPlane] = 0;
+							glm::vec3 localPos = pVoxelToCompare;
+							localPos[iAxis] = 0;
 							compareVoxel = chunk->m_voxels.at(getId(localPos, size));
 						}
 						else 
@@ -430,19 +432,87 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const float size)
 							compareVoxel = m_voxels.at(getId(pVoxelToCompare, size));
 						}
 
-						faceMask.at(iMask++) = currVoxel != Voxel::Empty && compareVoxel == Voxel::Empty 
-							? currVoxel 
-							: Voxel::Empty;
+						faceMask.at(iMask++) =		
+							currVoxel != Voxel::Empty && compareVoxel == Voxel::Empty 
+								? currVoxel 
+								: Voxel::Empty;
 					}
 				}
 
-				iMask = 0;
 				for (int32_t v = 0; v < size; v++)
 				{
 					for (int32_t u = 0; u < size; u++)
 					{
+						pVoxelInPlane[iuAxis] = u;
+						pVoxelInPlane[ivAxis] = v;
 
-					}
+						iMask = size * v + u;
+						if (faceMask.at(iMask) == Voxel::Empty)
+						{
+							continue;
+						}
+						
+						const Voxel currVoxel = faceMask.at(iMask);
+
+						int32_t width = 1;
+						for (; iMask + width < size && faceMask.at(iMask + width) == currVoxel; width++) 
+						{
+
+						}
+
+						bool quadDone = false;
+												
+						int32_t height = 1;
+						for (; v + height < size; height++)
+						{
+							for (int32_t w = 0; w < width; w++) 
+							{
+								if (faceMask.at(iMask + height * size + w) != currVoxel)
+								{
+									quadDone = true;
+									break;
+								}
+							}
+
+							if (quadDone)
+							{
+								break;
+							}
+						}
+
+						glm::vec3 du = glm::vec3(0.0);
+						glm::vec3 dv = glm::vec3(0.0);
+
+						du[iuAxis] = width;
+						dv[ivAxis] = height;
+
+						const int32_t texId = iFace == 0 
+							? s_textureFaces[currVoxel][iAxis] 
+							: s_textureFaces[currVoxel][iAxis + 3];
+
+						glm::vec3 facePos = pVoxelInPlane;
+
+						bool backface = iFace == 0;
+						if (iAxis == 0)
+						{
+						 	std::swap(du, dv);
+							backface = !backface;
+						}
+						
+						if (iFace == 1)
+						{
+							facePos[iAxis] += 1.0f;
+						}
+						addQuadFace(facePos, du, dv, texId, backface);
+
+						for (int32_t h = 0; h < height; h++)
+						{
+							for (int32_t w = 0; w < width; w++)
+							{
+								faceMask.at(iMask + h * size + w) = Voxel::Empty;
+							}
+						}
+					} 	
 				}
 			}	
 		}
@@ -475,8 +545,8 @@ void Chunk::handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t i
 	{
 		if (m_voxels.at(neighbourId) == VoxelType::Empty)
 		{
-			addQuadFace(facePos, u, v, tFace, isBackFace);
 		}
+		addQuadFace(facePos, u, v, tFace, isBackFace);
 	}
 }
 #endif
@@ -677,6 +747,10 @@ void Chunk::bake(MeshType type)
 	{
 	case MeshType::CULLED:
 		bakeCulled(m_voxels, g_sAxis);
+		break;
+
+	case MeshType::GREEDY:
+		bakeGreedy(m_voxels, g_sAxis);
 		break;
 
 	case MeshType::BINARY_GREEDY:

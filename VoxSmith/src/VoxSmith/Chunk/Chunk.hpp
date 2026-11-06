@@ -56,7 +56,7 @@ namespace VoxSmith
 		void addNeighbour(Direction dir, const std::shared_ptr<Chunk>& chunk);
 		void setMesh(const std::shared_ptr<Mesh>& mesh);
 		void draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline);
-		void bake(MeshType type = MeshType::CULLED);
+		void bake(MeshType type = MeshType::GREEDY);
 		void loadVerticesToBuffer();
 		void generateChunk(const ChunkMap& map);
 
@@ -101,7 +101,7 @@ namespace VoxSmith
 
 		bool isOnwardPlane(const Plane& frustum) const;
 		void bakeCulled(const std::vector<Voxel>& voxels, const float size);
-		void bakeGreedy(const std::vector<Voxel>& voxels, const float size);
+		void bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size);
 		void bakeBinGreedy(const std::vector<Voxel>& voxels, const float size);
 		
 		void addQuadFace(const glm::vec3& pos, 

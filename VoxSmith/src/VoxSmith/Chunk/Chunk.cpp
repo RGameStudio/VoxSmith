@@ -455,7 +455,7 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size)
 						const Voxel currVoxel = faceMask.at(iMask);
 
 						int32_t width = 1;
-						for (; iMask + width < size && faceMask.at(iMask + width) == currVoxel; width++) 
+						for (; width + u < size && faceMask.at(iMask + width) == currVoxel; width++) 
 						{
 
 						}
@@ -493,9 +493,16 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size)
 						glm::vec3 facePos = pVoxelInPlane;
 
 						bool backface = iFace == 0;
+						
+						glm::ivec2 dims = {
+							du[iuAxis],
+							dv[ivAxis]
+						};
+
 						if (iAxis == 0)
 						{
 						 	std::swap(du, dv);
+							std::swap(dims.x, dims.y);
 							backface = !backface;
 						}
 						
@@ -503,7 +510,8 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size)
 						{
 							facePos[iAxis] += 1.0f;
 						}
-						addQuadFace(facePos, du, dv, texId, backface);
+
+						addQuadFace(facePos, du, dv, dims, texId, backface);
 
 						for (int32_t h = 0; h < height; h++)
 						{
@@ -598,6 +606,32 @@ void Chunk::addQuadFace(const glm::vec3& pos,
 		m_vertices.emplace_back(pos + v, texId, 2);
 		m_vertices.emplace_back(pos + u, texId, 1);
 		m_vertices.emplace_back(pos + u + v, texId, 3);
+	}
+}
+
+void Chunk::addQuadFace(const glm::vec3& pos, 
+	const glm::vec3& u, const glm::vec3& v, const glm::ivec2& dims, 
+	const int32_t texId, bool isBackFace)
+{
+	if (isBackFace)
+	{
+		m_vertices.emplace_back(pos, texId, 0, dims);
+		m_vertices.emplace_back(pos + v, texId, 2, dims);
+		m_vertices.emplace_back(pos + u, texId, 1, dims);
+
+		m_vertices.emplace_back(pos + u, texId, 1, dims);
+		m_vertices.emplace_back(pos + v, texId, 2, dims);
+		m_vertices.emplace_back(pos + u + v, texId, 3, dims);
+	}
+	else
+	{
+		m_vertices.emplace_back(pos, texId, 0, dims);
+		m_vertices.emplace_back(pos + u, texId, 1, dims);
+		m_vertices.emplace_back(pos + v, texId, 2, dims);
+
+		m_vertices.emplace_back(pos + v, texId, 2, dims);
+		m_vertices.emplace_back(pos + u, texId, 1, dims);
+		m_vertices.emplace_back(pos + u + v, texId, 3, dims);
 	}
 }
 

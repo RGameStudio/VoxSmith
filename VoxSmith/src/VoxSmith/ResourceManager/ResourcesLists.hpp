@@ -10,12 +10,14 @@ namespace VoxSmith
 {
 	static const std::string s_mesh = "mesh";
 	static const std::string s_meshTexture = "mesh_texture";
+	static const std::string s_greedyTexture = "greedy_texture";
 	static const std::string s_chunkOutline = "chunk_outline";
 	static const std::string s_voxelTextureList = "texture_list";
 
 	static const std::unordered_map<std::string, std::string> s_shaderPaths = {
 		{s_mesh, "Resources/Shaders/mesh_basic.glsl"},
 		{s_chunkOutline, "Resources/Shaders/chunk_outline.glsl"},
+		{s_greedyTexture, "Resources/Shaders/greedy_mesher.glsl"},
 		{s_meshTexture, "Resources/Shaders/mesh_basic_texture.glsl"}
 	};
 

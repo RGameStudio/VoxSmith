@@ -2,17 +2,21 @@
 
 #version 430 core
 
-layout (location = 0) in vec3 pos;
-layout (location = 1) in vec3 color;
-layout (location = 2) in int faceId;
+layout (location = 0) in uint portion1;
+layout (location = 1) in uint portion2;
 
-const float g_fadeFactors[6] = {
+const vec2 g_texCoords[4] = {
+    vec2(0, 0),
+    vec2(1, 0),
+    vec2(0, 1),
+    vec2(1, 1)
+};
+
+const float g_occlusionValues[4] = {
     0.1,
     0.2,
-    0.3,
-    0.4,
-    0.5,
-    0.6
+    0.6,
+    1.0
 };
 
 uniform mat4 u_projection;
@@ -20,35 +24,59 @@ uniform mat4 u_view;
 
 uniform vec3 u_chunkPos;
 
-out vec3 fragment_color;
+out vec3 frag_data;
+// out float frag_occlusionFactor;
 
 void main()
 {
-    gl_Position = u_projection * u_view * vec4(u_chunkPos + pos, 1.0);
-    fragment_color = g_fadeFactors[faceId] * color;
+    const vec3 pos = u_chunkPos + vec3(
+        portion1 & 63,
+        (portion1 >> 6) & 63,
+        (portion1 >> 12) & 63 
+    );
+
+    const uint uvId = (portion1 >> 18) & 3;
+    const uint texId = (portion1 >> 20) & 63;
+
+    const vec2 dims = vec2(
+        portion2 & 63,
+        (portion2 >> 6) & 63 
+    );
+
+    // const uint occlusionCase = (portion1 >> 28) & 7;
+    
+    gl_Position = u_projection * u_view * vec4(pos, 1.0);
+
+    const vec2 texCoords = vec2(
+        g_texCoords[uvId].x * dims.x, 
+        g_texCoords[uvId].y * dims.y
+    );
+
+    frag_data = vec3(texCoords, texId);
+    // frag_occlusionFactor = g_occlusionValues[occlusionCase];
 }
 
 #shader GEOMETRY
-
-layout (points) in;
-layout (triangle_strip, max_vertices = 4) out;
-
-void main()
-{
-    gl_Position = vec4(-1, -1, 0, 1); EmitVertex();
-	gl_Position = vec4(-1, 1, 0, 1); EmitVertex();
-	gl_Position = vec4(1, -1, 0, 1); EmitVertex();
-	gl_Position = vec4(1, 1, 0, 1); EmitVertex();
-}
-
 #shader FRAGMENT
 
 #version 430
 
-in vec3 fragment_color;
+in vec3 frag_data;
+// in float frag_occlusionFactor;
+
+uniform bool u_bUseAO;
+
 out vec4 o_color;
+
+uniform sampler2DArray u_textureArray;
 
 void main()
 {
-    o_color = vec4(fragment_color, 1.0);
+    float factorAO = 1.0;
+    // if (u_bUseAO)
+    {
+        // factorAO = frag_occlusionFactor;
+    }
+    
+    o_color = factorAO * texture(u_textureArray, frag_data);
 }

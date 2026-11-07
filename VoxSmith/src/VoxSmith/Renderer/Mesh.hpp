@@ -34,7 +34,7 @@ namespace VoxSmith
 			portion2 |= (texId & 0b0000111) << 10;
 		}
 
-		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId)
+		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId) // Textures
 		{
 			portion1 |= (pos.x & 0b00111111);
 			portion1 |= (pos.y & 0b00111111) << 6;
@@ -45,10 +45,17 @@ namespace VoxSmith
 		}
 
 		
-		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId, const uint8_t occlusionCase)
+		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId, const uint8_t occlusionCase) // Textures, occlusion culling
 			: Vertex(pos, texId, uvId)
 		{
 			portion1 |= (occlusionCase & 0b0000111) << 28;
+		}
+
+		Vertex(const glm::ivec3& pos, const uint8_t texId, const uint8_t uvId, const glm::ivec2& dims) // Greedy meshing, textures
+			: Vertex(pos, texId, uvId)
+		{
+			portion2 |= (dims.x & 0b00111111);
+			portion2 |= (dims.y & 0b00111111) << 6;
 		}
 
 		uint32_t portion1 = 0;

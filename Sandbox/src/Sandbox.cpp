@@ -22,11 +22,11 @@ public:
 		: Application(g_tempWidth, g_tempHeight)
 		, world(m_camera->getPos(), 8)
 	{
-		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture)
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_greedyTexture)
 			.setUniform4m("u_projection", m_camera->getProjection());
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
 			.setUniform4m("u_projection", m_camera->getProjection());
-		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture)
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_greedyTexture)
 			.setUniform1i("u_textureArray", 0);
 		VoxSmith::ResourceManager::getInstance().getTexture(VoxSmith::s_voxelTextureList).use();
 	}
@@ -69,7 +69,7 @@ public:
 			m_camera->clearFirstMove();
 		}
 
-		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture)
+		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_greedyTexture)
 			.setUniform4m("u_view", m_camera->getView());
 		VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_chunkOutline)
 			.setUniform4m("u_view", m_camera->getView());
@@ -78,7 +78,7 @@ public:
 	void draw(const float dt, const float cframe) override
 	{
 		world.draw(m_renderer, 
-			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_meshTexture), 
+			VoxSmith::ResourceManager::getInstance().getShader(VoxSmith::s_greedyTexture), 
 			m_camera->getPos(), m_camera->getFrustum(), chunkOutlineStatus());
 	}
 

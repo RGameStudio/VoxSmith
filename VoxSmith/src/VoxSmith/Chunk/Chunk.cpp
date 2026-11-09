@@ -455,19 +455,28 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size)
 						const Voxel currVoxel = faceMask.at(iMask);
 
 						int32_t width = 1;
-						for (; width + u < size && faceMask.at(iMask + width) == currVoxel; width++) 
+						glm::vec3 pAttachVoxel = pVoxelInPlane;
+						pAttachVoxel[iuAxis]++;
+						for (;
+							width + u < size && faceMask.at(iMask + width) == currVoxel && 
+							compareVerticesAO(pVoxelInPlane, pAttachVoxel, iAxis + iFace * 3); 
+							pAttachVoxel[iuAxis]++, width++) 
 						{
-
+							;;
 						}
 
 						bool quadDone = false;
 												
 						int32_t height = 1;
-						for (; v + height < size; height++)
+						pAttachVoxel = pVoxelInPlane;
+						pAttachVoxel[ivAxis]++;
+						for (; v + height < size; height++, pAttachVoxel[ivAxis]++)
 						{
-							for (int32_t w = 0; w < width; w++) 
+							pAttachVoxel[iuAxis] = pVoxelInPlane[iuAxis];
+							for (int32_t w = 0; w < width; w++, pAttachVoxel[iuAxis]++) 
 							{
-								if (faceMask.at(iMask + height * size + w) != currVoxel)
+								if (faceMask.at(iMask + height * size + w) != currVoxel ||
+									!compareVerticesAO(pVoxelInPlane, pAttachVoxel, iAxis + iFace * 3))
 								{
 									quadDone = true;
 									break;
@@ -505,13 +514,13 @@ void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size)
 							std::swap(dims.x, dims.y);
 							backface = !backface;
 						}
-						
+
 						if (iFace == 1)
 						{
 							facePos[iAxis] += 1.0f;
 						}
 
-						addQuadFace(facePos, du, dv, dims, texId, backface);
+						addQuadFace(pVoxelInPlane, facePos, du, dv, dims, texId, iAxis + iFace * 3, backface);
 
 						for (int32_t h = 0; h < height; h++)
 						{
@@ -574,12 +583,12 @@ void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const in
 void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
 	const glm::u8vec3& color, const int32_t id)
 {
-	m_vertices.emplace_back(pos, color, id);
-	m_vertices.emplace_back(pos + u, color, id);
-	m_vertices.emplace_back(pos + v, color, id);
+	m_vertices.emplace_back(pos, 		 color, id);
+	m_vertices.emplace_back(pos + u, 	 color, id);
+	m_vertices.emplace_back(pos + v, 	 color, id);
 
-	m_vertices.emplace_back(pos + v, color, id);
-	m_vertices.emplace_back(pos + u, color, id);
+	m_vertices.emplace_back(pos + v,  	 color, id);
+	m_vertices.emplace_back(pos + u, 	 color, id);
 	m_vertices.emplace_back(pos + u + v, color, id);
 }
 
@@ -589,22 +598,22 @@ void Chunk::addQuadFace(const glm::vec3& pos,
 {
 	if (isBackFace)
 	{
-		m_vertices.emplace_back(pos, texId, 0);
-		m_vertices.emplace_back(pos + v, texId, 2);
-		m_vertices.emplace_back(pos + u, texId, 1);
+		m_vertices.emplace_back(pos, 	 	 texId, 0);
+		m_vertices.emplace_back(pos + v, 	 texId, 2);
+		m_vertices.emplace_back(pos + u, 	 texId, 1);
 
-		m_vertices.emplace_back(pos + u, texId, 1);
-		m_vertices.emplace_back(pos + v, texId, 2);
+		m_vertices.emplace_back(pos + u, 	 texId, 1);
+		m_vertices.emplace_back(pos + v, 	 texId, 2);
 		m_vertices.emplace_back(pos + u + v, texId, 3);
 	}
 	else
 	{
-		m_vertices.emplace_back(pos, texId, 0);
-		m_vertices.emplace_back(pos + u, texId, 1);
-		m_vertices.emplace_back(pos + v, texId, 2);
+		m_vertices.emplace_back(pos, 	 	 texId, 0);
+		m_vertices.emplace_back(pos + u, 	 texId, 1);
+		m_vertices.emplace_back(pos + v, 	 texId, 2);
 
-		m_vertices.emplace_back(pos + v, texId, 2);
-		m_vertices.emplace_back(pos + u, texId, 1);
+		m_vertices.emplace_back(pos + v, 	 texId, 2);
+		m_vertices.emplace_back(pos + u, 	 texId, 1);
 		m_vertices.emplace_back(pos + u + v, texId, 3);
 	}
 }
@@ -615,22 +624,22 @@ void Chunk::addQuadFace(const glm::vec3& pos,
 {
 	if (isBackFace)
 	{
-		m_vertices.emplace_back(pos, texId, 0, dims);
-		m_vertices.emplace_back(pos + v, texId, 2, dims);
-		m_vertices.emplace_back(pos + u, texId, 1, dims);
+		m_vertices.emplace_back(pos, 		 texId, 0, dims);
+		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
+		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
 
-		m_vertices.emplace_back(pos + u, texId, 1, dims);
-		m_vertices.emplace_back(pos + v, texId, 2, dims);
+		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
+		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
 		m_vertices.emplace_back(pos + u + v, texId, 3, dims);
 	}
 	else
 	{
-		m_vertices.emplace_back(pos, texId, 0, dims);
-		m_vertices.emplace_back(pos + u, texId, 1, dims);
-		m_vertices.emplace_back(pos + v, texId, 2, dims);
+		m_vertices.emplace_back(pos, 		 texId, 0, dims);
+		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
+		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
 
-		m_vertices.emplace_back(pos + v, texId, 2, dims);
-		m_vertices.emplace_back(pos + u, texId, 1, dims);
+		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
+		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
 		m_vertices.emplace_back(pos + u + v, texId, 3, dims);
 	}
 }
@@ -643,6 +652,27 @@ uint32_t Chunk::vertexAO(int32_t side1, int32_t side2, int32_t corner) const
 	}
 
 	return 3 - (side1 + side2 + corner);
+}
+
+bool Chunk::compareVerticesAO(const glm::vec3& pVoxel1, const glm::vec3& pVoxel2, const int32_t faceId) const 
+{
+	const auto& faceAODirs = g_aoStates[faceId];
+ 
+	const int32_t p1v1 = checkVertexAO(pVoxel1, faceAODirs[0], faceAODirs[1], faceAODirs[7]);
+	const int32_t p1v2 = checkVertexAO(pVoxel1, faceAODirs[2], faceAODirs[1], faceAODirs[3]);
+	const int32_t p1v3 = checkVertexAO(pVoxel1, faceAODirs[6], faceAODirs[5], faceAODirs[7]);
+	const int32_t p1v4 = checkVertexAO(pVoxel1, faceAODirs[4], faceAODirs[5], faceAODirs[3]);
+
+	const int32_t p2v1 = checkVertexAO(pVoxel2, faceAODirs[0], faceAODirs[1], faceAODirs[7]);
+	const int32_t p2v2 = checkVertexAO(pVoxel2, faceAODirs[2], faceAODirs[1], faceAODirs[3]);
+	const int32_t p2v3 = checkVertexAO(pVoxel2, faceAODirs[6], faceAODirs[5], faceAODirs[7]);
+	const int32_t p2v4 = checkVertexAO(pVoxel2, faceAODirs[4], faceAODirs[5], faceAODirs[3]);
+
+	return 
+		p1v1 == p2v1 &&
+		p1v2 == p2v2 &&
+		p1v3 == p2v3 &&
+		p1v4 == p2v4;
 }
 
 uint32_t Chunk::checkVertexAO(const glm::vec3& pos, 
@@ -703,11 +733,12 @@ uint32_t Chunk::checkVertexAO(const glm::vec3& pos,
 	);
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos, 
-	const glm::vec3& u, const glm::vec3& v, 
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos,
+	const glm::vec3& u, const glm::vec3& v, const glm::ivec2& dims, 
 	const int32_t texId, const int32_t faceId, bool isBackFace)
-{
-	if (faceId >= g_nFaces)  {
+{	
+	if (faceId >= g_nFaces)  
+	{
 		LOG_CORE_ERROR("Error: faceId - {0} is wrong ", faceId);	
 		return;
 	}
@@ -716,23 +747,57 @@ void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos,
 
 	if (isBackFace)
 	{
-		m_vertices.emplace_back(facePos, texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos, 		 texId, 0, dims, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
 
-		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u + v, texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u + v, texId, 3, dims, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
 	}
 	else
 	{
-		m_vertices.emplace_back(facePos, texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos, 		 texId, 0, dims, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
 
-		m_vertices.emplace_back(facePos + v, texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + u, texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u + v, texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u + v, texId, 3, dims, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+	}
+}
+
+void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos, 
+	const glm::vec3& u, const glm::vec3& v, 
+	const int32_t texId, const int32_t faceId, bool isBackFace)
+{
+	if (faceId >= g_nFaces)  
+	{
+		LOG_CORE_ERROR("Error: faceId - {0} is wrong ", faceId);	
+		return;
+	}
+
+	const auto& faceAODirs = g_aoStates[faceId];
+
+	if (isBackFace)
+	{
+		m_vertices.emplace_back(facePos, 			texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u + v, 	texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+	}
+	else
+	{
+		m_vertices.emplace_back(facePos, 			texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+		m_vertices.emplace_back(facePos + u + v, 	texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
 	}
 }	
 
@@ -751,7 +816,7 @@ void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader
 	}
 
 	shader.setUniform3fv("u_chunkPos", m_pos);
-	if (m_meshType == MeshType::CULLED)
+	if (m_meshType == MeshType::CULLED || m_meshType == MeshType::GREEDY)
 	{
 		shader.setUniform1b("u_bUseAO", renderer->ambientOcclusion());
 	}

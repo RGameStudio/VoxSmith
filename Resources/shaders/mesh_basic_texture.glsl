@@ -15,7 +15,7 @@ const vec2 g_texCoords[4] = {
 const float g_occlusionValues[4] = {
     0.1,
     0.2,
-    0.6,
+    0.5,
     1.0
 };
 

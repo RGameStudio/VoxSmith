@@ -115,6 +115,12 @@ namespace VoxSmith
 			const glm::vec3& u, const glm::vec3& v, const glm::ivec2& dims,
 			const int32_t texId, bool isBackFace);
 		void addQuadFace(const glm::vec3& pos, const glm::vec3& facePos,
+			const glm::vec3& u, const glm::vec3& v, const glm::ivec2& dims, 
+			const int32_t texId, const int32_t faceId, bool isBackFace);
+		void addQuadFace(const glm::vec3& pos, const glm::vec3& facePos,
+			const glm::vec3& u, const glm::vec3& v, const glm::ivec2& dims,
+			const int32_t texId, bool isBackFace);
+		void addQuadFace(const glm::vec3& pos, const glm::vec3& facePos,
 			const glm::vec3& u, const glm::vec3& v,
 			const int32_t texId, const int32_t faceId, bool isBackFace);
 
@@ -123,6 +129,7 @@ namespace VoxSmith
 			const glm::vec3& corner,
 			const glm::vec3& pSide1, 
 			const glm::vec3& pSide2) const;
+		bool compareVerticesAO(const glm::vec3& pVoxel1, const glm::vec3& pVoxel2, const int32_t faceId) const;
 		void defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iAxis) const;
 #if 0
 		void handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis,

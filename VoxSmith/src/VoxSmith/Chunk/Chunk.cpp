@@ -1,11 +1,11 @@
+#include "VoxSmith/Camera/Camera.hpp"
 #include "VoxSmith/Logger/Log.hpp"
-#include "VoxSmith/Renderer/Renderer.hpp"
-#include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/Renderer/Mesh.hpp"
+#include "VoxSmith/Renderer/Renderer.hpp"
 #include "VoxSmith/ResourceManager/ResourceManager.hpp"
 #include "VoxSmith/ResourceManager/ResourcesLists.hpp"
+#include "VoxSmith/Shader/Shader.hpp"
 #include "VoxSmith/World/HeightMap/HeightMap.hpp"
-#include "VoxSmith/Camera/Camera.hpp"
 #include "VoxSmith/World/World.hpp"
 #include "VoxSmith/World/WorldManager.hpp"
 #include "Voxel.hpp"
@@ -14,526 +14,582 @@
 #include <utility>
 #include <winuser.h>
 
+
 #include "Chunk.hpp"
 
 using namespace VoxSmith;
 
-constexpr int32_t g_sAxis = 32;
+constexpr uint32_t g_sAxis = 32;
 constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
+constexpr uint32_t g_nVoxelRows = g_sAxis * g_sAxis;
 constexpr uint32_t g_biomThreshold = 5;
 
 const glm::vec3 g_dirs[2][3] = {
-	{
-		{-1, 0, 0},
-		{0, -1, 0},
-		{0, 0, -1}
-	},
-	{
-		{1, 0, 0},
-		{0, 1, 0},
-		{0, 0, 1},
-	},
+    {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}},
+    {
+        {1, 0, 0},
+        {0, 1, 0},
+        {0, 0, 1},
+    },
 };
 
 constexpr uint32_t g_nFaces = 6;
 constexpr uint32_t g_nNeighboursPerFace = 8;
 
 const glm::vec3 g_aoStates[g_nFaces][g_nNeighboursPerFace] = {
-	{   // Left face
-		{-1, -1, -1},
-		{-1, -1,  0},
-		{-1, -1,  1},
-		{-1,  0,  1},
-		{-1,  1,  1},
-		{-1,  1,  0},
-		{-1,  1, -1},
-		{-1,  0, -1},
-	},
-	{ 	// Bottom face
-		{-1, -1, -1},
-		{ 0, -1, -1},
-		{ 1, -1, -1},
-		{ 1, -1,  0},
-		{ 1, -1,  1},	
-		{ 0, -1,  1},
-		{-1, -1,  1},
-		{-1, -1,  0},
-	},
-	{ 	// Back face
-		{-1, -1, -1},
-		{-1,  0, -1},
-		{-1,  1, -1},
-		{ 0,  1, -1},
-		{ 1,  1, -1},
-		{ 1,  0, -1},
-		{ 1, -1, -1},
-		{ 0, -1, -1},
-	},
-	{ 	// Right face
-		{1, -1, -1},
-		{1,  0, -1},
-		{1,  1, -1},
-		{1,  1,  0},
-		{1,  1,  1},
-		{1,  0,  1},
-		{1, -1,  1},
-		{1, -1,  0},
-	},
-	{ 	// Top face
-		{-1, 1, -1},
-		{-1, 1,  0},
-		{-1, 1,  1},
-		{ 0, 1,  1},
-		{ 1, 1,  1},
-		{ 1, 1,  0},
-		{ 1, 1, -1},
-		{ 0, 1, -1},
-	},
-	{ 	// Front face 
-		{-1, -1, 1},
-		{ 0, -1, 1},
-		{ 1, -1, 1},
-		{ 1,  0, 1},
-		{ 1,  1, 1},
-		{ 0,  1, 1},
-		{-1,  1, 1},
-		{-1,  0, 1},
-	},
+    {
+        // Left face
+        {-1, -1, -1},
+        {-1, -1, 0},
+        {-1, -1, 1},
+        {-1, 0, 1},
+        {-1, 1, 1},
+        {-1, 1, 0},
+        {-1, 1, -1},
+        {-1, 0, -1},
+    },
+    {
+        // Bottom face
+        {-1, -1, -1},
+        {0, -1, -1},
+        {1, -1, -1},
+        {1, -1, 0},
+        {1, -1, 1},
+        {0, -1, 1},
+        {-1, -1, 1},
+        {-1, -1, 0},
+    },
+    {
+        // Back face
+        {-1, -1, -1},
+        {-1, 0, -1},
+        {-1, 1, -1},
+        {0, 1, -1},
+        {1, 1, -1},
+        {1, 0, -1},
+        {1, -1, -1},
+        {0, -1, -1},
+    },
+    {
+        // Right face
+        {1, -1, -1},
+        {1, 0, -1},
+        {1, 1, -1},
+        {1, 1, 0},
+        {1, 1, 1},
+        {1, 0, 1},
+        {1, -1, 1},
+        {1, -1, 0},
+    },
+    {
+        // Top face
+        {-1, 1, -1},
+        {-1, 1, 0},
+        {-1, 1, 1},
+        {0, 1, 1},
+        {1, 1, 1},
+        {1, 1, 0},
+        {1, 1, -1},
+        {0, 1, -1},
+    },
+    {
+        // Front face
+        {-1, -1, 1},
+        {0, -1, 1},
+        {1, -1, 1},
+        {1, 0, 1},
+        {1, 1, 1},
+        {0, 1, 1},
+        {-1, 1, 1},
+        {-1, 0, 1},
+    },
 };
 
-Chunk::Chunk(const glm::vec3& pos)
-	: m_pos(pos)
-	, m_state(ChunkState::EMPTY)
-	, m_center(pos + glm::vec3(g_sAxis / 2))
-	, m_neighbours(26, nullptr)
-	, m_mesh(std::make_shared<Mesh>())
+Chunk::Chunk(const glm::vec3 &pos)
+    : m_pos(pos), m_state(ChunkState::EMPTY),
+      m_center(pos + glm::vec3(g_sAxis / 2)), m_neighbours(26, nullptr),
+      m_mesh(std::make_shared<Mesh>()), m_opaqueMask(g_nVoxelRows, 0)
 {
-	std::unique_lock<std::shared_mutex> uLock(m_mutex);
-	m_state = ChunkState::EMPTY;
-	uLock.unlock();
+    std::unique_lock<std::shared_mutex> uLock(m_mutex);
+    m_state = ChunkState::EMPTY;
+    uLock.unlock();
 }
 
-Chunk::~Chunk()
+Chunk::~Chunk() { std::lock_guard<std::shared_mutex> lock(m_mutex); }
+
+void Chunk::generateChunk(const ChunkMap &map)
 {
-	std::lock_guard<std::shared_mutex> lock(m_mutex);
-}
+    std::unique_lock<std::shared_mutex> uLock(m_mutex);
+    m_state = ChunkState::FRESH;
+    uLock.unlock();
 
-void Chunk::generateChunk(const ChunkMap& map)
-{
-	std::unique_lock<std::shared_mutex> uLock(m_mutex);
-	m_state = ChunkState::FRESH;
-	uLock.unlock();
+    m_voxels.reserve(g_voxelsPerChunk);
 
-	m_voxels.reserve(g_voxelsPerChunk);
+    bool hasOnlyEmpty = true;
+    for (uint32_t y = 0; y < g_sAxis; y++)
+    {
+        for (uint32_t z = 0; z < g_sAxis; z++)
+        {
+            for (uint32_t x = 0; x < g_sAxis; x++)
+            {
+                auto type = VoxelType::Empty;
 
-	bool hasOnlyEmpty = true;
-	for (uint32_t y = 0; y < g_sAxis; y++)
-	{
-		for (uint32_t z = 0; z < g_sAxis; z++)
-		{
-			for (uint32_t x = 0; x < g_sAxis; x++)
-			{
-				auto type = VoxelType::Empty;
+                const int32_t height = map.data[z * g_sAxis + x];
+                const auto biome = map.biomData[z * g_sAxis + x];
 
-				const int32_t height = map.data[z * g_sAxis + x];
-				const auto biome = map.biomData[z * g_sAxis + x];
+                if (y + m_pos.y < height - g_biomThreshold)
+                {
+                    type = VoxelType::Stone;
+                }
+                else if (y + m_pos.y < height)
+                {
+                    type = biome.mainVoxel;
+                }
+                else if (y + m_pos.y == height)
+                {
+                    type = biome.topVoxel;
+                }
 
-				if (y + m_pos.y < height - g_biomThreshold)
-				{
-					type = VoxelType::Stone;
-					hasOnlyEmpty = false;
-				}
-				else if (y + m_pos.y < height)
-				{
-					type = biome.mainVoxel;
-					hasOnlyEmpty = false;
-				}
-				else if (y + m_pos.y == height)
-				{
-					type = biome.topVoxel;
-					hasOnlyEmpty = false;
-				}
-				m_voxels.emplace_back(type);
-			}
-		}
-	}
+                if (type != VoxelType::Empty)
+                {
+                    hasOnlyEmpty = false;
+					m_opaqueMask.at(y * g_sAxis + z) |= 1 << x;
+                }
+                m_voxels.emplace_back(type);
+            }
+        }
+    }
 
-	if (!hasOnlyEmpty)
-	{
-		uLock.lock();
-		m_state = ChunkState::VOXELS_GENERATED;
-	}
-	else
-	{
-		uLock.lock();
-		m_state = ChunkState::VOXELS_GENERATED_READY;
-	}
+    if (!hasOnlyEmpty)
+    {
+        uLock.lock();
+        m_state = ChunkState::VOXELS_GENERATED;
+    }
+    else
+    {
+        uLock.lock();
+        m_state = ChunkState::VOXELS_GENERATED_READY;
+    }
 }
 
 Voxel Chunk::getVoxel(const glm::vec3 pLocal) const
 {
-	const int32_t id = getId(pLocal, g_sAxis);
+    const int32_t id = getId(pLocal, g_sAxis);
 
-	if (m_state == ChunkState::EMPTY)
-	{
-		return Voxel::Empty;
-	}
+    if (m_state == ChunkState::EMPTY)
+    {
+        return Voxel::Empty;
+    }
 
-	if (id < 0 || id >= g_voxelsPerChunk)
-	{
-		LOG_CORE_ERROR("CHUNK::GET_VOXEL::Could not get voxel.");
-		return Voxel::Empty;
-	}
+    if (id < 0 || id >= g_voxelsPerChunk)
+    {
+        LOG_CORE_ERROR("CHUNK::GET_VOXEL::Could not get voxel.");
+        return Voxel::Empty;
+    }
 
-	return m_voxels.at(id);
+    return m_voxels.at(id);
 }
 
 void Chunk::setState(ChunkState state)
 {
-	std::lock_guard<std::shared_mutex> lock(m_mutex);
-	m_state = state;
+    std::lock_guard<std::shared_mutex> lock(m_mutex);
+    m_state = state;
 }
 
 ChunkState Chunk::getState() const
 {
-	std::lock_guard<std::shared_mutex> lock(m_mutex);
-	return m_state;
+    std::lock_guard<std::shared_mutex> lock(m_mutex);
+    return m_state;
 }
 
 Direction VoxSmith::getInverseDirection(Direction dir)
 {
-	return static_cast<Direction>((static_cast<int32_t>(dir) + 3) % 6);
+    return static_cast<Direction>((static_cast<int32_t>(dir) + 3) % 6);
 }
 
-void Chunk::addNeighbour(Direction dir, const std::shared_ptr<Chunk>& chunk)
+void Chunk::addNeighbour(Direction dir, const std::shared_ptr<Chunk> &chunk)
 {
-	m_neighbours.at(static_cast<int32_t>(dir)) = chunk;
+    m_neighbours.at(static_cast<int32_t>(dir)) = chunk;
 }
 
 bool Chunk::canBake() const
 {
-	for (auto& neighbour : m_neighbours)
-	{
-		if (neighbour == nullptr || 
-			neighbour->getState() == ChunkState::FRESH || neighbour->getState() == ChunkState::EMPTY)
-		{
-			return false;
-		}
-	}
+    for (auto &neighbour : m_neighbours)
+    {
+        if (neighbour == nullptr ||
+            neighbour->getState() == ChunkState::FRESH ||
+            neighbour->getState() == ChunkState::EMPTY)
+        {
+            return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
-bool Chunk::inFrustum(const Frustum& frustum)
+bool Chunk::inFrustum(const Frustum &frustum)
 {
-	return
-		isOnwardPlane(frustum.bottomFace) && isOnwardPlane(frustum.topFace) &&
-		isOnwardPlane(frustum.nearFace) && isOnwardPlane(frustum.farFace) &&
-		isOnwardPlane(frustum.leftFace) && isOnwardPlane(frustum.rightFace);
+    return isOnwardPlane(frustum.bottomFace) &&
+           isOnwardPlane(frustum.topFace) && isOnwardPlane(frustum.nearFace) &&
+           isOnwardPlane(frustum.farFace) && isOnwardPlane(frustum.leftFace) &&
+           isOnwardPlane(frustum.rightFace);
 }
 
-
-bool Chunk::isOnwardPlane(const Plane& plane) const
+bool Chunk::isOnwardPlane(const Plane &plane) const
 {
-	const float extent = g_sAxis * 0.5f;
-	const float r = extent * glm::abs(plane.normal.x) + extent * glm::abs(plane.normal.y) + extent * glm::abs(plane.normal.z);
-	return glm::dot(plane.normal, m_center) - plane.distance + r >= 0;
+    const float extent = g_sAxis * 0.5f;
+    const float r = extent * glm::abs(plane.normal.x) +
+                    extent * glm::abs(plane.normal.y) +
+                    extent * glm::abs(plane.normal.z);
+    return glm::dot(plane.normal, m_center) - plane.distance + r >= 0;
 }
 
-bool Chunk::inBounds(const glm::ivec3& min, const glm::ivec3& max) const
+bool Chunk::inBounds(const glm::ivec3 &min, const glm::ivec3 &max) const
 {
-	return
-		min.x <= m_pos.x && min.y <= m_pos.y && min.z <= m_pos.z &&
-		m_pos.x <= max.x && m_pos.y <= max.y && m_pos.z <= max.z;
+    return min.x <= m_pos.x && min.y <= m_pos.y && min.z <= m_pos.z &&
+           m_pos.x <= max.x && m_pos.y <= max.y && m_pos.z <= max.z;
 }
 
-void Chunk::bakeCulled(const std::vector<Voxel>& voxels, const float cSize)
+void Chunk::bakeCulled(const std::vector<Voxel> &voxels, const float cSize)
 {
-	for (int32_t y = 0; y < cSize; y++)
-	{
-		for (int32_t z = 0; z < cSize; z++)
-		{
-			for (int32_t x = 0; x < cSize; x++)
-			{
-				const int32_t id = cSize * (y * cSize + z) + x;
+    for (int32_t y = 0; y < cSize; y++)
+    {
+        for (int32_t z = 0; z < cSize; z++)
+        {
+            for (int32_t x = 0; x < cSize; x++)
+            {
+                const int32_t id = cSize * (y * cSize + z) + x;
 
-				if (voxels.at(id) == VoxelType::Empty)
-				{
-					continue;
-				}
+                if (voxels.at(id) == VoxelType::Empty)
+                {
+                    continue;
+                }
 
-				const int32_t left = id - 1;
-				const int32_t right = id + 1;
+                const int32_t left = id - 1;
+                const int32_t right = id + 1;
 
-				const int32_t bottom = id - cSize * cSize;
-				const int32_t top = id + cSize * cSize;
+                const int32_t bottom = id - cSize * cSize;
+                const int32_t top = id + cSize * cSize;
 
-				const int32_t back = id - cSize;
-				const int32_t front = id + cSize;
+                const int32_t back = id - cSize;
+                const int32_t front = id + cSize;
 
-				if (x == 0)
-				{
-					const glm::vec3 neighbourPos = { cSize - 1, y, z };
-					if (m_neighbours[LEFT] != nullptr &&
-						m_neighbours[LEFT]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][LEFT], LEFT, false);
-					}
-				}
-				else
-				{
-					if (m_voxels.at(left) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][LEFT], LEFT, false);
-					}
-				}
+                if (x == 0)
+                {
+                    const glm::vec3 neighbourPos = {cSize - 1, y, z};
+                    if (m_neighbours[LEFT] != nullptr &&
+                        m_neighbours[LEFT]->m_voxels.at(
+                            getId(neighbourPos, cSize)) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y, z}, {0, 0, 1}, {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][LEFT], LEFT,
+                                    false);
+                    }
+                }
+                else
+                {
+                    if (m_voxels.at(left) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y, z}, {0, 0, 1}, {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][LEFT], LEFT,
+                                    false);
+                    }
+                }
 
-				if (x >= cSize - 1)
-				{
-					const glm::vec3 neighbourPos = { 0, y, z };
-					if (m_neighbours[RIGHT] != nullptr &&
-						m_neighbours[RIGHT]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x + 1, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][RIGHT], RIGHT, true);
-					}
-				}
-				else
-				{
-					if (m_voxels.at(right) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x + 1, y, z }, { 0, 0, 1 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][RIGHT], RIGHT, true);
-					}
-				}
+                if (x >= cSize - 1)
+                {
+                    const glm::vec3 neighbourPos = {0, y, z};
+                    if (m_neighbours[RIGHT] != nullptr &&
+                        m_neighbours[RIGHT]->m_voxels.at(
+                            getId(neighbourPos, cSize)) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x + 1, y, z}, {0, 0, 1},
+                                    {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][RIGHT],
+                                    RIGHT, true);
+                    }
+                }
+                else
+                {
+                    if (m_voxels.at(right) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x + 1, y, z}, {0, 0, 1},
+                                    {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][RIGHT],
+                                    RIGHT, true);
+                    }
+                }
 
-				if (y == 0)
-				{
-					const glm::vec3 neighbourPos = { x, cSize - 1, z };
-					if (m_neighbours[BOTTOM] != nullptr &&
-						m_neighbours[BOTTOM]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][BOTTOM], BOTTOM, true);
-					}
-				}
-				else
-				{
-					if (m_voxels.at(bottom) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][BOTTOM], BOTTOM, true);
-					}
-				}
+                if (y == 0)
+                {
+                    const glm::vec3 neighbourPos = {x, cSize - 1, z};
+                    if (m_neighbours[BOTTOM] != nullptr &&
+                        m_neighbours[BOTTOM]->m_voxels.at(
+                            getId(neighbourPos, cSize)) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y + 1, z}, {0, 0, 1},
+                                    {1, 0, 0},
+                                    s_textureFaces[m_voxels.at(id)][BOTTOM],
+                                    BOTTOM, true);
+                    }
+                }
+                else
+                {
+                    if (m_voxels.at(bottom) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y + 1, z}, {0, 0, 1},
+                                    {1, 0, 0},
+                                    s_textureFaces[m_voxels.at(id)][BOTTOM],
+                                    BOTTOM, true);
+                    }
+                }
 
-				if (y >= cSize - 1)
-				{
-					const glm::vec3 neighbourPos = { x, 0, z };
-					if (m_neighbours[TOP] != nullptr &&
-						m_neighbours[TOP]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], TOP, false);
-					}
-				}
-				else
-				{
-					if (m_voxels.at(top) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y + 1, z }, { 0, 0, 1 }, { 1, 0, 0 }, s_textureFaces[m_voxels.at(id)][TOP], TOP, false);
-					}
-				}
+                if (y >= cSize - 1)
+                {
+                    const glm::vec3 neighbourPos = {x, 0, z};
+                    if (m_neighbours[TOP] != nullptr &&
+                        m_neighbours[TOP]->m_voxels.at(
+                            getId(neighbourPos, cSize)) == VoxelType::Empty)
+                    {
+                        addQuadFace(
+                            {x, y, z}, {x, y + 1, z}, {0, 0, 1}, {1, 0, 0},
+                            s_textureFaces[m_voxels.at(id)][TOP], TOP, false);
+                    }
+                }
+                else
+                {
+                    if (m_voxels.at(top) == VoxelType::Empty)
+                    {
+                        addQuadFace(
+                            {x, y, z}, {x, y + 1, z}, {0, 0, 1}, {1, 0, 0},
+                            s_textureFaces[m_voxels.at(id)][TOP], TOP, false);
+                    }
+                }
 
-				if (z == 0)
-				{
-					const glm::vec3 neighbourPos = { x, y, cSize - 1 };
-					if (m_neighbours[BACK] != nullptr &&
-						m_neighbours[BACK]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y, z }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][BACK], BACK, true);
-					}
-				}
-				else
-				{
-					if (m_voxels.at(back) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y, z }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][BACK], BACK, true);
-					}
-				}
+                if (z == 0)
+                {
+                    const glm::vec3 neighbourPos = {x, y, cSize - 1};
+                    if (m_neighbours[BACK] != nullptr &&
+                        m_neighbours[BACK]->m_voxels.at(
+                            getId(neighbourPos, cSize)) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y, z}, {1, 0, 0}, {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][BACK], BACK,
+                                    true);
+                    }
+                }
+                else
+                {
+                    if (m_voxels.at(back) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y, z}, {1, 0, 0}, {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][BACK], BACK,
+                                    true);
+                    }
+                }
 
-				if (z >= cSize - 1)
-				{
-					const glm::vec3 neighbourPos = { x, y, 0 };
-					if (m_neighbours[FRONT] != nullptr &&
-						m_neighbours[FRONT]->m_voxels.at(getId(neighbourPos, cSize)) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y, z + 1 }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][FRONT], FRONT, false);
-					}
-				}
-				else
-				{
-					if (m_voxels.at(front) == VoxelType::Empty)
-					{
-						addQuadFace({ x, y, z }, { x, y, z + 1 }, { 1, 0, 0 }, { 0, 1, 0 }, s_textureFaces[m_voxels.at(id)][FRONT], FRONT, false);
-					}
-				}
-			}
-		}
-	}
+                if (z >= cSize - 1)
+                {
+                    const glm::vec3 neighbourPos = {x, y, 0};
+                    if (m_neighbours[FRONT] != nullptr &&
+                        m_neighbours[FRONT]->m_voxels.at(
+                            getId(neighbourPos, cSize)) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y, z + 1}, {1, 0, 0},
+                                    {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][FRONT],
+                                    FRONT, false);
+                    }
+                }
+                else
+                {
+                    if (m_voxels.at(front) == VoxelType::Empty)
+                    {
+                        addQuadFace({x, y, z}, {x, y, z + 1}, {1, 0, 0},
+                                    {0, 1, 0},
+                                    s_textureFaces[m_voxels.at(id)][FRONT],
+                                    FRONT, false);
+                    }
+                }
+            }
+        }
+    }
 }
 
-void Chunk::bakeGreedy(const std::vector<Voxel>& voxels, const int32_t size)
+void Chunk::bakeGreedy(const std::vector<Voxel> &voxels, const int32_t size)
 {
-	for (int32_t iFace = 0; iFace < 2; iFace++) // 0 - backface, 1 - frontface
-	{
-		for (int32_t iAxis = 0; iAxis < 3; iAxis++)
-		{
-			const int32_t iuAxis = (iAxis + 1) % 3;
-			const int32_t ivAxis = (iAxis + 2) % 3;
+    for (int32_t iFace = 0; iFace < 2; iFace++) // 0 - backface, 1 - frontface
+    {
+        for (int32_t iAxis = 0; iAxis < 3; iAxis++)
+        {
+            const int32_t iuAxis = (iAxis + 1) % 3;
+            const int32_t ivAxis = (iAxis + 2) % 3;
 
-			for (int32_t iPlane = 0; iPlane < size; iPlane++)
-			{
-				std::vector<Voxel> faceMask(size * size, Voxel::Empty);
-				std::vector<bool> visitedMask(size * size, false);
+            for (int32_t iPlane = 0; iPlane < size; iPlane++)
+            {
+                std::vector<Voxel> faceMask(size * size, Voxel::Empty);
+                std::vector<bool> visitedMask(size * size, false);
 
-				glm::vec3 pVoxelInPlane = glm::vec3(0.0f);
-				glm::vec3 pVoxelToCompare = glm::vec3(0.0f);
+                glm::vec3 pVoxelInPlane = glm::vec3(0.0f);
+                glm::vec3 pVoxelToCompare = glm::vec3(0.0f);
 
-				pVoxelInPlane[iAxis] = iPlane;
-				pVoxelToCompare[iAxis] = iFace == 0 ? iPlane - 1 : iPlane + 1; 	// If we are creating backfaces make sure,
-																				// to check the corresponding voxel with the back plane -> iPlane - 1, 
-																				// and front plane accordingly -> iPlane + 1
+                pVoxelInPlane[iAxis] = iPlane;
+                pVoxelToCompare[iAxis] =
+                    iFace == 0
+                        ? iPlane - 1
+                        : iPlane + 1; // If we are creating backfaces make sure,
+                                      // to check the corresponding voxel with
+                                      // the back plane -> iPlane - 1, and front
+                                      // plane accordingly -> iPlane + 1
 
-				int32_t iMask = 0;
-				for (int32_t v = 0; v < size; v++)
-				{
-					for (int32_t u = 0; u < size; u++)
-					{
-						pVoxelInPlane[iuAxis] = u;
-						pVoxelInPlane[ivAxis] = v;
-						
-						pVoxelToCompare[iuAxis] = u;
-						pVoxelToCompare[ivAxis] = v;
+                int32_t iMask = 0;
+                for (int32_t v = 0; v < size; v++)
+                {
+                    for (int32_t u = 0; u < size; u++)
+                    {
+                        pVoxelInPlane[iuAxis] = u;
+                        pVoxelInPlane[ivAxis] = v;
 
-						const Voxel currVoxel = m_voxels.at(getId(pVoxelInPlane, size));
-						Voxel compareVoxel = VoxelType::Empty;
+                        pVoxelToCompare[iuAxis] = u;
+                        pVoxelToCompare[ivAxis] = v;
 
-						if (pVoxelToCompare[iAxis] < 0) // In case the neighbour chunk for the backface is needed
-						{
-							const auto& chunk = m_neighbours[iAxis];
-							glm::vec3 localPos = pVoxelToCompare;
-							localPos[iAxis] = size - 1;
-							compareVoxel = chunk->m_voxels.at(getId(localPos, size));
-						}
-						else if (pVoxelToCompare[iAxis] >= size)
-						{
-							const auto& chunk = m_neighbours[iAxis + 3];
-							glm::vec3 localPos = pVoxelToCompare;
-							localPos[iAxis] = 0;
-							compareVoxel = chunk->m_voxels.at(getId(localPos, size));
-						}
-						else 
-						{
-							compareVoxel = m_voxels.at(getId(pVoxelToCompare, size));
-						}
+                        const Voxel currVoxel =
+                            m_voxels.at(getId(pVoxelInPlane, size));
+                        Voxel compareVoxel = VoxelType::Empty;
 
-						faceMask.at(iMask++) =		
-							currVoxel != Voxel::Empty && compareVoxel == Voxel::Empty 
-								? currVoxel 
-								: Voxel::Empty;
-					}
-				}
+                        if (pVoxelToCompare[iAxis] <
+                            0) // In case the neighbour chunk for the backface
+                               // is needed
+                        {
+                            const auto &chunk = m_neighbours[iAxis];
+                            glm::vec3 localPos = pVoxelToCompare;
+                            localPos[iAxis] = size - 1;
+                            compareVoxel =
+                                chunk->m_voxels.at(getId(localPos, size));
+                        }
+                        else if (pVoxelToCompare[iAxis] >= size)
+                        {
+                            const auto &chunk = m_neighbours[iAxis + 3];
+                            glm::vec3 localPos = pVoxelToCompare;
+                            localPos[iAxis] = 0;
+                            compareVoxel =
+                                chunk->m_voxels.at(getId(localPos, size));
+                        }
+                        else
+                        {
+                            compareVoxel =
+                                m_voxels.at(getId(pVoxelToCompare, size));
+                        }
 
-				for (int32_t v = 0; v < size; v++)
-				{
-					for (int32_t u = 0; u < size; u++)
-					{
-						pVoxelInPlane[iuAxis] = u;
-						pVoxelInPlane[ivAxis] = v;
+                        faceMask.at(iMask++) =
+                            currVoxel != Voxel::Empty &&
+                                    compareVoxel == Voxel::Empty
+                                ? currVoxel
+                                : Voxel::Empty;
+                    }
+                }
 
-						iMask = size * v + u;
-						if (faceMask.at(iMask) == Voxel::Empty)
-						{
-							continue;
-						}
-						
-						const Voxel currVoxel = faceMask.at(iMask);
+                for (int32_t v = 0; v < size; v++)
+                {
+                    for (int32_t u = 0; u < size; u++)
+                    {
+                        pVoxelInPlane[iuAxis] = u;
+                        pVoxelInPlane[ivAxis] = v;
 
-						int32_t width = 1;
-						glm::vec3 pAttachVoxel = pVoxelInPlane;
-						pAttachVoxel[iuAxis]++;
-						for (;
-							width + u < size && faceMask.at(iMask + width) == currVoxel && 
-							compareVerticesAO(pVoxelInPlane, pAttachVoxel, iAxis + iFace * 3); 
-							pAttachVoxel[iuAxis]++, width++) 
-						{
-							;;
-						}
+                        iMask = size * v + u;
+                        if (faceMask.at(iMask) == Voxel::Empty)
+                        {
+                            continue;
+                        }
 
-						bool quadDone = false;
-												
-						int32_t height = 1;
-						pAttachVoxel = pVoxelInPlane;
-						pAttachVoxel[ivAxis]++;
-						for (; v + height < size; height++, pAttachVoxel[ivAxis]++)
-						{
-							pAttachVoxel[iuAxis] = pVoxelInPlane[iuAxis];
-							for (int32_t w = 0; w < width; w++, pAttachVoxel[iuAxis]++) 
-							{
-								if (faceMask.at(iMask + height * size + w) != currVoxel ||
-									!compareVerticesAO(pVoxelInPlane, pAttachVoxel, iAxis + iFace * 3))
-								{
-									quadDone = true;
-									break;
-								}
-							}
+                        const Voxel currVoxel = faceMask.at(iMask);
 
-							if (quadDone)
-							{
-								break;
-							}
-						}
+                        int32_t width = 1;
+                        glm::vec3 pAttachVoxel = pVoxelInPlane;
+                        pAttachVoxel[iuAxis]++;
+                        for (; width + u < size &&
+                               faceMask.at(iMask + width) == currVoxel &&
+                               compareVerticesAO(pVoxelInPlane, pAttachVoxel,
+                                                 iAxis + iFace * 3);
+                             pAttachVoxel[iuAxis]++, width++)
+                        {
+                            ;
+                            ;
+                        }
 
-						glm::vec3 du = glm::vec3(0.0);
-						glm::vec3 dv = glm::vec3(0.0);
+                        bool quadDone = false;
 
-						du[iuAxis] = width;
-						dv[ivAxis] = height;
+                        int32_t height = 1;
+                        pAttachVoxel = pVoxelInPlane;
+                        pAttachVoxel[ivAxis]++;
+                        for (; v + height < size;
+                             height++, pAttachVoxel[ivAxis]++)
+                        {
+                            pAttachVoxel[iuAxis] = pVoxelInPlane[iuAxis];
+                            for (int32_t w = 0; w < width;
+                                 w++, pAttachVoxel[iuAxis]++)
+                            {
+                                if (faceMask.at(iMask + height * size + w) !=
+                                        currVoxel ||
+                                    !compareVerticesAO(pVoxelInPlane,
+                                                       pAttachVoxel,
+                                                       iAxis + iFace * 3))
+                                {
+                                    quadDone = true;
+                                    break;
+                                }
+                            }
 
-						const int32_t texId = iFace == 0 
-							? s_textureFaces[currVoxel][iAxis] 
-							: s_textureFaces[currVoxel][iAxis + 3];
+                            if (quadDone)
+                            {
+                                break;
+                            }
+                        }
 
-						glm::vec3 facePos = pVoxelInPlane;
+                        glm::vec3 du = glm::vec3(0.0);
+                        glm::vec3 dv = glm::vec3(0.0);
 
-						bool backface = iFace == 0;
-						
-						glm::ivec2 dims = {
-							du[iuAxis],
-							dv[ivAxis]
-						};
+                        du[iuAxis] = width;
+                        dv[ivAxis] = height;
 
-						if (iAxis == 0)
-						{
-						 	std::swap(du, dv);
-							std::swap(dims.x, dims.y);
-							backface = !backface;
-						}
+                        const int32_t texId =
+                            iFace == 0 ? s_textureFaces[currVoxel][iAxis]
+                                       : s_textureFaces[currVoxel][iAxis + 3];
 
-						if (iFace == 1)
-						{
-							facePos[iAxis] += 1.0f;
-						}
+                        glm::vec3 facePos = pVoxelInPlane;
 
-						addQuadFace(pVoxelInPlane, facePos, du, dv, dims, texId, iAxis + iFace * 3, backface);
+                        bool backface = iFace == 0;
 
-						for (int32_t h = 0; h < height; h++)
-						{
-							for (int32_t w = 0; w < width; w++)
-							{
-								faceMask.at(iMask + h * size + w) = Voxel::Empty;
-							}
-						}
-					} 	
-				}
-			}	
-		}
-	}
+                        glm::ivec2 dims = {du[iuAxis], dv[ivAxis]};
+
+                        if (iAxis == 0)
+                        {
+                            std::swap(du, dv);
+                            std::swap(dims.x, dims.y);
+                            backface = !backface;
+                        }
+
+                        if (iFace == 1)
+                        {
+                            facePos[iAxis] += 1.0f;
+                        }
+
+                        addQuadFace(pVoxelInPlane, facePos, du, dv, dims, texId,
+                                    iAxis + iFace * 3, backface);
+
+                        for (int32_t h = 0; h < height; h++)
+                        {
+                            for (int32_t w = 0; w < width; w++)
+                            {
+                                faceMask.at(iMask + h * size + w) =
+                                    Voxel::Empty;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #if 0
@@ -567,329 +623,383 @@ void Chunk::handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t i
 	}
 }
 #endif
-void Chunk::bakeBinGreedy(const std::vector<Voxel>& voxels, const float size)
+
+void Chunk::bakeBinGreedy(const std::vector<Voxel> &voxels, const float size) {}
+
+void Chunk::defineUV(glm::vec3 &u, glm::vec3 &v, const glm::vec2 &size,
+                     const int32_t iAxis) const
 {
+    if (u.y != 0)
+    {
+        std::swap(u, v);
+    }
 }
 
-
-void Chunk::defineUV(glm::vec3& u, glm::vec3& v, const glm::vec2& size, const int32_t iAxis) const
+void Chunk::addQuadFace(const glm::vec3 &pos, const glm::vec3 &u,
+                        const glm::vec3 &v, const glm::u8vec3 &color,
+                        const int32_t id)
 {
-	if (u.y != 0)
-	{
-		std::swap(u, v);
-	}
+    m_vertices.emplace_back(pos, color, id);
+    m_vertices.emplace_back(pos + u, color, id);
+    m_vertices.emplace_back(pos + v, color, id);
+
+    m_vertices.emplace_back(pos + v, color, id);
+    m_vertices.emplace_back(pos + u, color, id);
+    m_vertices.emplace_back(pos + u + v, color, id);
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& u, const glm::vec3& v,
-	const glm::u8vec3& color, const int32_t id)
+void Chunk::addQuadFace(const glm::vec3 &pos, const glm::vec3 &u,
+                        const glm::vec3 &v, const int32_t texId,
+                        bool isBackFace)
 {
-	m_vertices.emplace_back(pos, 		 color, id);
-	m_vertices.emplace_back(pos + u, 	 color, id);
-	m_vertices.emplace_back(pos + v, 	 color, id);
+    if (isBackFace)
+    {
+        m_vertices.emplace_back(pos, texId, 0);
+        m_vertices.emplace_back(pos + v, texId, 2);
+        m_vertices.emplace_back(pos + u, texId, 1);
 
-	m_vertices.emplace_back(pos + v,  	 color, id);
-	m_vertices.emplace_back(pos + u, 	 color, id);
-	m_vertices.emplace_back(pos + u + v, color, id);
+        m_vertices.emplace_back(pos + u, texId, 1);
+        m_vertices.emplace_back(pos + v, texId, 2);
+        m_vertices.emplace_back(pos + u + v, texId, 3);
+    }
+    else
+    {
+        m_vertices.emplace_back(pos, texId, 0);
+        m_vertices.emplace_back(pos + u, texId, 1);
+        m_vertices.emplace_back(pos + v, texId, 2);
+
+        m_vertices.emplace_back(pos + v, texId, 2);
+        m_vertices.emplace_back(pos + u, texId, 1);
+        m_vertices.emplace_back(pos + u + v, texId, 3);
+    }
 }
 
-void Chunk::addQuadFace(const glm::vec3& pos, 
-	const glm::vec3& u, const glm::vec3& v, 
-	const int32_t texId, bool isBackFace)
+void Chunk::addQuadFace(const glm::vec3 &pos, const glm::vec3 &u,
+                        const glm::vec3 &v, const glm::ivec2 &dims,
+                        const int32_t texId, bool isBackFace)
 {
-	if (isBackFace)
-	{
-		m_vertices.emplace_back(pos, 	 	 texId, 0);
-		m_vertices.emplace_back(pos + v, 	 texId, 2);
-		m_vertices.emplace_back(pos + u, 	 texId, 1);
+    if (isBackFace)
+    {
+        m_vertices.emplace_back(pos, texId, 0, dims);
+        m_vertices.emplace_back(pos + v, texId, 2, dims);
+        m_vertices.emplace_back(pos + u, texId, 1, dims);
 
-		m_vertices.emplace_back(pos + u, 	 texId, 1);
-		m_vertices.emplace_back(pos + v, 	 texId, 2);
-		m_vertices.emplace_back(pos + u + v, texId, 3);
-	}
-	else
-	{
-		m_vertices.emplace_back(pos, 	 	 texId, 0);
-		m_vertices.emplace_back(pos + u, 	 texId, 1);
-		m_vertices.emplace_back(pos + v, 	 texId, 2);
+        m_vertices.emplace_back(pos + u, texId, 1, dims);
+        m_vertices.emplace_back(pos + v, texId, 2, dims);
+        m_vertices.emplace_back(pos + u + v, texId, 3, dims);
+    }
+    else
+    {
+        m_vertices.emplace_back(pos, texId, 0, dims);
+        m_vertices.emplace_back(pos + u, texId, 1, dims);
+        m_vertices.emplace_back(pos + v, texId, 2, dims);
 
-		m_vertices.emplace_back(pos + v, 	 texId, 2);
-		m_vertices.emplace_back(pos + u, 	 texId, 1);
-		m_vertices.emplace_back(pos + u + v, texId, 3);
-	}
-}
-
-void Chunk::addQuadFace(const glm::vec3& pos, 
-	const glm::vec3& u, const glm::vec3& v, const glm::ivec2& dims, 
-	const int32_t texId, bool isBackFace)
-{
-	if (isBackFace)
-	{
-		m_vertices.emplace_back(pos, 		 texId, 0, dims);
-		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
-		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
-
-		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
-		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
-		m_vertices.emplace_back(pos + u + v, texId, 3, dims);
-	}
-	else
-	{
-		m_vertices.emplace_back(pos, 		 texId, 0, dims);
-		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
-		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
-
-		m_vertices.emplace_back(pos + v, 	 texId, 2, dims);
-		m_vertices.emplace_back(pos + u, 	 texId, 1, dims);
-		m_vertices.emplace_back(pos + u + v, texId, 3, dims);
-	}
+        m_vertices.emplace_back(pos + v, texId, 2, dims);
+        m_vertices.emplace_back(pos + u, texId, 1, dims);
+        m_vertices.emplace_back(pos + u + v, texId, 3, dims);
+    }
 }
 
 uint32_t Chunk::vertexAO(int32_t side1, int32_t side2, int32_t corner) const
 {
-	if (side1 + side2 == 2)
-	{
-		return 0;
-	}
+    if (side1 + side2 == 2)
+    {
+        return 0;
+    }
 
-	return 3 - (side1 + side2 + corner);
+    return 3 - (side1 + side2 + corner);
 }
 
-bool Chunk::compareVerticesAO(const glm::vec3& pVoxel1, const glm::vec3& pVoxel2, const int32_t faceId) const 
+bool Chunk::compareVerticesAO(const glm::vec3 &pVoxel1,
+                              const glm::vec3 &pVoxel2,
+                              const int32_t faceId) const
 {
-	const auto& faceAODirs = g_aoStates[faceId];
- 
-	const int32_t p1v1 = checkVertexAO(pVoxel1, faceAODirs[0], faceAODirs[1], faceAODirs[7]);
-	const int32_t p1v2 = checkVertexAO(pVoxel1, faceAODirs[2], faceAODirs[1], faceAODirs[3]);
-	const int32_t p1v3 = checkVertexAO(pVoxel1, faceAODirs[6], faceAODirs[5], faceAODirs[7]);
-	const int32_t p1v4 = checkVertexAO(pVoxel1, faceAODirs[4], faceAODirs[5], faceAODirs[3]);
+    const auto &faceAODirs = g_aoStates[faceId];
 
-	const int32_t p2v1 = checkVertexAO(pVoxel2, faceAODirs[0], faceAODirs[1], faceAODirs[7]);
-	const int32_t p2v2 = checkVertexAO(pVoxel2, faceAODirs[2], faceAODirs[1], faceAODirs[3]);
-	const int32_t p2v3 = checkVertexAO(pVoxel2, faceAODirs[6], faceAODirs[5], faceAODirs[7]);
-	const int32_t p2v4 = checkVertexAO(pVoxel2, faceAODirs[4], faceAODirs[5], faceAODirs[3]);
+    const int32_t p1v1 =
+        checkVertexAO(pVoxel1, faceAODirs[0], faceAODirs[1], faceAODirs[7]);
+    const int32_t p1v2 =
+        checkVertexAO(pVoxel1, faceAODirs[2], faceAODirs[1], faceAODirs[3]);
+    const int32_t p1v3 =
+        checkVertexAO(pVoxel1, faceAODirs[6], faceAODirs[5], faceAODirs[7]);
+    const int32_t p1v4 =
+        checkVertexAO(pVoxel1, faceAODirs[4], faceAODirs[5], faceAODirs[3]);
 
-	return 
-		p1v1 == p2v1 &&
-		p1v2 == p2v2 &&
-		p1v3 == p2v3 &&
-		p1v4 == p2v4;
+    const int32_t p2v1 =
+        checkVertexAO(pVoxel2, faceAODirs[0], faceAODirs[1], faceAODirs[7]);
+    const int32_t p2v2 =
+        checkVertexAO(pVoxel2, faceAODirs[2], faceAODirs[1], faceAODirs[3]);
+    const int32_t p2v3 =
+        checkVertexAO(pVoxel2, faceAODirs[6], faceAODirs[5], faceAODirs[7]);
+    const int32_t p2v4 =
+        checkVertexAO(pVoxel2, faceAODirs[4], faceAODirs[5], faceAODirs[3]);
+
+    return p1v1 == p2v1 && p1v2 == p2v2 && p1v3 == p2v3 && p1v4 == p2v4;
 }
 
-uint32_t Chunk::checkVertexAO(const glm::vec3& pos, 
-	const glm::vec3& vCorner, const glm::vec3& vSide1, const glm::vec3& vSide2) const 
-{	
-	const glm::vec3 pCorner = pos + vCorner;
-	const glm::vec3 pSide1 = pos + vSide1;
-	const glm::vec3 pSide2 = pos + vSide2;
-
-	const int32_t cornerId = getId(pCorner, g_sAxis);
-	const int32_t side1Id = getId(pSide1, g_sAxis);
-	const int32_t side2Id = getId(pSide2, g_sAxis);
-
-	Voxel corner;
-	Voxel side1;
-	Voxel side2;
-
-	if (pCorner.x < 0 || pCorner.x >= g_sAxis ||
-		pCorner.y < 0 || pCorner.y >= g_sAxis ||
-		pCorner.z < 0 || pCorner.z >= g_sAxis)
-	{
-		corner = WorldManager::getInstance()
-			.getVoxel(static_cast<glm::vec3>(m_pos) + pCorner);
-	}
-	else
-	{
-		corner = m_voxels.at(cornerId);
-	}
-	
-	if (pSide1.x < 0 || pSide1.x >= g_sAxis ||
-		pSide1.y < 0 || pSide1.y >= g_sAxis ||
-		pSide1.z < 0 || pSide1.z >= g_sAxis)
-	{
-		side1 = WorldManager::getInstance()
-			.getVoxel(static_cast<glm::vec3>(m_pos) + pSide1);
-	}
-	else
-	{
-		side1 = m_voxels.at(side1Id);
-	}
-
-	if (pSide2.x < 0 || pSide2.x >= g_sAxis ||
-		pSide2.y < 0 || pSide2.y >= g_sAxis ||
-		pSide2.z < 0 || pSide2.z >= g_sAxis)
-	{
-		side2 = WorldManager::getInstance()
-			.getVoxel(static_cast<glm::vec3>(m_pos) + pSide2);
-	}
-	else
-	{
-		side2 = m_voxels.at(side2Id);
-	}
-	
-	return vertexAO(
-		side1  != VoxelType::Empty ? 1 : 0, 
-		side2  != VoxelType::Empty ? 1 : 0,
-		corner != VoxelType::Empty ? 1 : 0
-	);
-}
-
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos,
-	const glm::vec3& u, const glm::vec3& v, const glm::ivec2& dims, 
-	const int32_t texId, const int32_t faceId, bool isBackFace)
-{	
-	if (faceId >= g_nFaces)  
-	{
-		LOG_CORE_ERROR("Error: faceId - {0} is wrong ", faceId);	
-		return;
-	}
-
-	const auto& faceAODirs = g_aoStates[faceId];
-
-	if (isBackFace)
-	{
-		m_vertices.emplace_back(facePos, 		 texId, 0, dims, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-
-		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u + v, texId, 3, dims, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
-	}
-	else
-	{
-		m_vertices.emplace_back(facePos, 		 texId, 0, dims, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-
-		m_vertices.emplace_back(facePos + v, 	 texId, 2, dims, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + u, 	 texId, 1, dims, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u + v, texId, 3, dims, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
-	}
-}
-
-void Chunk::addQuadFace(const glm::vec3& pos, const glm::vec3& facePos, 
-	const glm::vec3& u, const glm::vec3& v, 
-	const int32_t texId, const int32_t faceId, bool isBackFace)
+uint32_t Chunk::checkVertexAO(const glm::vec3 &pos, const glm::vec3 &vCorner,
+                              const glm::vec3 &vSide1,
+                              const glm::vec3 &vSide2) const
 {
-	if (faceId >= g_nFaces)  
-	{
-		LOG_CORE_ERROR("Error: faceId - {0} is wrong ", faceId);	
-		return;
-	}
+    const glm::vec3 pCorner = pos + vCorner;
+    const glm::vec3 pSide1 = pos + vSide1;
+    const glm::vec3 pSide2 = pos + vSide2;
 
-	const auto& faceAODirs = g_aoStates[faceId];
+    const int32_t cornerId = getId(pCorner, g_sAxis);
+    const int32_t side1Id = getId(pSide1, g_sAxis);
+    const int32_t side2Id = getId(pSide2, g_sAxis);
 
-	if (isBackFace)
-	{
-		m_vertices.emplace_back(facePos, 			texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+    Voxel corner;
+    Voxel side1;
+    Voxel side2;
 
-		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u + v, 	texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
-	}
-	else
-	{
-		m_vertices.emplace_back(facePos, 			texId, 0, checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+    if (pCorner.x < 0 || pCorner.x >= g_sAxis || pCorner.y < 0 ||
+        pCorner.y >= g_sAxis || pCorner.z < 0 || pCorner.z >= g_sAxis)
+    {
+        corner = WorldManager::getInstance().getVoxel(
+            static_cast<glm::vec3>(m_pos) + pCorner);
+    }
+    else
+    {
+        corner = m_voxels.at(cornerId);
+    }
 
-		m_vertices.emplace_back(facePos + v, 		texId, 2, checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
-		m_vertices.emplace_back(facePos + u, 		texId, 1, checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
-		m_vertices.emplace_back(facePos + u + v, 	texId, 3, checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
-	}
-}	
+    if (pSide1.x < 0 || pSide1.x >= g_sAxis || pSide1.y < 0 ||
+        pSide1.y >= g_sAxis || pSide1.z < 0 || pSide1.z >= g_sAxis)
+    {
+        side1 = WorldManager::getInstance().getVoxel(
+            static_cast<glm::vec3>(m_pos) + pSide1);
+    }
+    else
+    {
+        side1 = m_voxels.at(side1Id);
+    }
 
-void Chunk::draw(const std::shared_ptr<Renderer>& renderer, const Shader& shader, bool drawOutline)
-{
-	if (renderer == nullptr)
-	{
-		LOG_CORE_ERROR("CHUNK::DRAW::Renderer is not specified!");
-		return;
-	}
+    if (pSide2.x < 0 || pSide2.x >= g_sAxis || pSide2.y < 0 ||
+        pSide2.y >= g_sAxis || pSide2.z < 0 || pSide2.z >= g_sAxis)
+    {
+        side2 = WorldManager::getInstance().getVoxel(
+            static_cast<glm::vec3>(m_pos) + pSide2);
+    }
+    else
+    {
+        side2 = m_voxels.at(side2Id);
+    }
 
-	if (m_mesh == nullptr)
-	{
-		LOG_CORE_ERROR("CHUNK::DRAW::Mesh is not initialized!");
-		return;
-	}
-
-	shader.setUniform3fv("u_chunkPos", m_pos);
-	if (m_meshType == MeshType::CULLED || m_meshType == MeshType::GREEDY)
-	{
-		shader.setUniform1b("u_bUseAO", renderer->ambientOcclusion());
-	}
-
-	m_mesh->draw(renderer, shader);
-	if (drawOutline)
-	{
-		renderer->drawOutline(ResourceManager::getInstance().getShader(s_chunkOutline), m_pos);
-	}
+    return vertexAO(side1 != VoxelType::Empty ? 1 : 0,
+                    side2 != VoxelType::Empty ? 1 : 0,
+                    corner != VoxelType::Empty ? 1 : 0);
 }
 
-void Chunk::setMesh(const std::shared_ptr<Mesh>& mesh)
+void Chunk::addQuadFace(const glm::vec3 &pos, const glm::vec3 &facePos,
+                        const glm::vec3 &u, const glm::vec3 &v,
+                        const glm::ivec2 &dims, const int32_t texId,
+                        const int32_t faceId, bool isBackFace)
 {
-	m_mesh = mesh;
-	m_mesh->reserveMesh();
+    if (faceId >= g_nFaces)
+    {
+        LOG_CORE_ERROR("Error: faceId - {0} is wrong ", faceId);
+        return;
+    }
+
+    const auto &faceAODirs = g_aoStates[faceId];
+
+    if (isBackFace)
+    {
+        m_vertices.emplace_back(
+            facePos, texId, 0, dims,
+            checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + v, texId, 2, dims,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + u, texId, 1, dims,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+        m_vertices.emplace_back(
+            facePos + u, texId, 1, dims,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + v, texId, 2, dims,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + u + v, texId, 3, dims,
+            checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+    }
+    else
+    {
+        m_vertices.emplace_back(
+            facePos, texId, 0, dims,
+            checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + u, texId, 1, dims,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + v, texId, 2, dims,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+        m_vertices.emplace_back(
+            facePos + v, texId, 2, dims,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + u, texId, 1, dims,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + u + v, texId, 3, dims,
+            checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+    }
+}
+
+void Chunk::addQuadFace(const glm::vec3 &pos, const glm::vec3 &facePos,
+                        const glm::vec3 &u, const glm::vec3 &v,
+                        const int32_t texId, const int32_t faceId,
+                        bool isBackFace)
+{
+    if (faceId >= g_nFaces)
+    {
+        LOG_CORE_ERROR("Error: faceId - {0} is wrong ", faceId);
+        return;
+    }
+
+    const auto &faceAODirs = g_aoStates[faceId];
+
+    if (isBackFace)
+    {
+        m_vertices.emplace_back(
+            facePos, texId, 0,
+            checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + v, texId, 2,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + u, texId, 1,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+        m_vertices.emplace_back(
+            facePos + u, texId, 1,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + v, texId, 2,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + u + v, texId, 3,
+            checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+    }
+    else
+    {
+        m_vertices.emplace_back(
+            facePos, texId, 0,
+            checkVertexAO(pos, faceAODirs[0], faceAODirs[1], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + u, texId, 1,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + v, texId, 2,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+
+        m_vertices.emplace_back(
+            facePos + v, texId, 2,
+            checkVertexAO(pos, faceAODirs[6], faceAODirs[5], faceAODirs[7]));
+        m_vertices.emplace_back(
+            facePos + u, texId, 1,
+            checkVertexAO(pos, faceAODirs[2], faceAODirs[1], faceAODirs[3]));
+        m_vertices.emplace_back(
+            facePos + u + v, texId, 3,
+            checkVertexAO(pos, faceAODirs[4], faceAODirs[3], faceAODirs[5]));
+    }
+}
+
+void Chunk::draw(const std::shared_ptr<Renderer> &renderer,
+                 const Shader &shader, bool drawOutline)
+{
+    if (renderer == nullptr)
+    {
+        LOG_CORE_ERROR("CHUNK::DRAW::Renderer is not specified!");
+        return;
+    }
+
+    if (m_mesh == nullptr)
+    {
+        LOG_CORE_ERROR("CHUNK::DRAW::Mesh is not initialized!");
+        return;
+    }
+
+    shader.setUniform3fv("u_chunkPos", m_pos);
+    if (m_meshType == MeshType::CULLED || m_meshType == MeshType::GREEDY)
+    {
+        shader.setUniform1b("u_bUseAO", renderer->ambientOcclusion());
+    }
+
+    m_mesh->draw(renderer, shader);
+    if (drawOutline)
+    {
+        renderer->drawOutline(
+            ResourceManager::getInstance().getShader(s_chunkOutline), m_pos);
+    }
+}
+
+void Chunk::setMesh(const std::shared_ptr<Mesh> &mesh)
+{
+    m_mesh = mesh;
+    m_mesh->reserveMesh();
 }
 
 void Chunk::bake(MeshType type)
 {
-	std::unique_lock<std::shared_mutex> uLock(m_mutex);
-	m_state = ChunkState::MESH_BAKING;
-	uLock.unlock();
+    std::unique_lock<std::shared_mutex> uLock(m_mutex);
+    m_state = ChunkState::MESH_BAKING;
+    uLock.unlock();
 
-	m_meshType = type;
+    m_meshType = type;
 
-	switch (type)
-	{
-	case MeshType::CULLED:
-		bakeCulled(m_voxels, g_sAxis);
-		break;
+    switch (type)
+    {
+    case MeshType::CULLED:
+        bakeCulled(m_voxels, g_sAxis);
+        break;
 
-	case MeshType::GREEDY:
-		bakeGreedy(m_voxels, g_sAxis);
-		break;
+    case MeshType::GREEDY:
+        bakeGreedy(m_voxels, g_sAxis);
+        break;
 
-	case MeshType::BINARY_GREEDY:
-		bakeBinGreedy(m_voxels, g_sAxis);
-		break;
-	}
+    case MeshType::BINARY_GREEDY:
+        bakeBinGreedy(m_voxels, g_sAxis);
+        break;
+    }
 
-	uLock.lock();
-	if (m_vertices.empty())
-	{
-		m_state = ChunkState::VOXELS_GENERATED_READY;
-	}
-	else
-	{
-		m_state = ChunkState::MESH_BAKED;
-	}
+    uLock.lock();
+    if (m_vertices.empty())
+    {
+        m_state = ChunkState::VOXELS_GENERATED_READY;
+    }
+    else
+    {
+        m_state = ChunkState::MESH_BAKED;
+    }
 }
 
 // @NOTE: This method must work only on the main thread
 void Chunk::loadVerticesToBuffer()
 {
-	std::unique_lock<std::shared_mutex> uLock(m_mutex);
-	m_state = LOADING;
-	uLock.unlock();
+    std::unique_lock<std::shared_mutex> uLock(m_mutex);
+    m_state = LOADING;
+    uLock.unlock();
 
-	if (m_mesh == nullptr)
-	{
-		LOG_CORE_ERROR("CHUNK::MESH::CONSTRUCTION::Can't construct mesh!");
-		return;
-	}
+    if (m_mesh == nullptr)
+    {
+        LOG_CORE_ERROR("CHUNK::MESH::CONSTRUCTION::Can't construct mesh!");
+        return;
+    }
 
-	if (getState() == ChunkState::READY)
-	{
-		LOG_CORE_WARN("CHUNK::MESH::CONSTRUCTION::Mesh for this chunks is already generated!");
-		return;
-	}
+    if (getState() == ChunkState::READY)
+    {
+        LOG_CORE_WARN("CHUNK::MESH::CONSTRUCTION::Mesh for this chunks is "
+                      "already generated!");
+        return;
+    }
 
+    m_mesh->loadToBuffer<Vertex>(m_vertices);
 
-	m_mesh->loadToBuffer<Vertex>(m_vertices);
-
-	uLock.lock();
-	m_state = ChunkState::READY;
+    uLock.lock();
+    m_state = ChunkState::READY;
 }

@@ -5,6 +5,7 @@ bin-int/
 out/
 build/
 .cache/
+.clang-format
 launch.json
 compile_commands.json
 # Unwanted files

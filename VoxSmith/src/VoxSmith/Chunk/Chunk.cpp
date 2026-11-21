@@ -20,8 +20,11 @@
 using namespace VoxSmith;
 
 constexpr uint32_t g_sAxis = 32;
-constexpr uint32_t g_voxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
-constexpr uint32_t g_nVoxelRows = g_sAxis * g_sAxis;
+constexpr uint32_t g_sAxisPadded = g_sAxis + 2;
+constexpr uint32_t g_sChunkSizePadded = g_sAxisPadded * g_sAxisPadded * g_sAxisPadded;
+constexpr uint32_t g_sGridPlaneSizePadded = g_sAxisPadded * g_sAxisPadded;
+constexpr uint32_t g_sVoxelsPerChunk = g_sAxis * g_sAxis * g_sAxis;
+constexpr uint32_t g_sGridPlaneSize = g_sAxis * g_sAxis;
 constexpr uint32_t g_biomThreshold = 5;
 
 const glm::vec3 g_dirs[2][3] = {
@@ -108,7 +111,7 @@ const glm::vec3 g_aoStates[g_nFaces][g_nNeighboursPerFace] = {
 Chunk::Chunk(const glm::vec3 &pos)
     : m_pos(pos), m_state(ChunkState::EMPTY),
       m_center(pos + glm::vec3(g_sAxis / 2)), m_neighbours(26, nullptr),
-      m_mesh(std::make_shared<Mesh>()), m_opaqueMask(g_nVoxelRows, 0)
+      m_mesh(std::make_shared<Mesh>()), m_opaqueMask(g_sGridPlaneSizePadded, 0)
 {
     std::unique_lock<std::shared_mutex> uLock(m_mutex);
     m_state = ChunkState::EMPTY;
@@ -123,19 +126,19 @@ void Chunk::generateChunk(const ChunkMap &map)
     m_state = ChunkState::FRESH;
     uLock.unlock();
 
-    m_voxels.reserve(g_voxelsPerChunk);
+    m_voxels.reserve(g_sChunkSizePadded);
 
     bool hasOnlyEmpty = true;
-    for (uint32_t y = 0; y < g_sAxis; y++)
+    for (uint32_t y = 1; y < g_sAxisPadded - 1; y++)
     {
-        for (uint32_t z = 0; z < g_sAxis; z++)
+        for (uint32_t z = 1; z < g_sAxisPadded - 1; z++)
         {
-            for (uint32_t x = 0; x < g_sAxis; x++)
+            for (uint32_t x = 1; x < g_sAxisPadded - 1; x++)
             {
                 auto type = VoxelType::Empty;
 
-                const int32_t height = map.data[z * g_sAxis + x];
-                const auto biome = map.biomData[z * g_sAxis + x];
+                const int32_t height = map.data[(z - 1) * g_sAxis + (x - 1)];
+                const auto biome = map.biomData[(z - 1) * g_sAxis + (x - 1)];
 
                 if (y + m_pos.y < height - g_biomThreshold)
                 {
@@ -153,7 +156,7 @@ void Chunk::generateChunk(const ChunkMap &map)
                 if (type != VoxelType::Empty)
                 {
                     hasOnlyEmpty = false;
-					m_opaqueMask.at(y * g_sAxis + z) |= 1 << x;
+                    m_opaqueMask.at(y * g_sAxisPadded + z) |= 1 << x;
                 }
                 m_voxels.emplace_back(type);
             }
@@ -181,7 +184,7 @@ Voxel Chunk::getVoxel(const glm::vec3 pLocal) const
         return Voxel::Empty;
     }
 
-    if (id < 0 || id >= g_voxelsPerChunk)
+    if (id < 0 || id >= g_sVoxelsPerChunk)
     {
         LOG_CORE_ERROR("CHUNK::GET_VOXEL::Could not get voxel.");
         return Voxel::Empty;
@@ -252,13 +255,13 @@ bool Chunk::inBounds(const glm::ivec3 &min, const glm::ivec3 &max) const
 
 void Chunk::bakeCulled(const std::vector<Voxel> &voxels, const float cSize)
 {
-    for (int32_t y = 0; y < cSize; y++)
+    for (int32_t y = 1; y < g_sAxisPadded - 1; y++)
     {
-        for (int32_t z = 0; z < cSize; z++)
+        for (int32_t z = 1; z < g_sAxisPadded - 1; z++)
         {
-            for (int32_t x = 0; x < cSize; x++)
+            for (int32_t x = 1; x < g_sAxisPadded - 1; x++)
             {
-                const int32_t id = cSize * (y * cSize + z) + x;
+                const int32_t id = g_sAxisPadded * (y * g_sAxisPadded + z) + x;
 
                 if (voxels.at(id) == VoxelType::Empty)
                 {
@@ -268,11 +271,11 @@ void Chunk::bakeCulled(const std::vector<Voxel> &voxels, const float cSize)
                 const int32_t left = id - 1;
                 const int32_t right = id + 1;
 
-                const int32_t bottom = id - cSize * cSize;
-                const int32_t top = id + cSize * cSize;
+                const int32_t bottom = id - g_sAxisPadded * g_sAxisPadded;
+                const int32_t top = id + g_sAxisPadded * g_sAxisPadded;
 
-                const int32_t back = id - cSize;
-                const int32_t front = id + cSize;
+                const int32_t back = id - g_sAxisPadded;
+                const int32_t front = id + g_sAxisPadded;
 
                 if (x == 0)
                 {

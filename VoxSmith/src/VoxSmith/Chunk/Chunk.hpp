@@ -56,14 +56,19 @@ class VOX_SMITH_API Chunk final
     ~Chunk();
 
     void addNeighbour(Direction dir, const std::shared_ptr<Chunk> &chunk);
+    void updatePadding();
     void setMesh(const std::shared_ptr<Mesh> &mesh);
     void draw(const std::shared_ptr<Renderer> &renderer, const Shader &shader,
               bool drawOutline);
-    void bake(MeshType type = MeshType::GREEDY);
+    void bake(MeshType type = MeshType::CULLED);
     void loadVerticesToBuffer();
     void generateChunk(const ChunkMap &map);
 
     Voxel getVoxel(const glm::vec3 pLocal) const;
+
+    void updateFace(Direction dir, const std::shared_ptr<Chunk>& neighbour);
+    void updateEdge(Direction dir, const std::shared_ptr<Chunk>& neighbour);
+    void udpateCorner(Direction dir, const std::shared_ptr<Chunk>& neighbour);
 
     bool canBake() const;
     bool inBounds(const glm::ivec3 &min, const glm::ivec3 &max) const;
@@ -141,14 +146,6 @@ class VOX_SMITH_API Chunk final
                            const glm::vec3 &pSide2) const;
     bool compareVerticesAO(const glm::vec3 &pVoxel1, const glm::vec3 &pVoxel2,
                            const int32_t faceId) const;
-    void defineUV(glm::vec3 &u, glm::vec3 &v, const glm::vec2 &size,
-                  const int32_t iAxis) const;
-#if 0
-		void handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis,
-			const glm::vec3& u, const glm::vec3& v,
-			const int32_t neighbourId,
-			Direction dir, bool condition, bool isBackFace);
-#endif
 };
 
 } // namespace VoxSmith

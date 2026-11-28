@@ -11,6 +11,8 @@
 #include "Voxel.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include <cstdint>
+#include <memory>
+#include <unordered_map>
 #include <utility>
 #include <winuser.h>
 
@@ -108,6 +110,41 @@ const glm::vec3 g_aoStates[g_nFaces][g_nNeighboursPerFace] = {
     },
 };
 
+const glm::vec3 g_localPaddedNeighbourPos[26] = {
+    {g_sAxisPadded - 2, 0, 0}, // to LEFT
+    {0, g_sAxisPadded - 2, 0}, // to BOTTOM
+    {0, 0, g_sAxisPadded - 2}, // to BACK
+    {1, 0, 0},                 // to RIGHT
+    {0, 1, 0},                 // to TOP
+    {0, 0, 1},                 // to FRONT
+
+    {g_sAxisPadded - 2, g_sAxisPadded - 2,
+     g_sAxisPadded - 2},                       // to BOTTOM_LEFT_BACK
+    {g_sAxisPadded - 2, g_sAxisPadded - 2, 1}, // to BOTTOM_LEFT_FRONT
+    {1, g_sAxisPadded - 2, g_sAxisPadded - 2}, // to BOTTOM_RIGHT_BACK
+    {1, g_sAxisPadded - 2, 1},                 // to BOTTOM_RIGHT_FRONT
+
+    {g_sAxisPadded - 2, 1, g_sAxisPadded - 2}, // to TOP_LEFT_BACK
+    {g_sAxisPadded - 2, 1, 1},                 // to TOP_LEFT_FRONT
+    {1, 1, g_sAxisPadded - 2},                 // to TOP_RIGHT_BACK
+    {1, 1, 1},                                 // to TOP_RIGHT_FRONT
+
+    {1, 0, 1},                                 // to FRONT_RIGHT
+    {g_sAxisPadded - 2, 0, 1},                 // to FRONT_LEFT
+    {1, 0, g_sAxisPadded - 2},                 // to BACK_RIGHT
+    {g_sAxisPadded - 2, 0, g_sAxisPadded - 2}, // to BACK_LEFT
+
+    {0, 1, 1},                                 // to TOP_FRONT
+    {0, 1, g_sAxisPadded - 2},                 // to TOP_BACK
+    {1, g_sAxisPadded - 2, 0},                 // to BOTTOM_FRONT
+    {0, g_sAxisPadded - 2, g_sAxisPadded - 2}, // to BOTTOM_BACK
+
+    {1, 1, 0},                                 // to TOP_RIGHT
+    {g_sAxisPadded - 2, 1, 0},                 // to TOP_LEFT
+    {1, g_sAxisPadded - 2, 0},                 // to BOTTOM_RIGHT
+    {g_sAxisPadded - 2, g_sAxisPadded - 2, 0}, // to BOTTOM_LEFT
+};
+
 Chunk::Chunk(const glm::vec3 &pos)
     : m_pos(pos), m_state(ChunkState::EMPTY),
       m_voxels(g_sChunkSizePadded, Voxel::Empty),
@@ -192,6 +229,44 @@ Voxel Chunk::getVoxel(const glm::vec3 pLocal) const
     return m_voxels.at(id);
 }
 
+void Chunk::updateFace(Direction dir, const std::shared_ptr<Chunk> &neighbour)
+{
+    const int32_t iAxis = dir % 3;
+    const int32_t iuAxis = (dir + 1) % 3;
+    const int32_t ivAxis = (dir + 2) % 3;
+
+    const int32_t iFaceAxis = dir > Direction::BACK ? g_sAxisPadded - 1 : 0;
+
+    glm::vec3 neighbourPos = g_localPaddedNeighbourPos[iAxis];
+
+    for (int32_t v = 1; v < g_sAxisPadded - 1; v++)
+    {
+        for (int32_t u = 1; u < g_sAxisPadded - 1; u++)
+        {
+            glm::vec3 localPos = glm::vec3(0.0f);
+            localPos[iuAxis] = u;
+            localPos[ivAxis] = v;
+            localPos[iAxis] = iFaceAxis;
+
+            neighbourPos[iuAxis] = u;
+            neighbourPos[ivAxis] = v;
+
+            const int32_t localId = getId(localPos, g_sAxisPadded);
+            const int32_t neighbourId = getId(neighbourPos, g_sAxisPadded);
+
+            m_voxels.at(localId) = neighbour->m_voxels.at(neighbourId);
+        }
+    }
+}
+
+void Chunk::updateEdge(Direction dir, const std::shared_ptr<Chunk> &neighbour)
+{
+}
+
+void Chunk::udpateCorner(Direction dir, const std::shared_ptr<Chunk> &neighbour)
+{
+}
+
 void Chunk::setState(ChunkState state)
 {
     std::lock_guard<std::shared_mutex> lock(m_mutex);
@@ -207,6 +282,26 @@ ChunkState Chunk::getState() const
 Direction VoxSmith::getInverseDirection(Direction dir)
 {
     return static_cast<Direction>((static_cast<int32_t>(dir) + 3) % 6);
+}
+
+void Chunk::updatePadding()
+{
+    for (int32_t iDir = Direction::LEFT; iDir < BOTTOM_LEFT; iDir++)
+    {
+        const auto &chunk = m_neighbours[iDir];
+        auto dir = static_cast<Direction>(iDir);
+        if (dir <= FRONT) // update padded voxels for faces
+        {
+            updateFace(dir, chunk);
+        }
+        else if (dir >= TOP_LEFT_BACK &&
+                 dir <= BOTTOM_RIGHT_FRONT) // update corners
+        {
+        }
+        else // update edges
+        {
+        }
+    }
 }
 
 void Chunk::addNeighbour(Direction dir, const std::shared_ptr<Chunk> &chunk)
@@ -260,166 +355,77 @@ void Chunk::bakeCulled(const std::vector<Voxel> &voxels, const float cSize)
         {
             for (int32_t x = 1; x < g_sAxisPadded - 1; x++)
             {
-                const int32_t id = g_sAxisPadded * (y * g_sAxisPadded + z) + x;
+                const int32_t id = getId({x, y, z}, g_sAxisPadded);
 
                 if (voxels.at(id) == VoxelType::Empty)
                 {
                     continue;
                 }
 
-                const int32_t left = id - 1;
-                const int32_t right = id + 1;
+                const int32_t left = getId({x - 1, y, z}, g_sAxisPadded);
+                const int32_t right = getId({x + 1, y, z}, g_sAxisPadded);
 
-                const int32_t bottom = id - g_sAxisPadded * g_sAxisPadded;
-                const int32_t top = id + g_sAxisPadded * g_sAxisPadded;
+                const int32_t bottom = getId({x, y - 1, z}, g_sAxisPadded);
+                const int32_t top = getId({x, y + 1, z}, g_sAxisPadded);
 
-                const int32_t back = id - g_sAxisPadded;
-                const int32_t front = id + g_sAxisPadded;
+                const int32_t back = getId({x, y, z - 1}, g_sAxisPadded);
+                const int32_t front = getId({x, y, z + 1}, g_sAxisPadded);
 
                 const glm::vec3 voxelPos = {x - 1, y - 1, z - 1};
 
-                if (x == 1)
+                // TODO: Improve in the future with putting this in the loop;
+                bool faceFree = m_voxels.at(left) == VoxelType::Empty;
+                if (faceFree)
                 {
-                    const glm::vec3 neighbourPos = {g_sAxisPadded - 2, y, z};
-                    if (m_neighbours[LEFT] != nullptr &&
-                        m_neighbours[LEFT]->m_voxels.at(getId(
-                            neighbourPos, g_sAxisPadded)) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][LEFT], LEFT,
-                                    false);
-                    }
-                }
-                else
-                {
-                    if (m_voxels.at(left) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][LEFT], LEFT,
-                                    false);
-                    }
+                    const glm::vec3 facePos = {x - 1, y - 1, z - 1};
+                    addQuadFace(voxelPos, facePos, {0, 0, 1}, {0, 1, 0},
+                                s_textureFaces[m_voxels.at(id)][LEFT], LEFT,
+                                false);
                 }
 
-                if (x >= g_sAxisPadded - 2)
+                faceFree = m_voxels.at(right) == VoxelType::Empty;
+                if (faceFree)
                 {
-                    const glm::vec3 neighbourPos = {1, y, z};
-                    if (m_neighbours[RIGHT] != nullptr &&
-                        m_neighbours[RIGHT]->m_voxels.at(getId(
-                            neighbourPos, g_sAxisPadded)) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][RIGHT],
-                                    RIGHT, true);
-                    }
-                }
-                else
-                {
-                    if (m_voxels.at(right) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][RIGHT],
-                                    RIGHT, true);
-                    }
+                    const glm::vec3 facePos = {x, y - 1, z - 1};
+                    addQuadFace(voxelPos, facePos, {0, 0, 1}, {0, 1, 0},
+                                s_textureFaces[m_voxels.at(id)][RIGHT], RIGHT,
+                                true);
                 }
 
-                if (y == 1)
+                faceFree = m_voxels.at(bottom) == VoxelType::Empty;
+                if (faceFree)
                 {
-                    const glm::vec3 neighbourPos = {x, g_sAxisPadded - 2, z};
-                    if (m_neighbours[BOTTOM] != nullptr &&
-                        m_neighbours[BOTTOM]->m_voxels.at(getId(
-                            neighbourPos, g_sAxisPadded)) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {1, 0, 0},
-                                    s_textureFaces[m_voxels.at(id)][BOTTOM],
-                                    BOTTOM, true);
-                    }
-                }
-                else
-                {
-                    if (m_voxels.at(bottom) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {1, 0, 0},
-                                    s_textureFaces[m_voxels.at(id)][BOTTOM],
-                                    BOTTOM, true);
-                    }
+                    const glm::vec3 facePos = {x - 1, y - 1, z - 1};
+                    addQuadFace(voxelPos, facePos, {0, 0, 1}, {1, 0, 0},
+                                s_textureFaces[m_voxels.at(id)][BOTTOM], BOTTOM,
+                                true);
                 }
 
-                if (y >= g_sAxisPadded - 2)
+                faceFree = m_voxels.at(top) == VoxelType::Empty;
+                if (faceFree)
                 {
-                    const glm::vec3 neighbourPos = {x, 1, z};
-                    if (m_neighbours[TOP] != nullptr &&
-                        m_neighbours[TOP]->m_voxels.at(getId(
-                            neighbourPos, g_sAxisPadded)) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {1, 0, 0},
-                                    s_textureFaces[m_voxels.at(id)][TOP], TOP,
-                                    false);
-                    }
-                }
-                else
-                {
-                    if (m_voxels.at(top) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y, z - 1};
-                        addQuadFace(voxelPos, facePos, {0, 0, 1}, {1, 0, 0},
-                                    s_textureFaces[m_voxels.at(id)][TOP], TOP,
-                                    false);
-                    }
+                    const glm::vec3 facePos = {x - 1, y, z - 1};
+                    addQuadFace(voxelPos, facePos, {0, 0, 1}, {1, 0, 0},
+                                s_textureFaces[m_voxels.at(id)][TOP], TOP,
+                                false);
                 }
 
-                if (z == 1)
+                faceFree = m_voxels.at(back) == VoxelType::Empty;
+                if (faceFree)
                 {
-                    const glm::vec3 neighbourPos = {x, y, g_sAxisPadded - 2};
-                    if (m_neighbours[BACK] != nullptr &&
-                        m_neighbours[BACK]->m_voxels.at(getId(
-                            neighbourPos, g_sAxisPadded)) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {1, 0, 0}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][BACK], BACK,
-                                    true);
-                    }
-                }
-                else
-                {
-                    if (m_voxels.at(back) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z - 1};
-                        addQuadFace(voxelPos, facePos, {1, 0, 0}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][BACK], BACK,
-                                    true);
-                    }
+                    const glm::vec3 facePos = {x - 1, y - 1, z - 1};
+                    addQuadFace(voxelPos, facePos, {1, 0, 0}, {0, 1, 0},
+                                s_textureFaces[m_voxels.at(id)][BACK], BACK,
+                                true);
                 }
 
-                if (z >= g_sAxisPadded - 2)
+                faceFree = m_voxels.at(front) == VoxelType::Empty;
+                if (faceFree)
                 {
-                    const glm::vec3 neighbourPos = {x, y, 1};
-                    if (m_neighbours[FRONT] != nullptr &&
-                        m_neighbours[FRONT]->m_voxels.at(getId(
-                            neighbourPos, g_sAxisPadded)) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z};
-                        addQuadFace(voxelPos, facePos, {1, 0, 0}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][FRONT],
-                                    FRONT, false);
-                    }
-                }
-                else
-                {
-                    if (m_voxels.at(front) == VoxelType::Empty)
-                    {
-                        const glm::vec3 facePos = {x - 1, y - 1, z};
-                        addQuadFace(voxelPos, facePos, {1, 0, 0}, {0, 1, 0},
-                                    s_textureFaces[m_voxels.at(id)][FRONT],
-                                    FRONT, false);
-                    }
+                    const glm::vec3 facePos = {x - 1, y - 1, z};
+                    addQuadFace(voxelPos, facePos, {1, 0, 0}, {0, 1, 0},
+                                s_textureFaces[m_voxels.at(id)][FRONT], FRONT,
+                                false);
                 }
             }
         }
@@ -601,38 +607,6 @@ void Chunk::bakeGreedy(const std::vector<Voxel> &voxels, const int32_t size)
         }
     }
 }
-
-#if 0
-void Chunk::handleAxis(const glm::vec3& pos, TextureFace tFace, const uint32_t iAxis,
-	const glm::vec3& u, const glm::vec3& v,
-	const int32_t neighbourId,
-	Direction dir, bool condition, bool isBackFace)
-{
-	glm::vec3 facePos = pos;
-	if (dir >= RIGHT)
-	{
-		facePos[iAxis] += 1;
-	}
-
-	if (condition)
-	{
-		glm::vec3 neighbourPos = pos;
-		neighbourPos[iAxis] = g_sAxis - 1;
-		if (m_neighbours[dir] != nullptr &&
-			m_neighbours[dir]->m_voxels.at(getId(neighbourPos, g_sAxis)) == VoxelType::Empty)
-		{
-			addQuadFace(facePos, u, v, tFace, isBackFace);
-		}
-	}
-	else
-	{
-		if (m_voxels.at(neighbourId) == VoxelType::Empty)
-		{
-		}
-		addQuadFace(facePos, u, v, tFace, isBackFace);
-	}
-}
-#endif
 
 void Chunk::bakeBinGreedy(const std::vector<Voxel> &voxels, const float size)
 {

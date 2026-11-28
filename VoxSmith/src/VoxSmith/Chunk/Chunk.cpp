@@ -237,7 +237,7 @@ void Chunk::updateFace(Direction dir, const std::shared_ptr<Chunk> &neighbour)
 
     const int32_t iFaceAxis = dir > Direction::BACK ? g_sAxisPadded - 1 : 0;
 
-    glm::vec3 neighbourPos = g_localPaddedNeighbourPos[iAxis];
+    glm::vec3 neighbourPos = g_localPaddedNeighbourPos[dir];
 
     for (int32_t v = 1; v < g_sAxisPadded - 1; v++)
     {
@@ -743,50 +743,19 @@ uint32_t Chunk::checkVertexAO(const glm::vec3 &pos, const glm::vec3 &vCorner,
                               const glm::vec3 &vSide1,
                               const glm::vec3 &vSide2) const
 {
-    const glm::vec3 pCorner = pos + vCorner;
-    const glm::vec3 pSide1 = pos + vSide1;
-    const glm::vec3 pSide2 = pos + vSide2;
+    const glm::vec3 localPos = pos + glm::vec3(1, 1, 1);
 
-    const int32_t cornerId = getId(pCorner, g_sAxis);
-    const int32_t side1Id = getId(pSide1, g_sAxis);
-    const int32_t side2Id = getId(pSide2, g_sAxis);
+    const glm::vec3 pCorner = localPos + vCorner;
+    const glm::vec3 pSide1 = localPos + vSide1;
+    const glm::vec3 pSide2 = localPos + vSide2;
 
-    Voxel corner;
-    Voxel side1;
-    Voxel side2;
+    const int32_t cornerId = getId(pCorner, g_sAxisPadded);
+    const int32_t side1Id = getId(pSide1, g_sAxisPadded);
+    const int32_t side2Id = getId(pSide2, g_sAxisPadded);
 
-    if (pCorner.x < 0 || pCorner.x >= g_sAxis || pCorner.y < 0 ||
-        pCorner.y >= g_sAxis || pCorner.z < 0 || pCorner.z >= g_sAxis)
-    {
-        corner = WorldManager::getInstance().getVoxel(
-            static_cast<glm::vec3>(m_pos) + pCorner);
-    }
-    else
-    {
-        corner = m_voxels.at(cornerId);
-    }
-
-    if (pSide1.x < 0 || pSide1.x >= g_sAxis || pSide1.y < 0 ||
-        pSide1.y >= g_sAxis || pSide1.z < 0 || pSide1.z >= g_sAxis)
-    {
-        side1 = WorldManager::getInstance().getVoxel(
-            static_cast<glm::vec3>(m_pos) + pSide1);
-    }
-    else
-    {
-        side1 = m_voxels.at(side1Id);
-    }
-
-    if (pSide2.x < 0 || pSide2.x >= g_sAxis || pSide2.y < 0 ||
-        pSide2.y >= g_sAxis || pSide2.z < 0 || pSide2.z >= g_sAxis)
-    {
-        side2 = WorldManager::getInstance().getVoxel(
-            static_cast<glm::vec3>(m_pos) + pSide2);
-    }
-    else
-    {
-        side2 = m_voxels.at(side2Id);
-    }
+    Voxel corner = m_voxels.at(cornerId);
+    Voxel side1 = m_voxels.at(side1Id);
+    Voxel side2 = m_voxels.at(side2Id);
 
     return vertexAO(side1 != VoxelType::Empty ? 1 : 0,
                     side2 != VoxelType::Empty ? 1 : 0,
